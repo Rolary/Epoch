@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.vite/
+.env
+data/
+*.local
+*.log
+*.tsbuildinfo
+.idea/
+.vscode/

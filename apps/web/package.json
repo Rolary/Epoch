@@ -1,0 +1,19 @@
+{
+  "name": "@eco-era/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@eco-era/game-core": "workspace:*",
+    "@eco-era/shared": "workspace:*",
+    "phaser": "^4.0.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "zustand": "^5.0.13"
+  }
+}
