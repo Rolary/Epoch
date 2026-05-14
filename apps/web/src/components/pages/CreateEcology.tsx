@@ -15,6 +15,8 @@ export function CreateEcology() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"name" | "talent">("name");
+  const [rollCount, setRollCount] = useState(0);
+  const MAX_ROLLS = 30;
   const setSave = useGameStore((s) => s.setSave);
   const setSaveId = useGameStore((s) => s.setSaveId);
   const setGuestReady = useGameStore((s) => s.setGuestReady);
@@ -28,6 +30,7 @@ export function CreateEcology() {
       await ensureGuest();
       const choices = await getTalentChoices();
       setTalents(choices);
+      setSelectedTalent(null);
       setStep("talent");
     } catch (e) {
       setError(e instanceof Error ? e.message : "连接失败");
@@ -48,6 +51,21 @@ export function CreateEcology() {
       setPage("home");
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReroll = async () => {
+    if (rollCount >= MAX_ROLLS) return;
+    setLoading(true);
+    try {
+      const choices = await getTalentChoices();
+      setTalents(choices);
+      setSelectedTalent(null);
+      setRollCount((c) => c + 1);
+    } catch {
+      // silent
     } finally {
       setLoading(false);
     }
@@ -86,17 +104,35 @@ export function CreateEcology() {
         <div className="create-section">
           <h2 className="create-title">选择源质印记</h2>
           <p className="create-subtitle">这将是这颗星球最初始的长期倾向，永久生效。</p>
+          <div className="reroll-bar">
+            <span className="reroll-hint">
+              刷新次数 {rollCount}/{MAX_ROLLS}
+            </span>
+            {rollCount < MAX_ROLLS && (
+              <button
+                className="btn-ghost"
+                onClick={handleReroll}
+                disabled={loading}
+              >
+                ↻ 刷新印记
+              </button>
+            )}
+          </div>
           <div className="talent-cards">
             {talents.map((t) => (
               <button
                 key={t.id}
-                className={`talent-card ${selectedTalent === t.id ? "selected" : ""}`}
+                className={`talent-card rarity-${t.rarity} ${selectedTalent === t.id ? "selected" : ""}`}
                 onClick={() => setSelectedTalent(t.id)}
               >
                 <span className="talent-icon">{iconFor(t.icon)}</span>
                 <span className="talent-name">{t.name}</span>
+                {t.consumable && <span className="talent-tag consumable" data-tooltip="选中后资源立即到账，不入永久天赋">⚡ 潮涌</span>}
                 <span className="talent-summary">{t.summary}</span>
                 <span className="talent-desc">{t.description}</span>
+                {t.trait && (
+                  <span className="talent-trait">✦ {t.trait.name}：{t.trait.desc}</span>
+                )}
               </button>
             ))}
           </div>

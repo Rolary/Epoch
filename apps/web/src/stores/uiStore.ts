@@ -33,6 +33,7 @@ export interface UIStore {
 
   speciesDetailId: string | null;
   pendingTalentModal: boolean;
+  strategyCooldownUntil: number;
 
   setPage: (page: Page) => void;
   showModal: (type: NonNullable<ModalType>, data?: Record<string, unknown>) => void;
@@ -44,6 +45,7 @@ export interface UIStore {
   nextGuideStep: () => void;
   setSpeciesDetailId: (id: string | null) => void;
   setPendingTalentModal: (pending: boolean) => void;
+  setStrategyCooldown: (seconds: number) => void;
 }
 
 export const useUIStore = create<UIStore>((set, get) => ({
@@ -58,6 +60,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   speciesDetailId: null,
   pendingTalentModal: false,
+  strategyCooldownUntil: 0,
 
   setPage: (page) => set({ page, modalType: null, sheetType: null }),
 
@@ -81,4 +84,5 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   setSpeciesDetailId: (id) => set({ speciesDetailId: id }),
   setPendingTalentModal: (pending) => set({ pendingTalentModal: pending }),
+  setStrategyCooldown: (seconds) => set({ strategyCooldownUntil: Date.now() + seconds * 1000 }),
 }));

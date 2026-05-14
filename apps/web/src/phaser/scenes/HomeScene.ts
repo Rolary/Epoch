@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { useGameStore } from "../../stores/gameStore.js";
 
 type ElementType = "crystal" | "spark" | "droplet" | "pulse";
 type Outcome = "positive" | "negative" | "rare";
@@ -301,11 +302,17 @@ export class HomeScene extends Phaser.Scene {
 
   private absorbElement(el: DragElement): void {
     const cfg = ELEMENT_CONFIG[el.type];
+    const talents = useGameStore.getState().save?.talents ?? [];
+
+    // Trait: 适应缓冲 — reduce negative chance from 25% to 15%
+    const hasAdaptiveBuffer = talents.some((t) => t.trait?.id === "adaptive_buffer");
+    const negativeThreshold = hasAdaptiveBuffer ? 0.85 : 0.7;
+
     const roll = Math.random();
     let outcome: Outcome;
     if (el.type === "pulse") {
       outcome = "rare";
-    } else if (roll < 0.7) {
+    } else if (roll < negativeThreshold) {
       outcome = "positive";
     } else {
       outcome = "negative";
@@ -316,10 +323,8 @@ export class HomeScene extends Phaser.Scene {
     const cy = this.cameras.main.height / 2 + 40;
     this.tweens.add({
       targets: el.container,
-      x: cx,
-      y: cy,
-      scale: 0,
-      alpha: 0,
+      x: cx, y: cy,
+      scale: 0, alpha: 0,
       duration: 300,
       ease: "Quad.easeIn",
       onComplete: () => {
@@ -329,16 +334,15 @@ export class HomeScene extends Phaser.Scene {
       },
     });
 
-    // Visual feedback
-    this.playAbsorbFeedback(cx, cy, el.type, outcome);
+    // Visual feedback — skip shake on negative if adaptive buffer
+    this.playAbsorbFeedback(cx, cy, el.type, outcome, hasAdaptiveBuffer && outcome === "negative");
 
     // Guide: hide after 3 successful absorbs
     this.absorbCount++;
     if (this.absorbCount >= 3 && this.poolHintText.visible) {
       this.tweens.add({
         targets: [this.poolHintText, this.poolHintArrow],
-        alpha: 0,
-        duration: 400,
+        alpha: 0, duration: 400,
         onComplete: () => {
           this.poolHintText.setVisible(false);
           this.poolHintArrow.setVisible(false);
@@ -348,9 +352,73 @@ export class HomeScene extends Phaser.Scene {
 
     // Notify React via callback
     this.onAbsorb?.(el.type, outcome);
+
+    // Trait: 脉冲加速 — every 4 absorbs spawn a pulse element
+    const hasPulseSurge = talents.some((t) => t.trait?.id === "pulse_surge");
+    if (hasPulseSurge && this.absorbCount % 4 === 0) {
+      this.spawnElementOfType("pulse");
+    }
+
+    // Trait: 连锁反应 — when absorbing spark, 50% chance to chain to 2 nearest elements
+    const hasChainReaction = talents.some((t) => t.trait?.id === "chain_reaction");
+    if (hasChainReaction && el.type === "spark" && this.dragElements.length > 0) {
+      const cx2 = this.cameras.main.width / 2;
+      const cy2 = this.cameras.main.height / 2 + 40;
+      const sorted = [...this.dragElements]
+        .map((e) => ({ e, d: Phaser.Math.Distance.Between(e.container.x, e.container.y, cx2, cy2) }))
+        .sort((a, b) => a.d - b.d);
+      for (let i = 0; i < Math.min(2, sorted.length); i++) {
+        if (Math.random() < 0.5) {
+          this.absorbElement(sorted[i].e);
+        }
+      }
+    }
   }
 
-  private playAbsorbFeedback(cx: number, cy: number, type: ElementType, outcome: Outcome): void {
+  private spawnElementOfType(type: ElementType): void {
+    const cfg = ELEMENT_CONFIG[type];
+    const gfx = this.add.graphics();
+    if (type === "crystal") this.drawCrystal(gfx, cfg.color, cfg.size);
+    else if (type === "spark") this.drawSpark(gfx, cfg.color, cfg.size);
+    else if (type === "droplet") this.drawDroplet(gfx, cfg.color, cfg.size);
+    else this.drawPulse(gfx, cfg.color, cfg.size);
+
+    const { width, height } = this.cameras.main;
+    const cx = width / 2;
+    const cy = height / 2 + 40;
+    const angle = Math.random() * Math.PI * 2;
+    const orbitRadius = 150 + Math.random() * 20;
+    const x = cx + Math.cos(angle) * orbitRadius;
+    const y = cy + Math.sin(angle) * orbitRadius;
+
+    const container = this.add.container(x, y, [gfx]);
+    container.setSize(cfg.size * 2, cfg.size * 2);
+    container.setInteractive(new Phaser.Geom.Circle(0, 0, cfg.size + 10), Phaser.Geom.Circle.Contains);
+    container.setDepth(8);
+    container.setScale(0);
+    this.input.setDraggable(container);
+    this.tweens.add({ targets: container, scale: 1, duration: 400, ease: "Back.easeOut" });
+
+    const el: DragElement = {
+      container, graphics: gfx, type,
+      homeOrbitAngle: angle, homeOrbitRadius: orbitRadius,
+      orbitSpeed: 0.00015 + Math.random() * 0.00025,
+      createdAt: Date.now(),
+    };
+    this.dragElements.push(el);
+
+    while (this.dragElements.length > HomeScene.MAX_ELEMENTS) {
+      const oldest = this.dragElements.shift();
+      if (oldest) {
+        this.tweens.add({
+          targets: oldest.container, alpha: 0, scale: 0, duration: 500,
+          onComplete: () => { oldest.container.destroy(); },
+        });
+      }
+    }
+  }
+
+  private playAbsorbFeedback(cx: number, cy: number, type: ElementType, outcome: Outcome, skipShake = false): void {
     const cfg = ELEMENT_CONFIG[type];
 
     // Ripple at center
@@ -399,8 +467,8 @@ export class HomeScene extends Phaser.Scene {
       });
     }
 
-    // Screen shake for negative
-    if (outcome === "negative") {
+    // Screen shake for negative (skipped if adaptive buffer)
+    if (outcome === "negative" && !skipShake) {
       this.cameras.main.shake(120, 0.003);
     }
 

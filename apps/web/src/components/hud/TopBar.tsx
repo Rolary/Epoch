@@ -13,7 +13,7 @@ export function TopBar() {
     <div className="top-bar">
       <div className="resource-row">
         {RESOURCE_CONFIG.map(({ key, icon, label, color }) => (
-          <div key={key} className="resource-item">
+          <div key={key} className="resource-item" data-tooltip={label}>
             <span className="resource-icon">{icon}</span>
             <span className="resource-value" style={{ color }}>{Math.floor(resources[key])}</span>
           </div>

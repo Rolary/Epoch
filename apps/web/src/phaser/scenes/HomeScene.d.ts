@@ -36,6 +36,7 @@ export declare class HomeScene extends Phaser.Scene {
     private onPointerUp;
     private updateDragTrail;
     private absorbElement;
+    private spawnElementOfType;
     private playAbsorbFeedback;
     spawnOrganism(): void;
     private updateOrganisms;

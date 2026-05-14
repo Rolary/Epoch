@@ -11,6 +11,7 @@ export interface UIStore {
     guideStep: number;
     speciesDetailId: string | null;
     pendingTalentModal: boolean;
+    strategyCooldownUntil: number;
     setPage: (page: Page) => void;
     showModal: (type: NonNullable<ModalType>, data?: Record<string, unknown>) => void;
     hideModal: () => void;
@@ -21,6 +22,7 @@ export interface UIStore {
     nextGuideStep: () => void;
     setSpeciesDetailId: (id: string | null) => void;
     setPendingTalentModal: (pending: boolean) => void;
+    setStrategyCooldown: (seconds: number) => void;
 }
 export declare const useUIStore: import("zustand").UseBoundStore<import("zustand").StoreApi<UIStore>>;
 //# sourceMappingURL=uiStore.d.ts.map

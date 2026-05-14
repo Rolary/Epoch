@@ -7,6 +7,7 @@ export declare function advanceState(input: GameState, now?: Date): GameState;
 export declare function applyEnvironmentAction(input: GameState, action: string): GameState;
 export declare function unlockEvolutionNode(input: GameState, nodeId: string): GameState;
 export declare function selectTalent(input: GameState, talentId: string): GameState;
+export declare function applyInstantEffect(state: GameState, talent: Talent): GameState;
 export declare function rollTalentChoices(state?: GameState, count?: number): Talent[];
 export declare function normalizeGameState(state: GameState): GameState;
 export declare function canUnlockEvolutionNode(state: GameState, nodeId: string): boolean;

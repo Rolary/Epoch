@@ -1,5 +1,6 @@
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
+import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
 
 const NAV_ITEMS = [
   { id: "home" as const, icon: "◉", label: "潮池" },
@@ -13,15 +14,26 @@ const NAV_ITEMS = [
 function isNavUnlocked(navId: string): boolean {
   const save = useGameStore.getState().save;
   if (!save) {
-    if (navId === "home" || navId === "settings" || navId === "create-ecology") return true;
+    if (navId === "home" || navId === "settings") return true;
     return false;
   }
   if (navId === "home" || navId === "settings") return true;
-  if (navId === "evolution" && save.unlockedNodes.length >= 0 && save.resources.organic >= 10) return true;
-  if (navId === "codex" && save.species.length > 0) return true;
-  if (navId === "fossils" && save.legacies.length > 0) return true;
-  if (navId === "logs" && save.logs.length > 3) return true;
+  if (navId === "evolution") {
+    return save.unlockedNodes.length > 0 || save.resources.organic >= 10;
+  }
+  if (navId === "codex") return save.species.length > 0;
+  if (navId === "fossils") return save.legacies.length > 0;
+  if (navId === "logs") return save.logs.length > 3;
   return false;
+}
+
+function canAnyNodeBeUnlocked(): boolean {
+  const save = useGameStore.getState().save;
+  if (!save) return false;
+  return evolutionNodes.some((n) => {
+    if (save.unlockedNodes.includes(n.id)) return false;
+    return canUnlockEvolutionNode(save, n.id);
+  });
 }
 
 export function BottomBar() {
@@ -34,6 +46,7 @@ export function BottomBar() {
   if (isCreate) return null;
 
   const canStrategize = save && save.unlockedNodes.length > 0;
+  const evolutionAlert = canAnyNodeBeUnlocked();
 
   return (
     <div className="bottom-bar">
@@ -41,7 +54,7 @@ export function BottomBar() {
         {NAV_ITEMS.filter((item) => isNavUnlocked(item.id)).map((item) => (
           <button
             key={item.id}
-            className={`nav-btn ${page === item.id ? "active" : ""}`}
+            className={`nav-btn ${page === item.id ? "active" : ""} ${item.id === "evolution" && evolutionAlert ? "glow-alert" : ""}`}
             onClick={() => setPage(item.id)}
           >
             <span className="nav-icon">{item.icon}</span>
@@ -50,7 +63,7 @@ export function BottomBar() {
         ))}
       </div>
       {canStrategize && (
-        <button className="strategy-fab" onClick={() => showSheet("strategy")}>
+        <button className="strategy-fab" data-tooltip="生态干预" onClick={() => showSheet("strategy")}>
           <span className="fab-icon">⧩</span>
         </button>
       )}

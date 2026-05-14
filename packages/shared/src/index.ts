@@ -22,10 +22,17 @@ export type PlanetProfile =
 
 export type TalentTier = 1 | 2 | 3;
 
+export type TalentRarity = "common" | "rare" | "legendary" | "epic";
+
 export interface Talent {
   id: string;
   name: string;
   tier: TalentTier;
+  rarity: TalentRarity;
+  weight: number;
+  consumable?: boolean;
+  instantEffect?: Partial<Record<ResourceKey, number>>;
+  trait?: { id: string; name: string; desc: string };
   icon: "crystal" | "spark" | "tide" | "membrane" | "mutation";
   summary: string;
   description: string;
@@ -105,6 +112,7 @@ export interface GameState {
   logs: EvolutionLog[];
   talents: Talent[];
   pendingTalentChoices: Talent[];
+  consumedTalents: string[];
   planetProfile: PlanetProfile;
   lastCalculatedAt: string;
   createdAt: string;
