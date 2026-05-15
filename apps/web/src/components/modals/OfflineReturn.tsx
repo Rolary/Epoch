@@ -1,5 +1,6 @@
 import { GameModal } from "./GameModal.js";
 import { useUIStore } from "../../stores/uiStore.js";
+import { uiAssets } from "../../assets/uiAssets.js";
 
 export function OfflineReturn() {
   const modalData = useUIStore((s) => s.modalData);
@@ -10,6 +11,9 @@ export function OfflineReturn() {
   return (
     <GameModal title="潮池仍在反应">
       <div className="offline-content">
+        <div className="asset-emblem">
+          <img src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
+        </div>
         <p className="offline-time">你离开了 {formatMinutes(minutes)}</p>
         <p className="offline-subtitle">潮池在你离开时仍在缓慢演化。</p>
         <div className="offline-gains">

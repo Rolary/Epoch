@@ -1,5 +1,12 @@
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
+import { uiAssets } from "../../assets/uiAssets.js";
+
+const SPECIES_CARD_ASSETS = [
+  uiAssets.cards.crystal,
+  uiAssets.cards.energy,
+  uiAssets.cards.tide,
+] as const;
 
 export function CodexPage() {
   const species = useGameStore((s) => s.species());
@@ -36,8 +43,12 @@ export function CodexPage() {
               setPage("codex-detail");
             }}
           >
-            <div className={`card-visual rarity-${sp.status}`}>
-              <span className="card-placeholder">{sp.name.slice(0, 2)}</span>
+            <div className={`card-visual asset-card rarity-${sp.status}`}>
+              <img
+                src={SPECIES_CARD_ASSETS[indexForId(sp.id) % SPECIES_CARD_ASSETS.length]}
+                alt=""
+                aria-hidden="true"
+              />
             </div>
             <div className="card-info">
               <span className="card-name">{sp.name}</span>
@@ -65,8 +76,12 @@ export function CodexDetailPage() {
   return (
     <div className="page codex-detail-page">
       <button className="btn-back" onClick={() => setPage("codex")}>← 图鉴</button>
-      <div className="detail-visual">
-        <span className="detail-placeholder">{sp.name.slice(0, 3)}</span>
+      <div className="detail-visual asset-detail">
+        <img
+          src={SPECIES_CARD_ASSETS[indexForId(sp.id) % SPECIES_CARD_ASSETS.length]}
+          alt=""
+          aria-hidden="true"
+        />
       </div>
       <h2 className="detail-name">{sp.name}</h2>
       <div className="detail-tags">
@@ -130,4 +145,10 @@ function labelRes(key: string): string {
     stability: "稳定性", mutation: "突变", biomass: "生物量",
   };
   return m[key] ?? key;
+}
+
+function indexForId(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash += id.charCodeAt(i) * (i + 1);
+  return Math.abs(hash);
 }

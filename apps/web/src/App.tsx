@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import type { CSSProperties } from "react";
 import * as Phaser from "phaser";
 import { createPhaserGame } from "./phaser/config.js";
 import { useGameStore } from "./stores/gameStore.js";
@@ -22,12 +23,29 @@ import { OfflineReturn } from "./components/modals/OfflineReturn.js";
 import { SystemUnlock } from "./components/modals/SystemUnlock.js";
 import { StrategySheet } from "./components/sheets/StrategySheet.js";
 import { GuideOverlay } from "./components/overlays/GuideOverlay.js";
+import { uiAssets } from "./assets/uiAssets.js";
 
 const ELEMENT_ACTION: Record<ElementType, string> = {
   crystal: "catalyze",
   spark: "catalyze",
   droplet: "catalyze",
   pulse: "catalyze",
+};
+
+type InterventionCue = {
+  id: number;
+  name: string;
+  asset: string;
+  deltas: Array<[string, number]>;
+};
+
+const RESOURCE_LABELS: Record<string, string> = {
+  organic: "有机质",
+  energy: "能量",
+  minerals: "矿物质",
+  stability: "稳定性",
+  mutation: "突变",
+  biomass: "生物量",
 };
 
 function FeedbackToast({
@@ -50,6 +68,28 @@ function FeedbackToast({
   );
 }
 
+function InterventionBurst({ cue, onDone }: { cue: InterventionCue; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 2200);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  return (
+    <div className="intervention-burst" role="status" aria-live="polite">
+      <div className="intervention-rings" />
+      <img className="intervention-icon" src={cue.asset} alt="" aria-hidden="true" />
+      <div className="intervention-copy">
+        <span className="intervention-title">{cue.name}</span>
+        <span className="intervention-result">
+          {cue.deltas.length > 0
+            ? cue.deltas.slice(0, 3).map(([key, value]) => `${RESOURCE_LABELS[key] ?? key} ${value > 0 ? "+" : ""}${value}`).join(" / ")
+            : "潮池状态已改变"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   const phaserRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -68,6 +108,7 @@ export function App() {
   const dequeueAbsorb = useGameStore((s) => s.dequeueAbsorb);
 
   const [toasts, setToasts] = useState<Array<{ id: number; text: string; color: string }>>([]);
+  const [interventionCue, setInterventionCue] = useState<InterventionCue | null>(null);
 
   // Initialize Phaser
   useEffect(() => {
@@ -205,11 +246,29 @@ export function App() {
     return () => clearTimeout(timer);
   }, [toasts]);
 
+  useEffect(() => {
+    const onIntervention = (event: Event) => {
+      const detail = (event as CustomEvent<Omit<InterventionCue, "id">>).detail;
+      if (!detail) return;
+      setInterventionCue({
+        id: Date.now(),
+        name: detail.name,
+        asset: detail.asset,
+        deltas: detail.deltas ?? [],
+      });
+    };
+    window.addEventListener("eco-intervention", onIntervention);
+    return () => window.removeEventListener("eco-intervention", onIntervention);
+  }, []);
+
   const isHome = page === "home";
   const isCreate = page === "create-ecology";
 
   return (
-    <div className="game-container">
+    <div
+      className="game-container"
+      style={{ "--ui-bg": `url(${uiAssets.backgrounds.homeTidepool})` } as CSSProperties}
+    >
       {/* Phaser Canvas */}
       <div
         ref={phaserRef}
@@ -236,6 +295,14 @@ export function App() {
           />
         ))}
       </div>
+
+      {interventionCue && (
+        <InterventionBurst
+          key={interventionCue.id}
+          cue={interventionCue}
+          onDone={() => setInterventionCue(null)}
+        />
+      )}
 
       {/* Pages */}
       {page === "create-ecology" && <CreateEcology />}

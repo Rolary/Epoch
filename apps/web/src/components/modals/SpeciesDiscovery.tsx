@@ -1,6 +1,7 @@
 import { GameModal } from "./GameModal.js";
 import { useUIStore } from "../../stores/uiStore.js";
 import { useGameStore } from "../../stores/gameStore.js";
+import { uiAssets } from "../../assets/uiAssets.js";
 
 export function SpeciesDiscovery() {
   const modalData = useUIStore((s) => s.modalData);
@@ -15,8 +16,8 @@ export function SpeciesDiscovery() {
   return (
     <GameModal title="新物种发现">
       <div className="discovery-content">
-        <div className="discovery-visual">
-          <span className="discovery-placeholder">{sp.name.slice(0, 3)}</span>
+        <div className="discovery-visual asset-emblem">
+          <img src={uiAssets.emblems.discovery} alt="" aria-hidden="true" />
         </div>
         <h3 className="discovery-name">{sp.name}</h3>
         <div className="discovery-tags">
