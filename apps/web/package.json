@@ -6,14 +6,18 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@eco-era/game-core": "workspace:*",
     "@eco-era/shared": "workspace:*",
-    "phaser": "^4.0.0",
+    "phaser": "^4.1.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "vite": "8.0.12"
   }
 }

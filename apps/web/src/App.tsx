@@ -209,11 +209,11 @@ export function App() {
         // Show feedback toast
         const label = next.type === "crystal" ? "矿物质" : next.type === "spark" ? "能量" : next.type === "droplet" ? "有机质" : "突变";
         if (next.outcome === "positive") {
-          setToasts((prev) => [...prev, { id: next.id, text: `+${label} 增长`, color: "#66BB6A" }]);
+          setToasts((prev) => [...prev, { id: next.id, text: `水里变得不一样了 · ${label}+`, color: "#66BB6A" }]);
         } else if (next.outcome === "negative") {
-          setToasts((prev) => [...prev, { id: next.id, text: `— 轻微失衡`, color: "#EF5350" }]);
+          setToasts((prev) => [...prev, { id: next.id, text: "反应短暂失衡，潮池仍在调整", color: "#EF5350" }]);
         } else {
-          setToasts((prev) => [...prev, { id: next.id, text: `✦ 异常反应！演化分支出`, color: "#FFD54F" }]);
+          setToasts((prev) => [...prev, { id: next.id, text: "第一道生命痕迹正在靠近", color: "#FFD54F" }]);
           // Check for new species
           const prevCount = save?.species.length ?? 0;
           if (s.species.length > prevCount) {
@@ -230,7 +230,7 @@ export function App() {
           showModal("talent-awakening");
         }
       } catch {
-        setToasts((prev) => [...prev, { id: next.id, text: "资源不足", color: "#EF5350" }]);
+        setToasts((prev) => [...prev, { id: next.id, text: "潮池暂时吸收不了这种变化", color: "#EF5350" }]);
       }
       dequeueAbsorb(next.id);
     })();

@@ -8,6 +8,7 @@
     "dev": "concurrently \"pnpm run dev:api\" \"pnpm run dev:web\"",
     "dev:api": "tsx watch apps/api/src/server.ts",
     "dev:web": "vite --host 0.0.0.0 apps/web",
+    "preview:web": "vite preview --host 0.0.0.0 apps/web",
     "build": "tsc -b && vite build apps/web",
     "typecheck": "tsc -b",
     "test": "vitest run"

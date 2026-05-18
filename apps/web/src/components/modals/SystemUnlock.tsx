@@ -5,18 +5,18 @@ import { GameModal } from "./GameModal.js";
 export function SystemUnlock() {
   const modalData = useUIStore((s) => s.modalData);
   const hideModal = useUIStore((s) => s.hideModal);
-  const name = (modalData.name as string) ?? "";
+  const name = (modalData.name as string) ?? "演化路径";
 
   return (
-    <GameModal title="系统解锁">
+    <GameModal title="第一道生命痕迹出现了">
       <div className="unlock-content">
         <span className="unlock-icon asset-emblem">
           <img src={uiAssets.emblems.system} alt="" aria-hidden="true" />
         </span>
-        <h3 className="unlock-name">{name}</h3>
-        <p className="unlock-desc">已解锁</p>
+        <h3 className="unlock-name">新的结构已经可以被确认。</h3>
+        <span className="term-badge">{name}</span>
         <button className="btn-primary" onClick={hideModal}>
-          知道了
+          查看生命痕迹
         </button>
       </div>
     </GameModal>
