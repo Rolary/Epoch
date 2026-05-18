@@ -1,10 +1,11 @@
 import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
 import type { ResourceKey } from "@eco-era/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 
 const DETAILS_STORAGE_KEY = "eco-era-objective-details-open";
+const AUTO_MINIMIZE_DELAY = 4200;
 
 const RES_LABELS: Record<string, { asset: string; label: string }> = {
   organic: { asset: uiAssets.resources.organic, label: "有机质" },
@@ -20,61 +21,22 @@ const STORY_STAGES = ["加入养料", "留下痕迹", "学会延续", "发现生
 export function CurrentObjective() {
   const save = useGameStore((s) => s.save);
   const [detailsOpen, setDetailsOpen] = useState(() => localStorage.getItem(DETAILS_STORAGE_KEY) === "1");
+  const [minimized, setMinimized] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMinimized(true), AUTO_MINIMIZE_DELAY);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   if (!save) return null;
 
   const unlocked = save.unlockedNodes;
   const nextNode = evolutionNodes.find(
-    (n) => !unlocked.includes(n.id) && n.requires.every((r) => unlocked.includes(r)),
+    (node) => !unlocked.includes(node.id) && node.requires.every((required) => unlocked.includes(required)),
   );
 
-  let title = "让潮池活过来";
-  let action = "把发光的养料拖进水里";
-  let observation = "水里开始出现生命材料。";
-  let term = "生命材料";
-  let progressLabel = "生命材料";
-  let progress = 0;
-  let target = 20;
-  let costEntries: Array<[string, number]> = [];
-
-  if (nextNode && canUnlockEvolutionNode(save, nextNode.id)) {
-    const copy = objectiveCopyForNode(nextNode.id, nextNode.name, nextNode.description);
-    title = copy.title;
-    action = nextNode.id === "organic_richness" ? "点底部演化，确认生命痕迹" : "点底部演化，确认这一步";
-    observation = copy.observation;
-    term = copy.term;
-    progressLabel = copy.progressLabel;
-    costEntries = Object.entries(nextNode.cost) as Array<[string, number]>;
-    const totalRequired = costEntries.reduce((sum, [, v]) => sum + v, 0);
-    const totalHave = costEntries.reduce((sum, [k, v]) => sum + Math.min(save.resources[k as ResourceKey] ?? 0, v), 0);
-    progress = totalHave;
-    target = totalRequired;
-  } else if (unlocked.length === 0) {
-    progress = Math.min(save.resources.organic, target);
-    costEntries = [["organic", 20]];
-  } else if (nextNode) {
-    const copy = objectiveCopyForNode(nextNode.id, nextNode.name, nextNode.description);
-    title = copy.title;
-    action = copy.action;
-    observation = copy.observation;
-    term = copy.term;
-    progressLabel = copy.progressLabel;
-    costEntries = Object.entries(nextNode.cost) as Array<[string, number]>;
-    const totalRequired = costEntries.reduce((sum, [, v]) => sum + v, 0);
-    const totalHave = costEntries.reduce((sum, [k, v]) => sum + Math.min(save.resources[k as ResourceKey] ?? 0, v), 0);
-    progress = totalHave;
-    target = totalRequired;
-  } else {
-    title = "让生命追逐光";
-    action = "继续投入能量";
-    observation = "一些生命开始靠近光，新的生态爆发正在到来。";
-    term = "感光色素";
-    progressLabel = "光照准备";
-    progress = save.resources.energy;
-    target = 500;
-  }
-
-  const percent = Math.min(100, Math.round((progress / Math.max(1, target)) * 100));
+  const objective = getObjective(save, nextNode);
+  const percent = Math.min(100, Math.round((objective.progress / Math.max(1, objective.target)) * 100));
   const currentStageIndex = getCurrentStageIndex(unlocked, save.species.length);
 
   const toggleDetails = () => {
@@ -86,66 +48,162 @@ export function CurrentObjective() {
   };
 
   return (
-    <div className={`objective-bar ${detailsOpen ? "expanded" : "compact"}`}>
-      <div className="objective-mainline">
-        <span className="objective-kicker">主线：养出第一只生命</span>
-        <button className="objective-toggle" type="button" onClick={toggleDetails} aria-expanded={detailsOpen}>
-          {detailsOpen ? "收起" : "详情"}
-        </button>
-      </div>
-
-      <div className="objective-header">
-        <span className="objective-title">{title}</span>
-        <span className="objective-percent">{percent}%</span>
-      </div>
-
-      <div className="objective-action">{action}</div>
-      <div className="objective-track">
-        <div className="objective-fill" style={{ width: `${percent}%` }} />
-      </div>
-      <div className="objective-progress-label">
-        {progressLabel} {Math.floor(progress)}/{target}
-      </div>
-
-      {detailsOpen && (
-        <div className="objective-details">
-          <div className="storyline-steps" aria-label="主线阶段">
-            {STORY_STAGES.map((stage, index) => (
-              <span
-                key={stage}
-                className={`storyline-step ${index === currentStageIndex ? "current" : ""} ${
-                  index < currentStageIndex ? "done" : ""
-                }`}
+    <div
+      className={`objective-bar ${detailsOpen ? "expanded" : "compact"} ${minimized ? "minimized" : "open"}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => {
+        if (minimized) setMinimized(false);
+      }}
+      onKeyDown={(event) => {
+        if (minimized && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          setMinimized(false);
+        }
+      }}
+      aria-expanded={!minimized}
+    >
+      {minimized ? (
+        <div className="objective-mini-content">
+          <span className="objective-mini-dot" aria-hidden="true" />
+          <span className="objective-mini-text">{objective.title}</span>
+          <span className="objective-mini-percent">{percent}%</span>
+          <span className="objective-mini-cue">展开</span>
+        </div>
+      ) : (
+        <>
+          <div className="objective-mainline">
+            <span className="objective-kicker">主线：养出第一只生命</span>
+            <span className="objective-mainline-actions">
+              <button
+                className="objective-toggle"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setMinimized(true);
+                }}
               >
-                {stage}
-              </span>
-            ))}
+                收起
+              </button>
+              <button
+                className="objective-toggle"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleDetails();
+                }}
+                aria-expanded={detailsOpen}
+              >
+                {detailsOpen ? "少看" : "更多"}
+              </button>
+            </span>
           </div>
-          <div className="objective-observation">{observation}</div>
-          <span className="term-badge">{term}</span>
-          {costEntries.length > 0 && (
-            <div className="resource-capsules">
-              {costEntries.map(([key, needed]) => {
-                const res = RES_LABELS[key] ?? { asset: uiAssets.emblems.system, label: key };
-                const current = Math.floor(save.resources[key as ResourceKey] ?? 0);
-                const met = current >= needed;
-                const fillPercent = Math.min(100, Math.round((current / Math.max(1, needed)) * 100));
-                return (
-                  <div key={key} className={`capsule ${met ? "met" : ""}`} data-tooltip={res.label}>
-                    <div className="capsule-fill" style={{ width: `${fillPercent}%` }} />
-                    <span className="capsule-content">
-                      <img className="capsule-icon" src={res.asset} alt="" aria-hidden="true" />
-                      <span className="capsule-nums">{current}/{needed}</span>
-                    </span>
-                  </div>
-                );
-              })}
+
+          <div className="objective-header">
+            <span className="objective-title">{objective.title}</span>
+            <span className="objective-percent">{percent}%</span>
+          </div>
+
+          <div className="objective-action">{objective.action}</div>
+          <div className="objective-track">
+            <div className="objective-fill" style={{ width: `${percent}%` }} />
+          </div>
+          <div className="objective-progress-label">
+            {objective.progressLabel} {Math.floor(objective.progress)}/{objective.target}
+          </div>
+
+          {detailsOpen && (
+            <div className="objective-details">
+              <div className="storyline-steps" aria-label="主线阶段">
+                {STORY_STAGES.map((stage, index) => (
+                  <span
+                    key={stage}
+                    className={`storyline-step ${index === currentStageIndex ? "current" : ""} ${
+                      index < currentStageIndex ? "done" : ""
+                    }`}
+                  >
+                    {stage}
+                  </span>
+                ))}
+              </div>
+              <div className="objective-observation">{objective.observation}</div>
+              <span className="term-badge">{objective.term}</span>
+              {objective.costEntries.length > 0 && (
+                <div className="resource-capsules">
+                  {objective.costEntries.map(([key, needed]) => {
+                    const res = RES_LABELS[key] ?? { asset: uiAssets.emblems.system, label: key };
+                    const current = Math.floor(save.resources[key as ResourceKey] ?? 0);
+                    const met = current >= needed;
+                    const fillPercent = Math.min(100, Math.round((current / Math.max(1, needed)) * 100));
+                    return (
+                      <div key={key} className={`capsule ${met ? "met" : ""}`} data-tooltip={res.label}>
+                        <div className="capsule-fill" style={{ width: `${fillPercent}%` }} />
+                        <span className="capsule-content">
+                          <img className="capsule-icon" src={res.asset} alt="" aria-hidden="true" />
+                          <span className="capsule-nums">
+                            {current}/{needed}
+                          </span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
+}
+
+function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, nextNode: typeof evolutionNodes[number] | undefined) {
+  const unlocked = save.unlockedNodes;
+  let title = "让潮池活过来";
+  let action = "把发光的养料拖进水里";
+  let observation = "水里开始出现生命材料。";
+  let term = "生命材料";
+  let progressLabel = "生命材料";
+  let progress = 0;
+  let target = 20;
+  let costEntries: Array<[string, number]> = [];
+
+  if (nextNode) {
+    costEntries = Object.entries(nextNode.cost) as Array<[string, number]>;
+    const totalRequired = costEntries.reduce((sum, [, value]) => sum + value, 0);
+    const totalHave = costEntries.reduce(
+      (sum, [key, value]) => sum + Math.min(save.resources[key as ResourceKey] ?? 0, value),
+      0,
+    );
+    progress = totalHave;
+    target = totalRequired;
+
+    if (canUnlockEvolutionNode(save, nextNode.id)) {
+      const copy = objectiveCopyForNode(nextNode.id, nextNode.name, nextNode.description);
+      return {
+        ...copy,
+        action: nextNode.id === "organic_richness" ? "点底部演化，记录生命痕迹" : "点底部演化，推进这次变化",
+        progress,
+        target,
+        costEntries,
+      };
+    }
+
+    if (unlocked.length > 0) {
+      const copy = objectiveCopyForNode(nextNode.id, nextNode.name, nextNode.description);
+      return { ...copy, progress, target, costEntries };
+    }
+  } else {
+    title = "让生命追逐光";
+    action = "继续投入能量";
+    observation = "一些生命开始靠近光，新的生态爆发正在到来。";
+    term = "感光色素";
+    progressLabel = "光照准备";
+    progress = save.resources.energy;
+    target = 500;
+  }
+
+  return { title, action, observation, term, progressLabel, progress, target, costEntries };
 }
 
 function getCurrentStageIndex(unlocked: string[], speciesCount: number) {
@@ -160,7 +218,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
   if (nodeId === "organic_richness") {
     return {
       title: "发现第一道生命痕迹",
-      action: "确认第一道生命痕迹",
+      action: "记录第一道生命痕迹",
       observation: "复杂分子开始稳定留下痕迹。",
       term: "有机富集",
       progressLabel: "生命痕迹",

@@ -1,5 +1,6 @@
 import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
-import { unlockNode } from "../../api.js";
+import { uiAssets } from "../../assets/uiAssets.js";
+import { tickSave, unlockNode } from "../../api.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
 
@@ -24,6 +25,8 @@ export function EvolutionPage() {
 
   const handleUnlock = async (nodeId: string) => {
     try {
+      const synced = await tickSave(save.id);
+      setSave(synced);
       const updated = await unlockNode(save.id, nodeId);
       setSave(updated);
       if (updated.pendingTalentChoices?.length > 0) {
@@ -59,9 +62,8 @@ export function EvolutionPage() {
                 onClick={() => handleUnlock(node.id)}
               >
                 <div className={`node-circle ${stateClass}`}>
-                  <span className="node-icon">
-                    {unlocked ? "已" : canUnlock ? "可" : "锁"}
-                  </span>
+                  <img className="node-icon-img" src={iconFor(node.id)} alt="" aria-hidden="true" />
+                  <span className="node-state-mark">{unlocked ? "OK" : canUnlock ? "!" : ""}</span>
                 </div>
                 <div className="node-info">
                   <span className="node-name">{copy.title}</span>
@@ -74,8 +76,8 @@ export function EvolutionPage() {
                         .join(" · ")}
                     </span>
                   )}
-                  {canUnlock && <span className="node-action">确认这一步</span>}
-                  {unlocked && <span className="node-action confirmed">已确认</span>}
+                  {canUnlock && <span className="node-action">推进变化</span>}
+                  {unlocked && <span className="node-action confirmed">已留下痕迹</span>}
                 </div>
               </button>
             </div>
@@ -86,6 +88,17 @@ export function EvolutionPage() {
   );
 }
 
+function iconFor(nodeId: string): string {
+  const map: Record<string, string> = {
+    organic_richness: uiAssets.evolution.organicRichness,
+    replicating_chain: uiAssets.evolution.replicatingChain,
+    primitive_vesicle: uiAssets.evolution.primitiveVesicle,
+    metabolic_loop: uiAssets.evolution.metabolicLoop,
+    proto_cell: uiAssets.evolution.protoCell,
+    photo_pigment: uiAssets.evolution.photoPigment,
+  };
+  return map[nodeId] ?? uiAssets.emblems.discovery;
+}
 function labelFor(key: string): string {
   const map: Record<string, string> = {
     organic: "有机质",

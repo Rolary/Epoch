@@ -6,6 +6,12 @@ import cardTide from "./ui/card-tide.png";
 import emblemDiscovery from "./ui/emblem-discovery.png";
 import emblemReward from "./ui/emblem-reward.png";
 import emblemSystem from "./ui/emblem-system.png";
+import evolutionMetabolicLoop from "./ui/evolution/metabolic-loop.png";
+import evolutionOrganicRichness from "./ui/evolution/organic-richness.png";
+import evolutionPhotoPigment from "./ui/evolution/photo-pigment.png";
+import evolutionPrimitiveVesicle from "./ui/evolution/primitive-vesicle.png";
+import evolutionProtoCell from "./ui/evolution/proto-cell.png";
+import evolutionReplicatingChain from "./ui/evolution/replicating-chain.png";
 import pickupCrystal from "./ui/pickup-crystal.png";
 import pickupDroplet from "./ui/pickup-droplet.png";
 import pickupPulse from "./ui/pickup-pulse.png";
@@ -49,6 +55,14 @@ export const uiAssets = {
     discovery: emblemDiscovery,
     system: emblemSystem,
     reward: emblemReward,
+  },
+  evolution: {
+    organicRichness: evolutionOrganicRichness,
+    replicatingChain: evolutionReplicatingChain,
+    primitiveVesicle: evolutionPrimitiveVesicle,
+    metabolicLoop: evolutionMetabolicLoop,
+    protoCell: evolutionProtoCell,
+    photoPigment: evolutionPhotoPigment,
   },
 } as const;
 

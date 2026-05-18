@@ -163,7 +163,7 @@ export const talentCatalog: Talent[] = [
   // ── Legendary 永久·特性 ──
   {
     id: "membrane_bias",
-    name: "稳膜倾向", tier: 1, rarity: "legendary", weight: 15,
+    name: "稳膜倾向", tier: 1, rarity: "legendary", weight: 18,
     icon: "membrane", summary: "稳定性 +18% · 膜泡庇护",
     description: "薄膜结构更容易短暂维持，低稳定性时自动恢复。",
     effects: { stability: 0.18 },
@@ -171,7 +171,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "symbiosis_net",
-    name: "共生网络", tier: 1, rarity: "legendary", weight: 15,
+    name: "共生网络", tier: 1, rarity: "legendary", weight: 18,
     icon: "membrane", summary: "有机质 +16% · 生态共振",
     description: "物种间自发形成微弱互养，谱系越多收益越高。",
     effects: { organic: 0.16 },
@@ -179,7 +179,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "cataclysm_ward",
-    name: "灾变预警", tier: 1, rarity: "legendary", weight: 15,
+    name: "灾变预警", tier: 1, rarity: "legendary", weight: 18,
     icon: "spark", summary: "能量 +16% · 适应缓冲",
     description: "潮池对极端事件有微弱预适应，负面反应概率降低。",
     effects: { energy: 0.16 },
@@ -187,7 +187,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "split_growth",
-    name: "分裂增殖", tier: 1, rarity: "legendary", weight: 15,
+    name: "分裂增殖", tier: 1, rarity: "legendary", weight: 18,
     icon: "crystal", summary: "矿物质 +16% · 复制遗产",
     description: "每次结构跃迁后残留的碎片成为下一次跃迁起点。",
     effects: { minerals: 0.16 },
@@ -196,7 +196,7 @@ export const talentCatalog: Talent[] = [
   // ── Legendary 一次性·高额 ──
   {
     id: "pool_boom",
-    name: "潮池爆发", tier: 1, rarity: "legendary", weight: 8,
+    name: "潮池爆发", tier: 1, rarity: "legendary", weight: 10,
     consumable: true, instantEffect: { organic: 80, energy: 40 },
     icon: "tide", summary: "+80 有机质，+40 能量",
     description: "潮池短暂进入富集周期，大量有机分子集中涌现。",
@@ -204,7 +204,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "vein_break",
-    name: "矿脉断裂", tier: 1, rarity: "legendary", weight: 8,
+    name: "矿脉断裂", tier: 1, rarity: "legendary", weight: 10,
     consumable: true, instantEffect: { minerals: 60, stability: 30 },
     icon: "crystal", summary: "+60 矿物质，+30 稳定性",
     description: "池底矿脉断裂，矿物颗粒布满水面同时提供新附着点。",
@@ -212,7 +212,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "storm_surge",
-    name: "闪电风暴", tier: 1, rarity: "legendary", weight: 8,
+    name: "闪电风暴", tier: 1, rarity: "legendary", weight: 10,
     consumable: true, instantEffect: { energy: 60, mutation: 30 },
     icon: "spark", summary: "+60 能量，+30 突变点",
     description: "连续闪电劈入浅水，高压等离子催化出异常链体。",
@@ -220,7 +220,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "soup_boil",
-    name: "原始汤沸腾", tier: 1, rarity: "legendary", weight: 8,
+    name: "原始汤沸腾", tier: 1, rarity: "legendary", weight: 10,
     consumable: true, instantEffect: { organic: 50, energy: 30, minerals: 20 },
     icon: "tide", summary: "+50 有机质 +30 能量 +20 矿物质",
     description: "矿物与有机质在高温下剧烈混合，原始汤达到最大活性。",
@@ -229,7 +229,7 @@ export const talentCatalog: Talent[] = [
   // ── Epic 永久·特性 ──
   {
     id: "mutation_spark",
-    name: "异变火花", tier: 1, rarity: "epic", weight: 5,
+    name: "异变火花", tier: 1, rarity: "epic", weight: 7,
     icon: "mutation", summary: "突变 +22% · 脉冲加速",
     description: "复制错误更容易被保留，且每4次催化触发脉冲生成。",
     effects: { mutation: 0.22 },
@@ -237,7 +237,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "ancient_echo",
-    name: "远古回声", tier: 1, rarity: "epic", weight: 5,
+    name: "远古回声", tier: 1, rarity: "epic", weight: 7,
     icon: "crystal", summary: "有机质 +18% · 化石唤醒",
     description: "每次形成化石遗产，可能唤醒新的源质印记选择。",
     effects: { organic: 0.18 },
@@ -245,7 +245,7 @@ export const talentCatalog: Talent[] = [
   },
   {
     id: "chain_lightning",
-    name: "闪电链击", tier: 1, rarity: "epic", weight: 5,
+    name: "闪电链击", tier: 1, rarity: "epic", weight: 7,
     icon: "spark", summary: "能量 +18% · 连锁反应",
     description: "吸收能量闪光时可能带动周围元素同时入池。",
     effects: { energy: 0.18 },

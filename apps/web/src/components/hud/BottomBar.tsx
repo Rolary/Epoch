@@ -9,8 +9,8 @@ const NAV_ITEMS: Array<{ id: Page; asset: string; label: string }> = [
   { id: "evolution", asset: uiAssets.resources.mutation, label: "演化" },
   { id: "codex", asset: uiAssets.emblems.discovery, label: "图鉴" },
   { id: "fossils", asset: uiAssets.cards.tide, label: "遗产" },
-  { id: "logs", asset: uiAssets.emblems.system, label: "日志" },
-  { id: "settings", asset: uiAssets.resources.energy, label: "设置" },
+  { id: "logs", asset: uiAssets.emblems.system, label: "生命史" },
+  { id: "settings", asset: uiAssets.resources.energy, label: "档案" },
 ];
 
 function isNavUnlocked(navId: string): boolean {

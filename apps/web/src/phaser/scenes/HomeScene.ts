@@ -27,6 +27,8 @@ interface DragElement {
   swayWidth: number;
   swayHeight: number;
   orbitalParticles: OrbitalParticle[];
+  appearingUntil: number;
+  exiting: boolean;
 }
 
 const ELEMENT_CONFIG: Record<ElementType, { color: number; size: number; label: string; action: string; rare?: boolean }> = {
@@ -167,7 +169,9 @@ export class HomeScene extends Phaser.Scene {
     container.setSize(cfg.size * 4, cfg.size * 4);
     container.setInteractive(new Phaser.Geom.Circle(0, 0, cfg.size + 10), Phaser.Geom.Circle.Contains);
     container.setDepth(8);
-    container.setScale(0);
+    container.setAlpha(0);
+    container.setScale(0.55);
+    container.y += 14;
     this.input.setDraggable(container);
 
     // Orbital particles
@@ -200,18 +204,13 @@ export class HomeScene extends Phaser.Scene {
       swayWidth: Phaser.Math.FloatBetween(8, 16),
       swayHeight: Phaser.Math.FloatBetween(3, 7),
       orbitalParticles,
+      appearingUntil: this.time.now + 650,
+      exiting: false,
     };
     this.dragElements.push(el);
+    this.playElementEnter(el);
 
-    while (this.dragElements.length > HomeScene.MAX_ELEMENTS) {
-      const oldest = this.dragElements.shift();
-      if (oldest) {
-        this.tweens.add({
-          targets: oldest.container, alpha: 0, scale: 0, duration: 500,
-          onComplete: () => { oldest.container.destroy(); },
-        });
-      }
-    }
+    this.trimExtraElements();
   }
 
   private spawnElementOfType(type: ElementType): void {
@@ -226,9 +225,10 @@ export class HomeScene extends Phaser.Scene {
     container.setSize(cfg.size * 4, cfg.size * 4);
     container.setInteractive(new Phaser.Geom.Circle(0, 0, cfg.size + 10), Phaser.Geom.Circle.Contains);
     container.setDepth(8);
-    container.setScale(0);
+    container.setAlpha(0);
+    container.setScale(0.55);
+    container.y += 14;
     this.input.setDraggable(container);
-    this.tweens.add({ targets: container, scale: 1, duration: 400, ease: "Back.easeOut" });
 
     const el: DragElement = {
       container, asset, type,
@@ -241,18 +241,90 @@ export class HomeScene extends Phaser.Scene {
       swayWidth: Phaser.Math.FloatBetween(8, 16),
       swayHeight: Phaser.Math.FloatBetween(3, 7),
       orbitalParticles: [],
+      appearingUntil: this.time.now + 650,
+      exiting: false,
     };
     this.dragElements.push(el);
+    this.playElementEnter(el);
 
+    this.trimExtraElements();
+  }
+
+  private playElementEnter(el: DragElement): void {
+    this.tweens.add({
+      targets: el.container,
+      y: el.anchorY,
+      alpha: 1,
+      scale: 1,
+      duration: 620,
+      ease: "Back.easeOut",
+      onComplete: () => {
+        el.appearingUntil = 0;
+      },
+    });
+
+    const cfg = ELEMENT_CONFIG[el.type];
+    const halo = this.add.circle(el.anchorX, el.anchorY, cfg.size * 2.1, cfg.color, 0.16);
+    halo.setDepth(7);
+    this.tweens.add({
+      targets: halo,
+      alpha: 0,
+      scale: 1.8,
+      duration: 720,
+      ease: "Sine.easeOut",
+      onComplete: () => halo.destroy(),
+    });
+  }
+
+  private trimExtraElements(): void {
     while (this.dragElements.length > HomeScene.MAX_ELEMENTS) {
-      const oldest = this.dragElements.shift();
-      if (oldest) {
-        this.tweens.add({
-          targets: oldest.container, alpha: 0, scale: 0, duration: 500,
-          onComplete: () => { oldest.container.destroy(); },
-        });
-      }
+      const oldest = this.dragElements.find((item) => item !== this.draggedElement && !item.exiting);
+      if (!oldest) return;
+      this.releaseElement(oldest);
     }
+  }
+
+  private releaseElement(el: DragElement, target?: { x: number; y: number }, duration = 520): void {
+    if (el.exiting) return;
+    el.exiting = true;
+    this.removeDragElement(el);
+    this.tweens.killTweensOf(el.container);
+    const cfg = ELEMENT_CONFIG[el.type];
+    const endX = target?.x ?? el.container.x + Phaser.Math.Between(-12, 12);
+    const endY = target?.y ?? el.container.y - Phaser.Math.Between(18, 34);
+    this.tweens.add({
+      targets: el.container,
+      x: endX,
+      y: endY,
+      alpha: 0,
+      scale: 0.35,
+      duration,
+      ease: "Sine.easeInOut",
+      onComplete: () => el.container.destroy(),
+    });
+
+    const moteCount = el.type === "pulse" ? 8 : 5;
+    for (let i = 0; i < moteCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const mote = this.add.circle(el.container.x, el.container.y, Phaser.Math.FloatBetween(1, 2.2), cfg.color, 0.45);
+      mote.setDepth(7);
+      this.tweens.add({
+        targets: mote,
+        x: mote.x + Math.cos(angle) * Phaser.Math.Between(12, 28),
+        y: mote.y + Math.sin(angle) * Phaser.Math.Between(12, 28),
+        alpha: 0,
+        scale: 0.2,
+        duration: duration + Phaser.Math.Between(80, 220),
+        ease: "Quad.easeOut",
+        onComplete: () => mote.destroy(),
+      });
+    }
+  }
+
+  private removeDragElement(el: DragElement): void {
+    const idx = this.dragElements.indexOf(el);
+    if (idx >= 0) this.dragElements.splice(idx, 1);
+    if (this.draggedElement === el) this.draggedElement = null;
   }
 
   // ── Element orbit update ──
@@ -265,7 +337,7 @@ export class HomeScene extends Phaser.Scene {
     const smooth = 1 - Math.pow(0.965, Math.min(delta, 33) / 16.67);
 
     for (const el of this.dragElements) {
-      if (el === this.draggedElement) continue;
+      if (el === this.draggedElement || el.exiting) continue;
 
       const sway = t * el.swaySpeed + el.swayPhase;
       const slowCurrent = t * 0.18 + el.floatPhase;
@@ -284,7 +356,7 @@ export class HomeScene extends Phaser.Scene {
       this.keepElementInPlayArea(el, width, height);
 
       const s = 1 + Math.sin(t * 1.1 + el.floatPhase) * 0.025;
-      if (el.container.active) el.container.setScale(s);
+      if (el.container.active && this.time.now >= el.appearingUntil) el.container.setScale(s);
 
       // Update orbital particles
       for (const op of el.orbitalParticles) {
@@ -329,6 +401,7 @@ export class HomeScene extends Phaser.Scene {
 
   private getTapElement(px: number, py: number): DragElement | null {
     for (const el of this.dragElements) {
+      if (el.exiting) continue;
       const dx = px - el.container.x;
       const dy = py - el.container.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -409,14 +482,7 @@ export class HomeScene extends Phaser.Scene {
 
     const cx = this.cameras.main.width / 2;
     const cy = this.cameras.main.height / 2 + 40;
-    this.tweens.add({
-      targets: el.container, x: cx, y: cy, scale: 0, alpha: 0, duration: 300, ease: "Quad.easeIn",
-      onComplete: () => {
-        el.container.destroy();
-        const idx = this.dragElements.indexOf(el);
-        if (idx >= 0) this.dragElements.splice(idx, 1);
-      },
-    });
+    this.releaseElement(el, { x: cx, y: cy }, 360);
 
     this.playAbsorbFeedback(cx, cy, el.type, outcome, hasAdaptiveBuffer && outcome === "negative");
 
