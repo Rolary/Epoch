@@ -7,6 +7,7 @@ export function SpeciesDiscovery() {
   const modalData = useUIStore((s) => s.modalData);
   const species = useGameStore((s) => s.species());
   const speciesId = modalData.speciesId as string | undefined;
+  const showTalentAfter = modalData.showTalentAfter === true;
   const sp = species.find((s) => s.id === speciesId) ?? species[0];
   const setPage = useUIStore((s) => s.setPage);
   const hideModal = useUIStore((s) => s.hideModal);
@@ -32,6 +33,11 @@ export function SpeciesDiscovery() {
           onClick={() => {
             hideModal();
             setPage("codex");
+            if (showTalentAfter) {
+              window.setTimeout(() => {
+                useUIStore.getState().showModal("talent-awakening");
+              }, 250);
+            }
           }}
         >
           记录这段生命

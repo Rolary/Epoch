@@ -25,10 +25,20 @@ export function EvolutionPage() {
 
   const handleUnlock = async (nodeId: string) => {
     try {
+      const previousSpeciesCount = save.species.length;
       const synced = await tickSave(save.id);
       setSave(synced);
       const updated = await unlockNode(save.id, nodeId);
       setSave(updated);
+      const newSpecies = updated.species.length > previousSpeciesCount ? updated.species[0] : undefined;
+      if (newSpecies) {
+        hideModal();
+        useUIStore.getState().showModal("species-discovery", {
+          speciesId: newSpecies.id,
+          showTalentAfter: updated.pendingTalentChoices?.length > 0,
+        });
+        return;
+      }
       if (updated.pendingTalentChoices?.length > 0) {
         hideModal();
         setTimeout(() => {
@@ -43,7 +53,7 @@ export function EvolutionPage() {
   return (
     <div className="page evolution-page">
       <h2 className="page-title">生命痕迹</h2>
-      <p className="page-hint">确认潮池中已经发生的关键变化，让生命史继续向前。</p>
+      <p className="page-hint">这里会记录潮池真正留下的变化。还不能点亮时，先回去继续拖入发光养料。</p>
       <div className="evolution-path">
         {evolutionNodes.map((node, idx) => {
           const unlocked = save.unlockedNodes.includes(node.id);
@@ -76,8 +86,9 @@ export function EvolutionPage() {
                         .join(" · ")}
                     </span>
                   )}
-                  {canUnlock && <span className="node-action">推进变化</span>}
+                  {canUnlock && <span className="node-action">{actionFor(node.id)}</span>}
                   {unlocked && <span className="node-action confirmed">已留下痕迹</span>}
+                  {!unlocked && !canUnlock && <span className="node-action waiting">继续积累材料</span>}
                 </div>
               </button>
             </div>
@@ -86,6 +97,18 @@ export function EvolutionPage() {
       </div>
     </div>
   );
+}
+
+function actionFor(nodeId: string): string {
+  const map: Record<string, string> = {
+    organic_richness: "点亮这道痕迹",
+    replicating_chain: "让它延续",
+    primitive_vesicle: "包住这段反应",
+    metabolic_loop: "接上能量循环",
+    proto_cell: "记录这个跃迁",
+    photo_pigment: "追逐第一缕光",
+  };
+  return map[nodeId] ?? "记录这个变化";
 }
 
 function iconFor(nodeId: string): string {

@@ -5,6 +5,7 @@ export declare class HomeScene extends Phaser.Scene {
     private poolInner;
     private poolOuter;
     private poolShape;
+    private poolImage;
     private particleEmitters;
     private organisms;
     private lightBeams;
@@ -27,7 +28,8 @@ export declare class HomeScene extends Phaser.Scene {
     private elementSpawnTimer;
     private nextSpawnDelay;
     static readonly MAX_ELEMENTS = 4;
-    static readonly POOL_ABSORB_RADIUS = 60;
+    static readonly POOL_ABSORB_RADIUS = 112;
+    static readonly ELEMENT_POOL_AVOID_RADIUS = 150;
     onAbsorb?: (type: ElementType, outcome: Outcome) => void;
     constructor();
     preload(): void;
@@ -36,7 +38,13 @@ export declare class HomeScene extends Phaser.Scene {
     private updateSpawning;
     private spawnElement;
     private spawnElementOfType;
+    private playElementEnter;
+    private trimExtraElements;
+    private releaseElement;
+    private removeDragElement;
     private updateDragElements;
+    private randomElementPosition;
+    private keepElementInPlayArea;
     private getTapElement;
     private onPointerDown;
     private onPointerMove;

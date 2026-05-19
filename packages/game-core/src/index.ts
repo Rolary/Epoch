@@ -125,7 +125,7 @@ export const talentCatalog: Talent[] = [
   {
     id: "stability_fix",
     name: "稳态维护", tier: 1, rarity: "common", weight: 10,
-    consumable: true, instantEffect: { stability: 40 },
+    consumable: true, instantEffect: { stability: 80 },
     icon: "membrane", summary: "稳定性恢复到 80",
     description: "潮池短暂进入循环稳定期，脆弱结构获得喘息窗口。",
     effects: {}
@@ -305,6 +305,7 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
   const speciesEnergy = sumSpeciesEffect(state, "energy");
   const legacyBonus = 1 + state.legacies.length * 0.02;
   const stabilityPressure = env.volatility * 0.012 + state.resources.mutation * 0.0002;
+  const stabilityRecovery = state.resources.stability < 35 ? 0.035 : 0.02;
 
   // Trait: 生态共振 — each living/flourishing species gives +1.5% all resources (max 15%)
   const hasEcoResonance = (state.talents ?? []).some((t) => t.trait?.id === "eco_resonance");
@@ -315,7 +316,7 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
     organic: elapsedSeconds * (0.18 * env.tide + 0.06 * env.heat + speciesOrganic) * nodeBonus * legacyBonus * resonanceBonus,
     energy: elapsedSeconds * (0.14 * env.light + 0.05 * env.heat + speciesEnergy) * nodeBonus * resonanceBonus,
     minerals: elapsedSeconds * (0.09 * env.mineralFlow + 0.02 * env.tide) * resonanceBonus,
-    stability: elapsedSeconds * (0.02 + state.species.length * 0.004 - stabilityPressure),
+    stability: elapsedSeconds * (stabilityRecovery + state.species.length * 0.004 - stabilityPressure),
     mutation: elapsedSeconds * (0.025 * env.volatility + 0.006 * env.light + state.species.length * 0.001) * resonanceBonus,
     biomass: elapsedSeconds * (state.unlockedNodes.includes("proto_cell") ? 0.07 + state.species.length * 0.008 : 0.005) * resonanceBonus
   };
@@ -381,6 +382,7 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
     next.resources.organic = clamp(next.resources.organic + 2 + next.environment.mineralFlow * 0.5, 0, 999999);
     next.resources.energy = clamp(next.resources.energy + 0.8 + next.environment.light * 0.3, 0, 999999);
     next.resources.minerals = clamp(next.resources.minerals + 0.4, 0, 999999);
+    next.resources.stability = clamp(next.resources.stability + 0.25 + next.environment.mineralFlow * 0.08, 0, 100);
     next.resources.mutation = clamp(next.resources.mutation + next.environment.volatility * 0.2, 0, 999999);
     next.logs.unshift(createLog("event", catalyzeMessage(next)));
   }

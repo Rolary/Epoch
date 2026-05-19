@@ -205,6 +205,8 @@ export function App() {
       try {
         const s = await applyAction(saveId, action);
         setSave(s);
+        const prevCount = save?.species.length ?? 0;
+        const newSpecies = s.species.length > prevCount ? s.species[0] : undefined;
 
         // Show feedback toast
         const label = next.type === "crystal" ? "矿物质" : next.type === "spark" ? "能量" : next.type === "droplet" ? "有机质" : "突变";
@@ -214,19 +216,15 @@ export function App() {
           setToasts((prev) => [...prev, { id: next.id, text: "反应短暂失衡，潮池仍在调整", color: "#EF5350" }]);
         } else {
           setToasts((prev) => [...prev, { id: next.id, text: "第一道生命痕迹正在靠近", color: "#FFD54F" }]);
-          // Check for new species
-          const prevCount = save?.species.length ?? 0;
-          if (s.species.length > prevCount) {
-            showModal("species-discovery", { speciesId: s.species[0].id });
-          }
         }
 
         // Check species / talents
-        const prevCount = save?.species.length ?? 0;
-        if (s.species.length > prevCount && next.outcome !== "rare") {
-          showModal("species-discovery", { speciesId: s.species[0].id });
-        }
-        if (s.pendingTalentChoices?.length > 0) {
+        if (newSpecies) {
+          showModal("species-discovery", {
+            speciesId: newSpecies.id,
+            showTalentAfter: s.pendingTalentChoices?.length > 0,
+          });
+        } else if (s.pendingTalentChoices?.length > 0) {
           showModal("talent-awakening");
         }
       } catch {

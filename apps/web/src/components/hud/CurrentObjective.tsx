@@ -5,6 +5,7 @@ import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 
 const DETAILS_STORAGE_KEY = "eco-era-objective-details-open";
+const MINIMIZED_STORAGE_KEY = "eco-era-objective-minimized";
 const AUTO_MINIMIZE_DELAY = 4200;
 
 const RES_LABELS: Record<string, { asset: string; label: string }> = {
@@ -21,12 +22,22 @@ const STORY_STAGES = ["加入养料", "留下痕迹", "学会延续", "发现生
 export function CurrentObjective() {
   const save = useGameStore((s) => s.save);
   const [detailsOpen, setDetailsOpen] = useState(() => localStorage.getItem(DETAILS_STORAGE_KEY) === "1");
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(() => localStorage.getItem(MINIMIZED_STORAGE_KEY) === "1");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMinimized(true), AUTO_MINIMIZE_DELAY);
+    if (minimized) return;
+    if (localStorage.getItem(MINIMIZED_STORAGE_KEY) === "1") return;
+    const timer = window.setTimeout(() => {
+      localStorage.setItem(MINIMIZED_STORAGE_KEY, "1");
+      setMinimized(true);
+    }, AUTO_MINIMIZE_DELAY);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [minimized]);
+
+  const minimizeObjective = () => {
+    localStorage.setItem(MINIMIZED_STORAGE_KEY, "1");
+    setMinimized(true);
+  };
 
   if (!save) return null;
 
@@ -80,7 +91,7 @@ export function CurrentObjective() {
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  setMinimized(true);
+                  minimizeObjective();
                 }}
               >
                 收起
