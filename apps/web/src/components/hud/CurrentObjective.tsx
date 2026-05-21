@@ -18,6 +18,16 @@ const RES_LABELS: Record<string, { asset: string; label: string }> = {
 };
 
 const STORY_STAGES = ["加入养料", "留下痕迹", "学会延续", "发现生命"] as const;
+const LIFE_HISTORY_CHAPTERS = [
+  "生命诞生",
+  "生态爆发",
+  "海陆分化",
+  "复杂生命",
+  "意识萌芽",
+  "文明初火",
+  "星球危机",
+  "群星生态",
+] as const;
 
 export function CurrentObjective() {
   const save = useGameStore((s) => s.save);
@@ -136,6 +146,16 @@ export function CurrentObjective() {
                     {stage}
                   </span>
                 ))}
+              </div>
+              <div className="life-history-arc" aria-label="这颗星球的生命史">
+                <span className="life-history-title">这颗星球的生命史</span>
+                <div className="life-history-chapters">
+                  {LIFE_HISTORY_CHAPTERS.map((chapter, index) => (
+                    <span key={chapter} className={`life-history-chapter ${index === 0 ? "current" : "future"}`}>
+                      {chapter}
+                    </span>
+                  ))}
+                </div>
               </div>
               <div className="objective-observation">{objective.observation}</div>
               <span className="term-badge">{objective.term}</span>

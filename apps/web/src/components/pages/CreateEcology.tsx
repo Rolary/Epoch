@@ -82,7 +82,9 @@ export function CreateEcology() {
         <div className="create-section">
           <img className="create-pool-preview" src={uiAssets.scene.poolCenterpiece} alt="" aria-hidden="true" />
           <h1 className="create-title">命名你的生态</h1>
-          <p className="create-subtitle">为这片始源潮池命名，它将成为这颗星球生命史的开端。</p>
+          <p className="create-subtitle">
+            从这片始源潮池开始，生命也许终有一天会望向群星。现在，先为它留下第一个名字。
+          </p>
           <div className="input-group">
             <input
               className="eco-input"

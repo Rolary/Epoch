@@ -36,7 +36,7 @@ export function SpeciesDiscovery() {
           <span className="tag">{roleLabel(sp.ecologicalRole)}</span>
         </div>
         <p className="discovery-desc">{sp.shortDescription}</p>
-        <p className="discovery-science">这段生命会被记录下来，并影响后续生态。</p>
+        <p className="discovery-science">文明还很遥远，但历史已经开始。这段生命会影响后续生态。</p>
         <button
           className="btn-primary"
           onClick={() => {

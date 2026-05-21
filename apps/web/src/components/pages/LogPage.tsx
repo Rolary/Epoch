@@ -40,8 +40,10 @@ export function LogPage() {
         <p className="page-hint">生命史会把重复变化整理成可以读懂的片段。</p>
         <div className="empty-state">
           <img className="empty-icon asset-empty-icon" src={uiAssets.emblems.system} alt="" aria-hidden="true" />
-          <p className="empty-title">这片潮池还没有留下值得记住的变化</p>
-          <p className="empty-hint">拖入养料、确认演化或发现物种后，这里会记录它自己的生命史。</p>
+          <p className="empty-title">潮池记忆尚未开始</p>
+          <p className="empty-hint">
+            若生命能留下第一道痕迹，这颗星球的故事就会有第一行。
+          </p>
           <button className="btn-secondary" onClick={() => setPage("home")}>
             返回潮池
           </button>

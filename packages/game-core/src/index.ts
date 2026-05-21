@@ -563,12 +563,16 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
   const now = new Date().toISOString();
 
   if (action === "catalyze") {
+    const wasQuiet = next.resources.organic < 1 && next.resources.energy < 1 && next.resources.minerals < 1;
     next.resources.organic = clamp(next.resources.organic + 2 + next.environment.mineralFlow * 0.5, 0, 999999);
     next.resources.energy = clamp(next.resources.energy + 0.8 + next.environment.light * 0.3, 0, 999999);
     next.resources.minerals = clamp(next.resources.minerals + 0.4, 0, 999999);
     next.resources.stability = clamp(next.resources.stability + 0.25 + next.environment.mineralFlow * 0.08, 0, 100);
     next.resources.mutation = clamp(next.resources.mutation + next.environment.volatility * 0.2, 0, 999999);
     next.logs.unshift(createLog("event", catalyzeMessage(next)));
+    if (wasQuiet) {
+      next.logs.unshift(createLog("event", "这些微小变化还称不上生命，却会成为后来一切的底色。"));
+    }
   }
 
   if (action === "light") {
@@ -636,6 +640,10 @@ export function unlockEvolutionNode(input: GameState, nodeId: string): GameState
     next.logs.unshift(createLog("era", `纪元推进：${node.name}改变了潮池的生命史方向。`));
   } else {
     next.logs.unshift(createLog("system", `演化节点解锁：${node.name}。`));
+  }
+  const echo = mainlineEchoForNode(node.id);
+  if (echo) {
+    next.logs.unshift(createLog("event", echo));
   }
   if (node.branchGroupId) {
     next.historyTags = addUniqueTags(next.historyTags ?? [], [node.id]);
@@ -1187,6 +1195,21 @@ function catalyzeMessage(state: GameState) {
   if (!state.unlockedNodes.includes("replicating_chain")) return "薄膜边缘出现短暂链体，复制压力正在积累。";
   if (state.species.length === 0) return "异常链体在潮汐中留下痕迹，第一条谱系可能正在靠近。";
   return "潮池被再次催化，现有谱系改变了周围的能量流。";
+}
+
+function mainlineEchoForNode(nodeId: string): string {
+  const map: Record<string, string> = {
+    organic_richness: "第一道痕迹出现时，这颗星球开始拥有可以被记住的过去。",
+    replicating_chain: "能重复自己的结构，第一次把偶然变成了未来。",
+    replication_fidelity: "潮池开始拥有性格；很久以后，生命也会继承这种倾向。",
+    error_retention: "潮池开始拥有性格；很久以后，生命也会继承这种倾向。",
+    fragment_budding: "潮池开始拥有性格；很久以后，生命也会继承这种倾向。",
+    primitive_vesicle: "反应被边界轻轻包住，第一种生命的轮廓正在靠近。",
+    metabolic_loop: "简单循环接上能量，潮池第一次像是在为未来保存火种。",
+    proto_cell: "第一种生命被记录下来。文明还很遥远，但历史已经开始。",
+    photo_pigment: "生命开始追逐光，下一段生态爆发正在靠近。",
+  };
+  return map[nodeId] ?? "";
 }
 
 function cloneState<T>(state: T): T {
