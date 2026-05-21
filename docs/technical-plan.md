@@ -49,6 +49,8 @@ DATABASE_URL=postgres://...
 
 本地开发未设置 `DATABASE_URL` 时默认连接 `postgres://admin:123456@localhost:5432/epoch`。生产环境必须显式提供 `DATABASE_URL`，不使用开发默认值。
 
+生产环境默认启用 PostgreSQL SSL。若提供 `DATABASE_CA_CERT`，服务端会严格校验证书；未提供时允许 DigitalOcean 托管数据库的自签证书链，避免部署启动失败。
+
 数据库初始化命令：
 
 ```bash

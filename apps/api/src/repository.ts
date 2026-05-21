@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, type PoolConfig } from "pg";
 import type { GameState } from "@eco-era/shared";
 
 const DEV_DATABASE_URL = "postgres://admin:123456@localhost:5432/epoch";
@@ -38,11 +38,23 @@ export function getDatabaseUrl() {
 
 function getPool() {
   if (pool) return pool;
-  pool = new Pool({
+  const config: PoolConfig = {
     connectionString: getDatabaseUrl(),
     max: Number(process.env.PG_POOL_MAX ?? 10),
-  });
+  };
+
+  const ssl = getDatabaseSslConfig();
+  if (ssl) config.ssl = ssl;
+
+  pool = new Pool(config);
   return pool;
+}
+
+function getDatabaseSslConfig(): PoolConfig["ssl"] {
+  const ca = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n");
+  if (ca) return { ca, rejectUnauthorized: true };
+  if (process.env.NODE_ENV === "production") return { rejectUnauthorized: false };
+  return undefined;
 }
 
 async function ensureSchema() {

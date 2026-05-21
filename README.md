@@ -88,6 +88,8 @@ postgres://admin:123456@localhost:5432/epoch
 corepack pnpm run db:init
 ```
 
+DigitalOcean Managed PostgreSQL 使用 SSL。如果生产连接遇到自签证书链，服务端会默认允许该连接；如果要严格校验证书，可额外配置 `DATABASE_CA_CERT` 为数据库 CA 证书内容。
+
 PostgreSQL 中保留轻量结构：
 
 - `guest_saves`：游客与存档的关联。
