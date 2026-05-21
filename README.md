@@ -7,7 +7,7 @@
 - 前端：React 19 + Phaser + Vite，React 负责 HUD、页面、弹层和引导，Phaser 负责潮池场景。
 - 后端：Fastify + TypeScript，负责游客身份、权威存档、tick 结算、环境操作和演化解锁校验。
 - 核心规则：`packages/game-core`，前后端共用纯函数。
-- 存档：一阶段使用本地 SQLite 文件 `data/saves.sqlite`。
+- 存档：一阶段使用 PostgreSQL，通过 `DATABASE_URL` 连接托管数据库。
 - 内容生成：一阶段使用本地生成器，真实 AI 接入属于后续扩展。
 
 ## 一阶段目标
@@ -40,11 +40,11 @@
 - 图鉴：记录发现的物种，物种会影响后续生态。
 - 生命史：入口名为 `生命史`，页面名为 `潮池记忆`，合并重复事件为自然记忆。
 - 生态档案：替代传统设置页，展示潮池身份、成长记录、当前状态和存档信息。
-- 服务端存档：SQLite 本地数据库，旧 `data/saves.json` 可非破坏迁移。
+- 服务端存档：PostgreSQL 数据库，保存游客与 `GameState` 快照。
 
 ## 暂不属于一阶段
 
-- PostgreSQL / Prisma。
+- Prisma。
 - 正式账号、多设备同步和多人分享。
 - 真实 AI 文本或图片生成服务。
 - 完整多纪元流程。
@@ -70,18 +70,30 @@ API: http://127.0.0.1:8787
 
 ## 存档说明
 
-一阶段存档写入：
+一阶段存档写入 PostgreSQL。开发和部署环境都需要配置：
 
 ```text
-data/saves.sqlite
+DATABASE_URL=postgres://...
 ```
 
-SQLite 中保留轻量结构：
+本地开发未设置 `DATABASE_URL` 时会默认连接：
+
+```text
+postgres://admin:123456@localhost:5432/epoch
+```
+
+生产环境必须从环境变量读取 `DATABASE_URL`。初始化或更新表结构可运行：
+
+```bash
+corepack pnpm run db:init
+```
+
+PostgreSQL 中保留轻量结构：
 
 - `guest_saves`：游客与存档的关联。
 - `saves`：完整 `GameState` JSON 快照和更新时间。
 
-如果开发环境里存在旧的 `data/saves.json`，服务端第一次打开 SQLite 且库为空时会迁移旧数据。旧 JSON 文件会保留为备份，迁移后不再双写。
+服务端启动后首次访问存档接口时会自动确保表结构存在。当前没有正式用户，不保留旧 JSON 或 SQLite 存档迁移逻辑。
 
 ## 文档同步规则
 
@@ -107,13 +119,12 @@ SQLite 中保留轻量结构：
 
 ```text
 apps/
-  api/       Fastify API 与 SQLite repository
+  api/       Fastify API 与 PostgreSQL repository
   web/       React + Phaser 前端
 packages/
   game-core/ 核心规则纯函数
   shared/    共享类型
 docs/        产品、技术、玩法和移动端决策文档
-data/        本地开发存档
 ```
 
 ## API 概览

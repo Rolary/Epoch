@@ -1,135 +1,142 @@
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { Pool } from "pg";
 import type { GameState } from "@eco-era/shared";
 
-interface LegacySaveDatabase {
-  guests?: Record<string, string[]>;
-  saves?: Record<string, GameState>;
-}
+const DEV_DATABASE_URL = "postgres://admin:123456@localhost:5432/epoch";
 
 interface SaveRow {
-  state_json: string;
+  state_json: GameState | string;
 }
 
-interface CountRow {
-  count: number;
+let pool: Pool | undefined;
+let schemaReady: Promise<void> | undefined;
+
+export const schemaSql = `
+  CREATE TABLE IF NOT EXISTS saves (
+    id TEXT PRIMARY KEY,
+    state_json JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS guest_saves (
+    guest_key TEXT NOT NULL,
+    save_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (guest_key, save_id),
+    FOREIGN KEY (save_id) REFERENCES saves(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS guest_saves_save_id_idx ON guest_saves(save_id);
+  CREATE INDEX IF NOT EXISTS saves_updated_at_idx ON saves(updated_at DESC);
+`;
+
+export function getDatabaseUrl() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (process.env.NODE_ENV !== "production") return DEV_DATABASE_URL;
+
+  throw new Error("DATABASE_URL is required for PostgreSQL saves storage in production.");
 }
 
-const dataDir = process.env.ECO_ERA_DATA_DIR ?? join(process.cwd(), "data");
-const sqlitePath = join(dataDir, "saves.sqlite");
-const legacyJsonPath = join(dataDir, "saves.json");
-
-let cachedDb: DatabaseSync | undefined;
-
-function getDb() {
-  if (cachedDb) return cachedDb;
-
-  mkdirSync(dirname(sqlitePath), { recursive: true });
-  const db = new DatabaseSync(sqlitePath);
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS saves (
-      id TEXT PRIMARY KEY,
-      state_json TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS guest_saves (
-      guest_key TEXT NOT NULL,
-      save_id TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (guest_key, save_id),
-      FOREIGN KEY (save_id) REFERENCES saves(id) ON DELETE CASCADE
-    );
-  `);
-
-  migrateLegacyJsonIfNeeded(db);
-  cachedDb = db;
-  return db;
+function getPool() {
+  if (pool) return pool;
+  pool = new Pool({
+    connectionString: getDatabaseUrl(),
+    max: Number(process.env.PG_POOL_MAX ?? 10),
+  });
+  return pool;
 }
 
-function migrateLegacyJsonIfNeeded(db: DatabaseSync) {
-  const row = db.prepare("SELECT COUNT(*) AS count FROM saves").get() as unknown as CountRow;
-  if (row.count > 0 || !existsSync(legacyJsonPath)) return;
+async function ensureSchema() {
+  if (schemaReady) return schemaReady;
 
-  let inTransaction = false;
-  try {
-    const legacy = JSON.parse(readFileSync(legacyJsonPath, "utf8")) as LegacySaveDatabase;
-    const saves = legacy.saves ?? {};
-    const guests = legacy.guests ?? {};
-    const now = new Date().toISOString();
+  schemaReady = getPool()
+    .query(schemaSql)
+    .then(() => undefined)
+    .catch((error) => {
+      schemaReady = undefined;
+      throw error;
+    });
 
-    db.exec("BEGIN");
-    inTransaction = true;
-    const saveStmt = db.prepare("INSERT OR REPLACE INTO saves (id, state_json, updated_at) VALUES (?, ?, ?)");
-    const guestStmt = db.prepare("INSERT OR IGNORE INTO guest_saves (guest_key, save_id) VALUES (?, ?)");
-
-    for (const [id, save] of Object.entries(saves)) {
-      saveStmt.run(id, JSON.stringify(save), save.updatedAt ?? now);
-    }
-
-    for (const [guestKey, saveIds] of Object.entries(guests)) {
-      for (const saveId of saveIds) {
-        if (saves[saveId]) {
-          guestStmt.run(guestKey, saveId);
-        }
-      }
-    }
-    db.exec("COMMIT");
-    inTransaction = false;
-  } catch (error) {
-    if (inTransaction) {
-      db.exec("ROLLBACK");
-    }
-    console.warn("Skipped legacy saves.json migration:", error);
-  }
+  return schemaReady;
 }
 
 function parseSave(row: SaveRow | undefined) {
-  return row ? (JSON.parse(row.state_json) as GameState) : undefined;
+  if (!row) return undefined;
+  return typeof row.state_json === "string" ? (JSON.parse(row.state_json) as GameState) : row.state_json;
 }
 
 export async function listSaves(guestKey: string) {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      `
-      SELECT saves.state_json
-      FROM guest_saves
-      JOIN saves ON saves.id = guest_saves.save_id
-      WHERE guest_saves.guest_key = ?
-      ORDER BY saves.updated_at DESC
-      `
-    )
-    .all(guestKey) as unknown as SaveRow[];
+  await ensureSchema();
+  const result = await getPool().query<SaveRow>(
+    `
+    SELECT saves.state_json
+    FROM guest_saves
+    JOIN saves ON saves.id = guest_saves.save_id
+    WHERE guest_saves.guest_key = $1
+    ORDER BY saves.updated_at DESC
+    `,
+    [guestKey]
+  );
 
-  return rows.map((row) => JSON.parse(row.state_json) as GameState);
+  return result.rows.map((row) => parseSave(row)).filter((save): save is GameState => Boolean(save));
 }
 
 export async function getSave(guestKey: string, saveId: string) {
-  const db = getDb();
-  const row = db
-    .prepare(
-      `
-      SELECT saves.state_json
-      FROM guest_saves
-      JOIN saves ON saves.id = guest_saves.save_id
-      WHERE guest_saves.guest_key = ? AND guest_saves.save_id = ?
-      `
-    )
-    .get(guestKey, saveId) as unknown as SaveRow | undefined;
+  await ensureSchema();
+  const result = await getPool().query<SaveRow>(
+    `
+    SELECT saves.state_json
+    FROM guest_saves
+    JOIN saves ON saves.id = guest_saves.save_id
+    WHERE guest_saves.guest_key = $1 AND guest_saves.save_id = $2
+    `,
+    [guestKey, saveId]
+  );
 
-  return parseSave(row);
+  return parseSave(result.rows[0]);
 }
 
 export async function putSave(guestKey: string, save: GameState) {
-  const db = getDb();
+  await ensureSchema();
   const updatedAt = save.updatedAt ?? new Date().toISOString();
-  db.prepare("INSERT OR REPLACE INTO saves (id, state_json, updated_at) VALUES (?, ?, ?)").run(
-    save.id,
-    JSON.stringify(save),
-    updatedAt
-  );
-  db.prepare("INSERT OR IGNORE INTO guest_saves (guest_key, save_id) VALUES (?, ?)").run(guestKey, save.id);
+  const client = await getPool().connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `
+      INSERT INTO saves (id, state_json, updated_at)
+      VALUES ($1, $2::jsonb, $3)
+      ON CONFLICT (id) DO UPDATE
+      SET state_json = EXCLUDED.state_json,
+          updated_at = EXCLUDED.updated_at
+      `,
+      [save.id, JSON.stringify(save), updatedAt]
+    );
+    await client.query(
+      `
+      INSERT INTO guest_saves (guest_key, save_id)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+      `,
+      [guestKey, save.id]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
   return save;
+}
+
+export async function closeRepository() {
+  await pool?.end();
+  pool = undefined;
+  schemaReady = undefined;
+}
+
+export async function initializeDatabase() {
+  await ensureSchema();
 }

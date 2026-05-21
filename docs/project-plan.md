@@ -42,11 +42,11 @@
 - 第一种生命：发现弹层、图鉴记录、生态影响。
 - 生命史：合并重复事件，展示潮池记忆。
 - 生态档案：身份、成长、状态、存档信息。
-- SQLite 存档：服务端权威存档，刷新可恢复。
+- PostgreSQL 存档：服务端权威存档，刷新和 App Platform 更新部署后可恢复。
 
 不放入第一阶段：
 
-- PostgreSQL / Prisma。
+- Prisma。
 - 真实 AI 服务。
 - 正式账号、多设备同步、分享。
 - 完整多纪元流程。
@@ -98,20 +98,20 @@
 - Fastify + TypeScript 后端。
 - `packages/game-core` 作为前后端共用规则。
 - Zustand 桥接 React 与 Phaser。
-- SQLite 本地存档，文件为 `data/saves.sqlite`。
+- PostgreSQL 存档；本地开发默认连接 `localhost:5432/epoch`，生产通过 `DATABASE_URL` 连接。
 - 本地生成器负责物种和生命史表达。
 
 后续可升级：
 
-- PostgreSQL / Prisma：当需要正式线上数据库、多用户、分享或后台统计时再引入。
+- Prisma：当需要复杂关系查询、多用户、分享或后台统计时再评估。
 - 真实 AI：当图鉴、物种插画和生命史报告需要更强个性化时再接入。
 
 ## 7. 一阶段收口清单
 
 必须收口：
 
-- SQLite 替代 JSON 文件存档，并支持旧 JSON 非破坏迁移。
-- 文档全部从 JSON / PostgreSQL 一阶段路线修正为 SQLite 一阶段路线。
+- PostgreSQL 替代本地文件存档，避免 App Platform 容器更新丢失数据。
+- 文档全部从 JSON / SQLite 一阶段路线修正为 PostgreSQL 一阶段路线。
 - 首页主线任务收起行为稳定，不遮挡潮池；切回潮池时不反复自动展开。
 - 演化页可解锁提醒足够明显。
 - 生命史不再像系统日志。

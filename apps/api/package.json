@@ -4,10 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "db:init": "tsx src/init-db.ts"
   },
   "dependencies": {
     "@eco-era/game-core": "workspace:*",
-    "@eco-era/shared": "workspace:*"
+    "@eco-era/shared": "workspace:*",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.16.0"
   }
 }

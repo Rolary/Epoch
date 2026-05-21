@@ -8,14 +8,14 @@
 | --- | --- | --- |
 | 前端 | React 19 + Phaser + TypeScript + Vite | React 负责 HUD、页面、弹层；Phaser 负责潮池场景。 |
 | 后端 | Node 24 + Fastify + TypeScript | 提供游客身份、权威存档、tick 和操作校验。 |
-| 存档 | SQLite (`data/saves.sqlite`) | 一阶段本地数据库，轻量可靠。 |
-| SQLite API | Node 内置 `node:sqlite` | 不引入 Prisma 或第三方 SQLite 包。 |
+| 存档 | PostgreSQL | 一阶段直接面向 App Platform 部署，避免容器更新丢失本地文件。 |
+| 数据库 API | `pg` | 使用轻量连接池，不引入 Prisma。 |
 | 状态管理 | Zustand | 桥接 React HUD 与 Phaser 场景。 |
 | 核心规则 | `packages/game-core` | 纯函数，前后端共用。 |
 | 内容生成 | 本地生成器 | 真实 AI 后续替换，不控制核心数值。 |
 | 验证 | TypeScript + Vite build | 一阶段以类型检查、构建和关键手测为主。 |
 
-PostgreSQL / Prisma 不属于一阶段。它们只在后续需要正式账号、多设备同步、分享、统计后台或线上运维时再评估。
+Prisma 不属于一阶段。后续需要复杂关系查询、正式账号、多设备同步、分享或统计后台时再评估 ORM。
 
 ## 2. 系统边界
 
@@ -39,38 +39,44 @@ PostgreSQL / Prisma 不属于一阶段。它们只在后续需要正式账号、
 - 资源增长、环境操作、演化节点、物种生成、遗产和日志写入。
 - 这些函数不依赖数据库、HTTP 或 React。
 
-## 3. SQLite 存档设计
+## 3. PostgreSQL 存档设计
 
-数据库文件：
+数据库连接通过环境变量提供：
 
 ```text
-data/saves.sqlite
+DATABASE_URL=postgres://...
 ```
 
-测试或临时环境可以通过 `ECO_ERA_DATA_DIR` 改写数据目录；未设置时默认写入项目根目录下的 `data/`。
+本地开发未设置 `DATABASE_URL` 时默认连接 `postgres://admin:123456@localhost:5432/epoch`。生产环境必须显式提供 `DATABASE_URL`，不使用开发默认值。
+
+数据库初始化命令：
+
+```bash
+corepack pnpm run db:init
+```
 
 表结构保持轻量：
 
 ```text
 saves
 - id TEXT PRIMARY KEY
-- state_json TEXT NOT NULL
-- updated_at TEXT NOT NULL
+- state_json JSONB NOT NULL
+- updated_at TIMESTAMPTZ NOT NULL
 
 guest_saves
 - guest_key TEXT NOT NULL
 - save_id TEXT NOT NULL
-- created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 - PRIMARY KEY (guest_key, save_id)
 ```
 
 设计原则：
 
 - 完整 `GameState` 继续保存为 JSON 快照，避免一阶段过早拆表。
-- 游客与存档关联独立成表，避免继续使用 JSON 文件里的嵌套索引。
+- 游客与存档关联独立成表，便于后续接入正式账号或多设备同步。
 - repository 对 API 暴露 `listSaves / getSave / putSave`，API 层不感知底层存储。
-- 如果旧 `data/saves.json` 存在且 SQLite 为空，启动时做一次非破坏迁移。
-- 迁移后不双写 JSON，旧文件只保留为备份。
+- 服务端首次访问存档接口时自动确保表结构存在。
+- 当前没有正式用户，不支持旧 JSON 或 SQLite 存档迁移。
 
 ## 4. API
 
@@ -113,7 +119,7 @@ GET  /saves/:saveId/logs
 
 - 玩家可创建并恢复后端存档。
 - 刷新页面不丢进度。
-- 旧 JSON 存档可迁移到 SQLite。
+- App Platform 更新部署不丢存档。
 - 玩家能通过拖拽发光养料推进第一阶段；拖拽会积累生命材料，并给低稳定潮池提供可感知的回稳来源。
 - 玩家能解锁演化节点，并看到可解锁提醒。
 - 玩家能发现至少一种生命并写入图鉴。

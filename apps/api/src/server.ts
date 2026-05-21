@@ -16,7 +16,7 @@ import {
   talentCatalog,
   unlockEvolutionNode
 } from "@eco-era/game-core";
-import { getSave, listSaves, putSave } from "./repository.js";
+import { closeRepository, getSave, listSaves, putSave } from "./repository.js";
 
 const publicRoot = resolve(process.cwd(), "apps/web/dist");
 const isProduction = process.env.NODE_ENV === "production";
@@ -313,6 +313,7 @@ async function listenWithRetry(attempt = 1): Promise<void> {
 async function shutdown() {
   try {
     await server.close();
+    await closeRepository();
   } finally {
     process.exit(0);
   }
