@@ -183,11 +183,12 @@ export function App() {
     if (!saveId || page !== "home") return;
     const interval = setInterval(async () => {
       try {
+        const prevCount = useGameStore.getState().save?.species.length ?? 0;
         const s = await tickSave(saveId);
         setSave(s);
-        const prevCount = save?.species.length ?? 0;
-        if (s.species.length > prevCount) {
-          showModal("species-discovery", { speciesId: s.species[0].id });
+        const newSpecies = s.species.slice(prevCount);
+        if (newSpecies.length > 0) {
+          showModal("species-discovery", { speciesId: newSpecies[0].id });
         }
         if (s.pendingTalentChoices?.length > 0) {
           showModal("talent-awakening");
@@ -206,10 +207,10 @@ export function App() {
     const action = ELEMENT_ACTION[next.type];
     (async () => {
       try {
+        const prevCount = useGameStore.getState().save?.species.length ?? 0;
         const s = await applyAction(saveId, action);
         setSave(s);
-        const prevCount = save?.species.length ?? 0;
-        const newSpecies = s.species.length > prevCount ? s.species[0] : undefined;
+        const newSpecies = s.species.slice(prevCount)[0];
 
         // Show feedback toast
         const label = next.type === "crystal" ? "矿物质" : next.type === "spark" ? "能量" : next.type === "droplet" ? "有机质" : "突变";

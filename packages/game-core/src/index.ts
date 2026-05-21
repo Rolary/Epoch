@@ -757,10 +757,10 @@ export function rollTalentChoices(state?: GameState, count = 3): Talent[] {
   const consumed = new Set(state?.consumedTalents ?? []);
   const pool = talentCatalog.filter((talent) => !owned.has(talent.id) && !consumed.has(talent.id));
   if (pool.length === 0) return [];
-  const totalWeight = pool.reduce((sum, t) => sum + t.weight, 0);
   const result: Talent[] = [];
   const remaining = [...pool];
   for (let i = 0; i < count && remaining.length > 0; i++) {
+    const totalWeight = remaining.reduce((sum, t) => sum + t.weight, 0);
     let roll = Math.random() * totalWeight;
     let accumulated = 0;
     let pickedIdx = 0;
