@@ -1,5 +1,7 @@
 import type {
   EcologicalRole,
+  EcologyEvent,
+  EcologyEventOption,
   EvolutionLog,
   EvolutionNode,
   FossilLegacy,
@@ -29,11 +31,38 @@ export const evolutionNodes: EvolutionNode[] = [
     unlocksEra: "self_replicators"
   },
   {
+    id: "replication_fidelity",
+    name: "高保真复制",
+    description: "复制链更少出错，潮池更容易稳定延续，但突变机会减少。",
+    cost: { organic: 40, stability: 18 },
+    requires: ["replicating_chain"],
+    branchGroupId: "replication_strategy",
+    branchHint: "复制路线只能留下一个主倾向。"
+  },
+  {
+    id: "error_retention",
+    name: "错误保留",
+    description: "一部分复制错误被保留下来，带来更多可能，也让潮池更不安定。",
+    cost: { energy: 42, mutation: 14 },
+    requires: ["replicating_chain"],
+    branchGroupId: "replication_strategy",
+    branchHint: "复制路线只能留下一个主倾向。"
+  },
+  {
     id: "primitive_vesicle",
     name: "原始膜泡",
     description: "薄膜结构把反应环境与外界潮水短暂隔开。",
     cost: { organic: 90, energy: 32, minerals: 30 },
     requires: ["replicating_chain"]
+  },
+  {
+    id: "fragment_budding",
+    name: "断裂繁殖",
+    description: "链体断裂后仍能延续，旁支谱系更容易出现。",
+    cost: { organic: 48, minerals: 16 },
+    requires: ["replicating_chain"],
+    branchGroupId: "replication_strategy",
+    branchHint: "复制路线只能留下一个主倾向。"
   },
   {
     id: "metabolic_loop",
@@ -57,6 +86,149 @@ export const evolutionNodes: EvolutionNode[] = [
     cost: { energy: 240, mutation: 60, biomass: 70 },
     requires: ["proto_cell"],
     unlocksEra: "photosynthesis_eve"
+  }
+];
+
+export const ecologyEvents: EcologyEvent[] = [
+  {
+    id: "hot_spring_pulse",
+    title: "热泉短暂喷发",
+    description: "潮池边缘升温，薄膜开始颤动。热量带来了反应窗口，也让脆弱结构更容易散开。",
+    tendencyTag: "耐热倾向",
+    options: [
+      {
+        id: "approach_heat",
+        title: "靠近热泉",
+        description: "接住高温带来的能量与矿物，让潮池记住这次灼热。",
+        resourceEffect: { energy: 34, minerals: 18, stability: -10 },
+        environmentEffect: { heat: 0.18, volatility: 0.08 },
+        addHistoryTags: ["heat_tolerant", "volatile"],
+        logMessage: "热泉把潮池边缘点亮，后来的结构开始带上一点耐热倾向。"
+      },
+      {
+        id: "retreat_shallows",
+        title: "退回浅水",
+        description: "避开最剧烈的喷发，让薄膜结构先稳住。",
+        resourceEffect: { stability: 14, organic: 12 },
+        environmentEffect: { heat: -0.06, volatility: -0.04 },
+        addHistoryTags: ["stable_membrane"],
+        logMessage: "潮池退回浅水，薄膜没有追逐热量，却留下了更稳的边界。"
+      },
+      {
+        id: "test_adaptation",
+        title: "让部分结构尝试适应",
+        description: "把一小段谱系推向热泉边缘，赌它们能留下新习性。",
+        resourceEffect: { mutation: 18, biomass: -4 },
+        environmentEffect: { heat: 0.08, volatility: 0.04 },
+        addHistoryTags: ["heat_tolerant", "selection_pressure"],
+        logMessage: "一部分结构靠近热泉，潮池第一次显露出筛选的痕迹。"
+      }
+    ]
+  },
+  {
+    id: "tidal_memory_surge",
+    title: "回潮带来陌生碎片",
+    description: "潮水把远处的有机碎片冲回池内，水面短暂变得浑浊而丰厚。",
+    tendencyTag: "潮汐富集",
+    options: [
+      {
+        id: "hold_fragments",
+        title: "留住碎片",
+        description: "让潮池优先积累有机质，但水体会更拥挤。",
+        resourceEffect: { organic: 46, stability: -6 },
+        environmentEffect: { tide: 0.16 },
+        addHistoryTags: ["tidal_rich", "crowded_soup"],
+        logMessage: "回潮碎片被留在池中，潮池似乎更容易形成富集层。"
+      },
+      {
+        id: "rinse_pool",
+        title: "换入清潮",
+        description: "放走一部分碎片，换来更稳定的浅水环境。",
+        resourceEffect: { stability: 18, minerals: 8 },
+        environmentEffect: { tide: 0.06, volatility: -0.06 },
+        addHistoryTags: ["clear_tide"],
+        logMessage: "清潮洗过池底，早期结构少了一些拥挤，多了一点秩序。"
+      },
+      {
+        id: "feed_edges",
+        title: "喂给边缘薄膜",
+        description: "让边缘结构先吸收碎片，推动更早的物种分化。",
+        resourceEffect: { organic: 24, biomass: 10, mutation: 8 },
+        environmentEffect: { tide: 0.08 },
+        addHistoryTags: ["edge_feeding", "branching"],
+        logMessage: "潮池边缘先吃到了回潮碎片，旁支生命的影子开始变多。"
+      }
+    ]
+  },
+  {
+    id: "lightning_window",
+    title: "近岸闪电落下",
+    description: "亮白电光劈入浅水，短暂打开了高能反应窗口。",
+    tendencyTag: "高能突变",
+    options: [
+      {
+        id: "catch_charge",
+        title: "接住电光",
+        description: "获得大量能量和突变点，但潮池会剧烈震荡。",
+        resourceEffect: { energy: 58, mutation: 24, stability: -14 },
+        environmentEffect: { light: 0.14, volatility: 0.12 },
+        addHistoryTags: ["charged", "volatile"],
+        logMessage: "闪电把浅水点亮，潮池记住了高能反应的味道。"
+      },
+      {
+        id: "ground_crystals",
+        title: "导入矿晶",
+        description: "让矿物晶面承接电荷，换取较温和的催化窗口。",
+        resourceEffect: { energy: 26, minerals: 20, stability: 4 },
+        environmentEffect: { mineralFlow: 0.1 },
+        addHistoryTags: ["mineral_catalyst"],
+        logMessage: "矿晶接住了电荷，后来的链体更容易贴着晶面反应。"
+      },
+      {
+        id: "preserve_errors",
+        title: "保留异常链体",
+        description: "保留闪电后的错误结构，推动突变路线更早显形。",
+        resourceEffect: { mutation: 38, organic: 8 },
+        environmentEffect: { volatility: 0.08 },
+        addHistoryTags: ["charged", "mutation_biased"],
+        logMessage: "异常链体没有被清掉，潮池似乎开始偏爱变化。"
+      }
+    ]
+  },
+  {
+    id: "mineral_shelf_exposed",
+    title: "池底矿架露出",
+    description: "潮水退去后，一片细小矿架暴露出来，像是给分子准备的落脚处。",
+    tendencyTag: "矿晶依赖",
+    options: [
+      {
+        id: "coat_shelf",
+        title: "覆盖有机膜",
+        description: "把有机质铺上矿架，催化更稳的早期结构。",
+        resourceEffect: { organic: -8, minerals: 34, stability: 12 },
+        environmentEffect: { mineralFlow: 0.14 },
+        addHistoryTags: ["mineral_catalyst", "stable_membrane"],
+        logMessage: "有机膜覆上矿架，潮池开始把晶面当作生命的脚手架。"
+      },
+      {
+        id: "break_shelf",
+        title: "击碎矿架",
+        description: "释放更多矿物颗粒，但会扰乱已有薄膜。",
+        resourceEffect: { minerals: 52, mutation: 10, stability: -8 },
+        environmentEffect: { mineralFlow: 0.18, volatility: 0.05 },
+        addHistoryTags: ["mineral_catalyst", "selection_pressure"],
+        logMessage: "矿架碎成细粒，潮池得到更多表面，也留下了轻微的筛选压力。"
+      },
+      {
+        id: "leave_shelter",
+        title: "保留庇护缝隙",
+        description: "让薄膜躲进矿架缝隙，牺牲速度换取延续。",
+        resourceEffect: { stability: 22, biomass: 6 },
+        environmentEffect: { mineralFlow: 0.06, volatility: -0.03 },
+        addHistoryTags: ["sheltered", "stable_membrane"],
+        logMessage: "矿架缝隙成了庇护处，潮池里的延续感更明显了。"
+      }
+    ]
   }
 ];
 
@@ -291,6 +463,9 @@ export function createInitialState(id: string, name = "始源潮池", initialTal
     talents: initialTalent ? [initialTalent] : [],
     pendingTalentChoices: [],
     consumedTalents: [],
+    pendingEcologyEvent: null,
+    historyTags: initialTalent ? historyTagsForTalent(initialTalent.id) : [],
+    eventHistory: [],
     planetProfile: "balanced",
     lastCalculatedAt: now,
     createdAt: now,
@@ -303,8 +478,8 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
   const nodeBonus = 1 + state.unlockedNodes.length * 0.06;
   const speciesOrganic = sumSpeciesEffect(state, "organic");
   const speciesEnergy = sumSpeciesEffect(state, "energy");
-  const legacyBonus = 1 + state.legacies.length * 0.02;
-  const stabilityPressure = env.volatility * 0.012 + state.resources.mutation * 0.0002;
+  const mutationPressure = 0.045 * (state.resources.mutation / (state.resources.mutation + 600));
+  const stabilityPressure = env.volatility * 0.012 + mutationPressure;
   const stabilityRecovery = state.resources.stability < 35 ? 0.035 : 0.02;
 
   // Trait: 生态共振 — each living/flourishing species gives +1.5% all resources (max 15%)
@@ -313,14 +488,14 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
   const resonanceBonus = hasEcoResonance ? 1 + Math.min(livingCount * 0.015, 0.15) : 1;
 
   const delta = {
-    organic: elapsedSeconds * (0.18 * env.tide + 0.06 * env.heat + speciesOrganic) * nodeBonus * legacyBonus * resonanceBonus,
-    energy: elapsedSeconds * (0.14 * env.light + 0.05 * env.heat + speciesEnergy) * nodeBonus * resonanceBonus,
-    minerals: elapsedSeconds * (0.09 * env.mineralFlow + 0.02 * env.tide) * resonanceBonus,
-    stability: elapsedSeconds * (stabilityRecovery + state.species.length * 0.004 - stabilityPressure),
-    mutation: elapsedSeconds * (0.025 * env.volatility + 0.006 * env.light + state.species.length * 0.001) * resonanceBonus,
-    biomass: elapsedSeconds * (state.unlockedNodes.includes("proto_cell") ? 0.07 + state.species.length * 0.008 : 0.005) * resonanceBonus
+    organic: elapsedSeconds * (0.18 * env.tide + 0.06 * env.heat + speciesOrganic) * nodeBonus * legacyMultiplierFor(state, "organic") * resonanceBonus,
+    energy: elapsedSeconds * (0.14 * env.light + 0.05 * env.heat + speciesEnergy) * nodeBonus * legacyMultiplierFor(state, "energy") * resonanceBonus,
+    minerals: elapsedSeconds * (0.09 * env.mineralFlow + 0.02 * env.tide) * legacyMultiplierFor(state, "minerals") * resonanceBonus,
+    stability: elapsedSeconds * (stabilityRecovery + state.species.length * 0.004 - stabilityPressure) * legacyMultiplierFor(state, "stability"),
+    mutation: elapsedSeconds * (0.025 * env.volatility + 0.006 * env.light + state.species.length * 0.001) * legacyMultiplierFor(state, "mutation") * resonanceBonus,
+    biomass: elapsedSeconds * (state.unlockedNodes.includes("proto_cell") ? 0.07 + state.species.length * 0.008 : 0.005) * legacyMultiplierFor(state, "biomass") * resonanceBonus
   };
-  return applyTalentEffects(delta, state.talents ?? []);
+  return applyEcologyComboEffects(applyHistoryTagEffects(applyTalentEffects(delta, state.talents ?? []), state), state);
 }
 
 export function advanceState(input: GameState, now = new Date()): GameState {
@@ -354,6 +529,11 @@ export function advanceState(input: GameState, now = new Date()): GameState {
     next.logs.unshift(createLog("species", `发现新谱系：${species.name}。${species.shortDescription}`));
   }
 
+  const comboLog = createFirstComboLog(next);
+  if (comboLog) {
+    next.logs.unshift(comboLog);
+  }
+
   if (shouldFossilize(next)) {
     const living = next.species.find((item) => item.status === "endangered" || item.status === "living");
     if (living) {
@@ -369,6 +549,10 @@ export function advanceState(input: GameState, now = new Date()): GameState {
         next.logs.unshift(createLog("system", "远古回声：化石遗产唤醒了新的源质印记选择。"));
       }
     }
+  }
+
+  if (!next.pendingEcologyEvent) {
+    next.pendingEcologyEvent = rollEcologyEvent(next);
   }
 
   return next;
@@ -416,6 +600,9 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
   }
 
   next.planetProfile = calculatePlanetProfile(next);
+  if (!next.pendingEcologyEvent) {
+    next.pendingEcologyEvent = rollEcologyEvent(next);
+  }
   next.updatedAt = now;
   return next;
 }
@@ -450,6 +637,67 @@ export function unlockEvolutionNode(input: GameState, nodeId: string): GameState
   } else {
     next.logs.unshift(createLog("system", `演化节点解锁：${node.name}。`));
   }
+  if (node.branchGroupId) {
+    next.historyTags = addUniqueTags(next.historyTags ?? [], [node.id]);
+    next.logs.unshift(createLog("event", `复制链留下了「${node.name}」倾向，后来的生命会沿着这道痕迹分化。`));
+  }
+  next.planetProfile = calculatePlanetProfile(next);
+  if (!next.pendingEcologyEvent) {
+    next.pendingEcologyEvent = rollEcologyEvent(next);
+  }
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
+export function availableEcologyEvents(state: GameState): EcologyEvent[] {
+  const seen = new Set(state.eventHistory ?? []);
+  const tags = new Set(state.historyTags ?? []);
+  const talentIds = new Set((state.talents ?? []).map((talent) => talent.id));
+  return ecologyEvents.filter((event) => {
+    if (seen.has(event.id)) return false;
+    if (event.id === "hot_spring_pulse") return state.unlockedNodes.includes("organic_richness") || state.environment.heat > 1.15 || tags.has("heat_tolerant") || talentIds.has("warm_water");
+    if (event.id === "tidal_memory_surge") return state.resources.organic >= 18 || tags.has("tidal_rich") || talentIds.has("tidal_memory");
+    if (event.id === "lightning_window") return state.resources.energy >= 18 || talentIds.has("storm_affinity") || talentIds.has("chain_lightning");
+    if (event.id === "mineral_shelf_exposed") return state.resources.minerals >= 12 || tags.has("mineral_catalyst") || talentIds.has("crystal_nursery") || talentIds.has("deep_mineral");
+    return true;
+  });
+}
+
+export function rollEcologyEvent(state: GameState): EcologyEvent | null {
+  if ((state.pendingTalentChoices ?? []).length > 0) return null;
+  if (state.unlockedNodes.length === 0 && state.resources.organic < 18) return null;
+  const events = availableEcologyEvents(state);
+  if (events.length === 0) return null;
+  const talentIds = new Set((state.talents ?? []).map((talent) => talent.id));
+  const weighted = events.flatMap((event) => {
+    const weight =
+      (event.id === "hot_spring_pulse" && talentIds.has("warm_water")) ||
+      (event.id === "tidal_memory_surge" && talentIds.has("tidal_memory")) ||
+      (event.id === "lightning_window" && talentIds.has("storm_affinity")) ||
+      (event.id === "mineral_shelf_exposed" && talentIds.has("crystal_nursery"))
+        ? 2
+        : 1;
+    return Array.from({ length: weight }, () => event);
+  });
+  return weighted[Math.floor(Math.random() * weighted.length)] ?? null;
+}
+
+export function applyEcologyEventChoice(input: GameState, eventId: string, optionId: string): GameState {
+  const next = normalizeGameState(cloneState(input));
+  const event = next.pendingEcologyEvent?.id === eventId
+    ? next.pendingEcologyEvent
+    : ecologyEvents.find((item) => item.id === eventId);
+  const option = event?.options.find((item) => item.id === optionId);
+  if (!event || !option) {
+    throw new Error("潮池事件不可用");
+  }
+  applyEventOption(next, option);
+  next.pendingEcologyEvent = null;
+  next.eventHistory = addUniqueTags(next.eventHistory ?? [], [event.id]);
+  next.historyTags = addUniqueTags(next.historyTags ?? [], option.addHistoryTags ?? []);
+  const newTags = option.addHistoryTags ?? [];
+  const hasEcho = newTags.some((tag) => (input.historyTags ?? []).includes(tag));
+  next.logs.unshift(createLog("event", hasEcho ? `${option.logMessage} 这类变化正在成为潮池的性格。` : option.logMessage));
   next.planetProfile = calculatePlanetProfile(next);
   next.updatedAt = new Date().toISOString();
   return next;
@@ -562,7 +810,10 @@ export function normalizeGameState(state: GameState): GameState {
     ...state,
     talents: state.talents ?? [],
     pendingTalentChoices: state.pendingTalentChoices ?? [],
-    consumedTalents: state.consumedTalents ?? []
+    consumedTalents: state.consumedTalents ?? [],
+    pendingEcologyEvent: state.pendingEcologyEvent ?? null,
+    historyTags: state.historyTags ?? [],
+    eventHistory: state.eventHistory ?? []
   };
 }
 
@@ -573,6 +824,12 @@ export function canUnlockEvolutionNode(state: GameState, nodeId: string): boolea
   }
   if (!node.requires.every((required) => state.unlockedNodes.includes(required))) {
     return false;
+  }
+  if (node.branchGroupId) {
+    const groupTaken = evolutionNodes.some(
+      (item) => item.branchGroupId === node.branchGroupId && state.unlockedNodes.includes(item.id),
+    );
+    if (groupTaken) return false;
   }
   return hasResources(state.resources, node.cost);
 }
@@ -611,6 +868,7 @@ export function generateSpeciesTemplate(state: GameState): SpeciesRecord {
     ecologicalRole: role,
     traits: traitsFor(role, state.planetProfile),
     vulnerabilities: vulnerabilitiesFor(state),
+    historyTags: speciesHistoryTagsFor(state, role),
     numericEffects: effects,
     shortDescription: `${name}出现在${niche}，它们把当前潮池的${roleLabel(role)}能力推向新的分支。`,
     visualPrompt: `科学图鉴插画风格，${niche}中的${name}，矿物晶体、浅海潮池、微弱荧光`,
@@ -642,15 +900,35 @@ function shouldFossilize(state: GameState) {
 }
 
 function createLegacy(species: SpeciesRecord): FossilLegacy {
+  const legacyCopy = legacyCopyFor(species.ecologicalRole, species.name);
   return {
     id: cryptoId("legacy"),
     sourceSpeciesId: species.id,
     name: `${species.name}遗痕`,
     type: species.ecologicalRole === "producer" ? "ancestor" : "fossil",
-    description: `${species.name}没有完全消失，它的结构痕迹成为后续演化的参照。`,
-    effect: "所有基础资源产出 +3%",
+    description: legacyCopy.description,
+    effect: resourceEffectText(legacyCopy.numericEffects),
+    numericEffects: legacyCopy.numericEffects,
+    tradeoffEffects: legacyCopy.tradeoffEffects,
+    tags: species.historyTags ?? [],
     createdAt: new Date().toISOString()
   };
+}
+
+function applyEventOption(state: GameState, option: EcologyEventOption) {
+  for (const [key, value] of Object.entries(option.resourceEffect ?? {}) as Array<[keyof Resources, number]>) {
+    const max = key === "stability" ? 100 : 999999;
+    state.resources[key] = clamp(state.resources[key] + value, 0, max);
+  }
+  for (const [key, value] of Object.entries(option.environmentEffect ?? {}) as Array<[keyof typeof state.environment, number]>) {
+    const min = key === "volatility" ? 0 : 0.4;
+    const max = key === "volatility" ? 2 : 3;
+    state.environment[key] = clamp(state.environment[key] + value, min, max);
+  }
+}
+
+function addUniqueTags(existing: string[], incoming: string[]) {
+  return Array.from(new Set([...(existing ?? []), ...incoming]));
 }
 
 function hasResources(resources: Resources, cost: Partial<Resources>) {
@@ -672,10 +950,27 @@ function sumSpeciesEffect(state: GameState, key: keyof Resources) {
     .reduce((sum, item) => sum + (item.numericEffects[key] ?? 0), 0);
 }
 
+function legacyMultiplierFor(state: GameState, key: keyof Resources) {
+  const bonus = state.legacies.reduce((sum, legacy) => {
+    const effects = legacy.numericEffects;
+    if (!effects) {
+      return sum + (key === "organic" ? 0.02 : 0);
+    }
+    return sum + (effects[key] ?? 0) + (legacy.tradeoffEffects?.[key] ?? 0);
+  }, 0);
+  return 1 + bonus;
+}
+
 function pickRole(state: GameState): EcologicalRole {
   if (state.planetProfile === "extreme") return "extremophile";
   if (state.planetProfile === "symbiotic") return "symbiont";
   if (state.unlockedNodes.includes("photo_pigment")) return "producer";
+  const tags = new Set(state.historyTags ?? []);
+  if (tags.has("heat_tolerant") && Math.random() > 0.35) return "extremophile";
+  if (tags.has("symbiotic_seed") && Math.random() > 0.35) return "symbiont";
+  if (tags.has("mineral_catalyst") && Math.random() > 0.45) return "catalyst";
+  if (tags.has("tidal_rich") && Math.random() > 0.45) return "decomposer";
+  if (tags.has("branching") && Math.random() > 0.45) return "filterer";
   const roles: EcologicalRole[] = ["catalyst", "filterer", "decomposer", "producer"];
   return roles[Math.floor(Math.random() * roles.length)];
 }
@@ -697,6 +992,61 @@ function roleEffects(role: EcologicalRole): Partial<Resources> {
     catalyst: { energy: 0.04, mutation: 0.02 }
   };
   return effects[role];
+}
+
+function legacyCopyFor(role: EcologicalRole, speciesName: string): { description: string; numericEffects: Partial<Resources>; tradeoffEffects?: Partial<Resources> } {
+  const copy: Record<EcologicalRole, { description: string; numericEffects: Partial<Resources>; tradeoffEffects?: Partial<Resources> }> = {
+    producer: {
+      description: `${speciesName}不再活跃繁殖，但残留的光合薄膜让潮池更容易把光转化为可用能量。`,
+      numericEffects: { energy: 0.03, organic: 0.01 },
+      tradeoffEffects: { mutation: -0.005 }
+    },
+    decomposer: {
+      description: `${speciesName}沉入底层后留下分解层，旧有结构被更稳定地拆回有机质与矿物。`,
+      numericEffects: { organic: 0.03, minerals: 0.01 },
+      tradeoffEffects: { biomass: -0.005 }
+    },
+    symbiont: {
+      description: `${speciesName}留下的互养网络没有完全断开，后续生命更容易共享养分并维持稳定。`,
+      numericEffects: { stability: 0.02, biomass: 0.02 },
+      tradeoffEffects: { energy: -0.005 }
+    },
+    extremophile: {
+      description: `${speciesName}的耐受壳层残存在沉积物中，让潮池更能利用极端环境带来的物质扰动。`,
+      numericEffects: { minerals: 0.02, mutation: 0.01 },
+      tradeoffEffects: { stability: -0.005 }
+    },
+    filterer: {
+      description: `${speciesName}不再游动，但残留的滤食孔隙改变了潮池中颗粒与稳定性的流动。`,
+      numericEffects: { biomass: 0.03, stability: 0.01 },
+      tradeoffEffects: { minerals: -0.005 }
+    },
+    catalyst: {
+      description: `${speciesName}附着过的催化晶面仍在发亮，后续反应更容易被能量与突变点燃。`,
+      numericEffects: { energy: 0.02, mutation: 0.01 },
+      tradeoffEffects: { stability: -0.005 }
+    }
+  };
+  return copy[role];
+}
+
+function resourceEffectText(effects: Partial<Resources>) {
+  return (Object.entries(effects) as Array<[keyof Resources, number]>)
+    .filter(([, value]) => value !== 0)
+    .map(([key, value]) => `${resourceLabel(key)} ${value > 0 ? "+" : ""}${(value * 100).toFixed(0)}%`)
+    .join(" · ");
+}
+
+function resourceLabel(key: keyof Resources) {
+  const labels: Record<keyof Resources, string> = {
+    organic: "有机质产出",
+    energy: "能量产出",
+    minerals: "矿物质产出",
+    stability: "稳定性恢复",
+    mutation: "突变倾向",
+    biomass: "生物量产出"
+  };
+  return labels[key];
 }
 
 function traitsFor(role: EcologicalRole, profile: PlanetProfile) {
@@ -729,6 +1079,96 @@ function roleLabel(role: EcologicalRole) {
     catalyst: "催化反应"
   };
   return labels[role];
+}
+
+function historyTagsForTalent(talentId: string) {
+  const map: Record<string, string[]> = {
+    crystal_nursery: ["mineral_catalyst"],
+    tidal_memory: ["tidal_rich"],
+    warm_water: ["heat_tolerant"],
+    trace_elements: ["mineral_catalyst", "stable_membrane"],
+    shallow_breath: ["edge_feeding"],
+    storm_affinity: ["charged"],
+    deep_mineral: ["mineral_catalyst"],
+    tide_surge: ["tidal_rich"],
+    membrane_bias: ["stable_membrane"],
+    symbiosis_net: ["symbiotic_seed"],
+    cataclysm_ward: ["sheltered"],
+    split_growth: ["branching"],
+    mutation_spark: ["mutation_biased"],
+    ancient_echo: ["selection_pressure"],
+    chain_lightning: ["charged"]
+  };
+  return map[talentId] ?? [];
+}
+
+function speciesHistoryTagsFor(state: GameState, role: EcologicalRole) {
+  const tags = [...(state.historyTags ?? [])];
+  if (role === "extremophile") tags.push("heat_tolerant");
+  if (role === "symbiont") tags.push("symbiotic_seed");
+  if (role === "catalyst") tags.push("mineral_catalyst");
+  return Array.from(new Set(tags)).slice(-4);
+}
+
+function applyHistoryTagEffects(delta: Resources, state: GameState): Resources {
+  const next = { ...delta };
+  const tags = new Set(state.historyTags ?? []);
+  if (tags.has("heat_tolerant")) {
+    next.energy *= 1.03;
+    next.stability *= 0.98;
+  }
+  if (tags.has("tidal_rich")) next.organic *= 1.04;
+  if (tags.has("mineral_catalyst")) next.minerals *= 1.04;
+  if (tags.has("stable_membrane")) {
+    next.stability *= 1.06;
+    next.mutation *= 0.98;
+  }
+  if (tags.has("mutation_biased") || tags.has("error_retention")) next.mutation *= 1.08;
+  if (tags.has("replication_fidelity")) {
+    next.stability *= 1.05;
+    next.mutation *= 0.94;
+  }
+  if (tags.has("fragment_budding")) next.biomass *= 1.06;
+  return next;
+}
+
+function applyEcologyComboEffects(delta: Resources, state: GameState): Resources {
+  const next = { ...delta };
+  const roles = new Set(
+    state.species
+      .filter((item) => item.status === "living" || item.status === "flourishing")
+      .map((item) => item.ecologicalRole),
+  );
+  if (roles.has("producer") && roles.has("decomposer")) {
+    next.organic *= 1.05;
+    next.energy *= 1.03;
+  }
+  if (roles.has("symbiont") && roles.has("filterer")) next.stability *= 1.07;
+  if (roles.has("extremophile") && roles.has("catalyst")) {
+    next.mutation *= 1.06;
+    next.minerals *= 1.03;
+  }
+  return next;
+}
+
+function createFirstComboLog(state: GameState): EvolutionLog | null {
+  const logged = state.logs.some((log) => log.message.includes("生态组合"));
+  if (logged) return null;
+  const roles = new Set(
+    state.species
+      .filter((item) => item.status === "living" || item.status === "flourishing")
+      .map((item) => item.ecologicalRole),
+  );
+  if (roles.has("producer") && roles.has("decomposer")) {
+    return createLog("event", "生态组合显现：分解层正在喂养新的生产薄膜，潮池开始有自己的循环。");
+  }
+  if (roles.has("symbiont") && roles.has("filterer")) {
+    return createLog("event", "生态组合显现：滤食孔隙与互养网络接上了，潮池更容易维持稳定。");
+  }
+  if (roles.has("extremophile") && roles.has("catalyst")) {
+    return createLog("event", "生态组合显现：耐受结构贴上催化晶面，变化开始被更大胆地保留。");
+  }
+  return null;
 }
 
 function applyTalentEffects(delta: Resources, talents: Talent[]): Resources {

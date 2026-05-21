@@ -56,6 +56,7 @@ export class HomeScene extends Phaser.Scene {
   private cloudGraphics!: Phaser.GameObjects.Graphics;
   private causticDrift = 0;
   private poolVertices: { x: number; y: number }[] = [];
+  private ambientRedrawTimer = 0;
 
   private dragElements: DragElement[] = [];
   private draggedElement: DragElement | null = null;
@@ -115,7 +116,10 @@ export class HomeScene extends Phaser.Scene {
     );
 
     this.elementSpawnTimer = 0;
-    this.nextSpawnDelay = 2000;
+    this.nextSpawnDelay = 4500;
+    this.time.delayedCall(250, () => {
+      if (this.dragElements.length === 0) this.spawnElement();
+    });
 
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.onPointerDown(pointer));
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.onPointerMove(pointer));
@@ -134,8 +138,12 @@ export class HomeScene extends Phaser.Scene {
     this.updateDragElements(delta);
     this.updateSpawning(delta);
     this.updateDragTrail();
-    this.updateCaustics(delta);
-    this.updateAlgaeAndClouds(delta);
+    this.ambientRedrawTimer += delta;
+    if (this.ambientRedrawTimer >= 80) {
+      this.updateCaustics(this.ambientRedrawTimer);
+      this.updateAlgaeAndClouds(this.ambientRedrawTimer);
+      this.ambientRedrawTimer = 0;
+    }
     this.updateLightBeams(delta);
   }
 

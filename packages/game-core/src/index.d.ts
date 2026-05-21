@@ -1,11 +1,15 @@
-import type { EvolutionLog, EvolutionNode, GameState, PlanetProfile, Resources, SpeciesRecord, Talent } from "@eco-era/shared";
+import type { EcologyEvent, EvolutionLog, EvolutionNode, GameState, PlanetProfile, Resources, SpeciesRecord, Talent } from "@eco-era/shared";
 export declare const evolutionNodes: EvolutionNode[];
+export declare const ecologyEvents: EcologyEvent[];
 export declare const talentCatalog: Talent[];
 export declare function createInitialState(id: string, name?: string, initialTalentId?: string): GameState;
 export declare function calculateResourceDelta(state: GameState, elapsedSeconds: number): Resources;
 export declare function advanceState(input: GameState, now?: Date): GameState;
 export declare function applyEnvironmentAction(input: GameState, action: string): GameState;
 export declare function unlockEvolutionNode(input: GameState, nodeId: string): GameState;
+export declare function availableEcologyEvents(state: GameState): EcologyEvent[];
+export declare function rollEcologyEvent(state: GameState): EcologyEvent | null;
+export declare function applyEcologyEventChoice(input: GameState, eventId: string, optionId: string): GameState;
 export declare function selectTalent(input: GameState, talentId: string): GameState;
 export declare function applyInstantEffect(state: GameState, talent: Talent): GameState;
 export declare function rollTalentChoices(state?: GameState, count?: number): Talent[];

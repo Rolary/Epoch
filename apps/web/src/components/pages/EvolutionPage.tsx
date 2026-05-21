@@ -79,6 +79,7 @@ export function EvolutionPage() {
                   <span className="node-name">{copy.title}</span>
                   <span className="node-desc">{copy.description}</span>
                   <span className="term-badge node-term">{node.name}</span>
+                  {node.branchHint && <span className="node-branch-hint">{node.branchHint}</span>}
                   {!unlocked && (
                     <span className="node-cost">
                       {Object.entries(node.cost)
@@ -103,6 +104,9 @@ function actionFor(nodeId: string): string {
   const map: Record<string, string> = {
     organic_richness: "点亮这道痕迹",
     replicating_chain: "让它延续",
+    replication_fidelity: "保留稳定复制",
+    error_retention: "保留一次错误",
+    fragment_budding: "允许旁支萌发",
     primitive_vesicle: "包住这段反应",
     metabolic_loop: "接上能量循环",
     proto_cell: "记录这个跃迁",
@@ -115,6 +119,9 @@ function iconFor(nodeId: string): string {
   const map: Record<string, string> = {
     organic_richness: uiAssets.evolution.organicRichness,
     replicating_chain: uiAssets.evolution.replicatingChain,
+    replication_fidelity: uiAssets.evolution.replicatingChain,
+    error_retention: uiAssets.evolution.metabolicLoop,
+    fragment_budding: uiAssets.evolution.primitiveVesicle,
     primitive_vesicle: uiAssets.evolution.primitiveVesicle,
     metabolic_loop: uiAssets.evolution.metabolicLoop,
     proto_cell: uiAssets.evolution.protoCell,
@@ -153,6 +160,27 @@ function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: 
     return {
       title: "等待第一种生命成形",
       description: "反应被边界包裹，第一批小生命正在接近成形。",
+    };
+  }
+
+  if (nodeId === "replication_fidelity") {
+    return {
+      title: "高保真复制",
+      description: "复制更稳，潮池会少一些大胆错误。",
+    };
+  }
+
+  if (nodeId === "error_retention") {
+    return {
+      title: "保留复制错误",
+      description: "变化会更频繁，潮池也会更容易失衡。",
+    };
+  }
+
+  if (nodeId === "fragment_budding") {
+    return {
+      title: "让旁支萌发",
+      description: "断裂结构也能延续，后续谱系更容易分叉。",
     };
   }
 

@@ -45,6 +45,24 @@ export interface EvolutionNode {
     cost: Partial<Resources>;
     requires: string[];
     unlocksEra?: EraId;
+    branchGroupId?: string;
+    branchHint?: string;
+}
+export interface EcologyEventOption {
+    id: string;
+    title: string;
+    description: string;
+    resourceEffect?: Partial<Resources>;
+    environmentEffect?: Partial<EnvironmentState>;
+    addHistoryTags?: string[];
+    logMessage: string;
+}
+export interface EcologyEvent {
+    id: string;
+    title: string;
+    description: string;
+    tendencyTag: string;
+    options: EcologyEventOption[];
 }
 export interface SpeciesRecord {
     id: string;
@@ -56,6 +74,7 @@ export interface SpeciesRecord {
     ecologicalRole: EcologicalRole;
     traits: string[];
     vulnerabilities: string[];
+    historyTags?: string[];
     numericEffects: Partial<Resources>;
     shortDescription: string;
     visualPrompt: string;
@@ -70,6 +89,9 @@ export interface FossilLegacy {
     type: "fossil" | "ancestor" | "empty_niche" | "warning" | "archive";
     description: string;
     effect: string;
+    numericEffects: Partial<Resources>;
+    tradeoffEffects?: Partial<Resources>;
+    tags?: string[];
     createdAt: string;
 }
 export interface EvolutionLog {
@@ -91,6 +113,9 @@ export interface GameState {
     talents: Talent[];
     pendingTalentChoices: Talent[];
     consumedTalents: string[];
+    pendingEcologyEvent?: EcologyEvent | null;
+    historyTags: string[];
+    eventHistory: string[];
     planetProfile: PlanetProfile;
     lastCalculatedAt: string;
     createdAt: string;

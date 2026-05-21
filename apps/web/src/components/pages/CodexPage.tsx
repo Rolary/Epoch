@@ -88,6 +88,9 @@ export function CodexDetailPage() {
         <span className="tag">{sp.niche}</span>
         <span className="tag">{roleLabel(sp.ecologicalRole)}</span>
         <span className={`tag status-${sp.status}`}>{statusLabel(sp.status)}</span>
+        {(sp.historyTags ?? []).map((tag) => (
+          <span key={tag} className="tag">{historyTagLabel(tag)}</span>
+        ))}
       </div>
       <p className="detail-desc">{sp.shortDescription}</p>
       <div className="detail-grid">
@@ -108,6 +111,12 @@ export function CodexDetailPage() {
               .join(" · ") || "待评估"}
           </span>
         </div>
+        {(sp.historyTags ?? []).length > 0 && (
+          <div className="detail-block">
+            <span className="detail-label">生命史倾向</span>
+            <span>{(sp.historyTags ?? []).map(historyTagLabel).join("、")}</span>
+          </div>
+        )}
         <div className="detail-block">
           <span className="detail-label">谱系</span>
           <span>{sp.lineageSummary}</span>
@@ -121,6 +130,29 @@ export function CodexDetailPage() {
       </div>
     </div>
   );
+}
+
+function historyTagLabel(tag: string): string {
+  const m: Record<string, string> = {
+    heat_tolerant: "耐热倾向",
+    volatile: "高波动",
+    stable_membrane: "稳膜倾向",
+    tidal_rich: "潮汐富集",
+    crowded_soup: "丰厚原汤",
+    clear_tide: "清潮记忆",
+    edge_feeding: "边缘摄食",
+    branching: "旁支分化",
+    charged: "高能电痕",
+    mineral_catalyst: "矿晶依赖",
+    mutation_biased: "突变偏向",
+    selection_pressure: "筛选压力",
+    sheltered: "庇护缝隙",
+    symbiotic_seed: "共生种源",
+    replication_fidelity: "高保真复制",
+    error_retention: "错误保留",
+    fragment_budding: "断裂繁殖",
+  };
+  return m[tag] ?? tag;
 }
 
 function roleLabel(role: string): string {

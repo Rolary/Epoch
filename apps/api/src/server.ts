@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import {
   advanceState,
+  applyEcologyEventChoice,
   applyEnvironmentAction,
   canUnlockEvolutionNode,
   createInitialState,
@@ -104,6 +105,23 @@ server.post("/saves/:saveId/evolution/unlock", async (request, reply) => {
   const next = unlockEvolutionNode(advanced, nodeId);
   await putSave(guestKey, next);
   return { save: next };
+});
+
+server.post("/saves/:saveId/events/choose", async (request, reply) => {
+  const guestKey = requireGuestKey(request.headers["x-guest-key"]);
+  if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
+  const { saveId } = request.params as { saveId: string };
+  const { eventId, optionId } = request.body as { eventId?: string; optionId?: string };
+  const save = await getSave(guestKey, saveId);
+  if (!save || !eventId || !optionId) return reply.code(404).send({ message: "存档或潮池事件不存在" });
+  try {
+    const advanced = advanceState(normalizeGameState(save));
+    const next = applyEcologyEventChoice(advanced, eventId, optionId);
+    await putSave(guestKey, next);
+    return { save: next };
+  } catch (error) {
+    return reply.code(400).send({ message: error instanceof Error ? error.message : "选择失败" });
+  }
 });
 
 server.post("/saves/:saveId/talents/select", async (request, reply) => {

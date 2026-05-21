@@ -19,6 +19,7 @@ export declare class HomeScene extends Phaser.Scene {
     private cloudGraphics;
     private causticDrift;
     private poolVertices;
+    private ambientRedrawTimer;
     private dragElements;
     private draggedElement;
     private dragTrail;

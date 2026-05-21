@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import * as Phaser from "phaser";
 import { createPhaserGame } from "./phaser/config.js";
@@ -10,20 +10,23 @@ import { calculateResourceDelta } from "@eco-era/game-core";
 import { TopBar } from "./components/hud/TopBar.js";
 import { BottomBar } from "./components/hud/BottomBar.js";
 import { CurrentObjective } from "./components/hud/CurrentObjective.js";
-import { CreateEcology } from "./components/pages/CreateEcology.js";
-import { EvolutionPage } from "./components/pages/EvolutionPage.js";
-import { CodexPage, CodexDetailPage } from "./components/pages/CodexPage.js";
-import { FossilPage } from "./components/pages/FossilPage.js";
-import { LogPage } from "./components/pages/LogPage.js";
-import { SettingsPage } from "./components/pages/SettingsPage.js";
-import { ErrorPage } from "./components/pages/ErrorPage.js";
-import { SpeciesDiscovery } from "./components/modals/SpeciesDiscovery.js";
-import { TalentAwakening } from "./components/modals/TalentAwakening.js";
-import { OfflineReturn } from "./components/modals/OfflineReturn.js";
-import { SystemUnlock } from "./components/modals/SystemUnlock.js";
-import { StrategySheet } from "./components/sheets/StrategySheet.js";
 import { GuideOverlay } from "./components/overlays/GuideOverlay.js";
 import { uiAssets } from "./assets/uiAssets.js";
+
+const CreateEcology = lazy(() => import("./components/pages/CreateEcology.js").then((m) => ({ default: m.CreateEcology })));
+const EvolutionPage = lazy(() => import("./components/pages/EvolutionPage.js").then((m) => ({ default: m.EvolutionPage })));
+const CodexPage = lazy(() => import("./components/pages/CodexPage.js").then((m) => ({ default: m.CodexPage })));
+const CodexDetailPage = lazy(() => import("./components/pages/CodexPage.js").then((m) => ({ default: m.CodexDetailPage })));
+const FossilPage = lazy(() => import("./components/pages/FossilPage.js").then((m) => ({ default: m.FossilPage })));
+const LogPage = lazy(() => import("./components/pages/LogPage.js").then((m) => ({ default: m.LogPage })));
+const SettingsPage = lazy(() => import("./components/pages/SettingsPage.js").then((m) => ({ default: m.SettingsPage })));
+const ErrorPage = lazy(() => import("./components/pages/ErrorPage.js").then((m) => ({ default: m.ErrorPage })));
+const SpeciesDiscovery = lazy(() => import("./components/modals/SpeciesDiscovery.js").then((m) => ({ default: m.SpeciesDiscovery })));
+const TalentAwakening = lazy(() => import("./components/modals/TalentAwakening.js").then((m) => ({ default: m.TalentAwakening })));
+const OfflineReturn = lazy(() => import("./components/modals/OfflineReturn.js").then((m) => ({ default: m.OfflineReturn })));
+const SystemUnlock = lazy(() => import("./components/modals/SystemUnlock.js").then((m) => ({ default: m.SystemUnlock })));
+const EcologyEventModal = lazy(() => import("./components/modals/EcologyEventModal.js").then((m) => ({ default: m.EcologyEventModal })));
+const StrategySheet = lazy(() => import("./components/sheets/StrategySheet.js").then((m) => ({ default: m.StrategySheet })));
 
 const ELEMENT_ACTION: Record<ElementType, string> = {
   crystal: "catalyze",
@@ -245,6 +248,11 @@ export function App() {
   }, [toasts]);
 
   useEffect(() => {
+    if (!save?.pendingEcologyEvent || modalType || page !== "home") return;
+    showModal("ecology-event");
+  }, [save?.pendingEcologyEvent?.id, modalType, page]);
+
+  useEffect(() => {
     const onIntervention = (event: Event) => {
       const detail = (event as CustomEvent<Omit<InterventionCue, "id">>).detail;
       if (!detail) return;
@@ -302,24 +310,27 @@ export function App() {
         />
       )}
 
-      {/* Pages */}
-      {page === "create-ecology" && <CreateEcology />}
-      {page === "evolution" && <EvolutionPage />}
-      {page === "codex" && <CodexPage />}
-      {page === "codex-detail" && <CodexDetailPage />}
-      {page === "fossils" && <FossilPage />}
-      {page === "logs" && <LogPage />}
-      {page === "settings" && <SettingsPage />}
-      {page === "error" && <ErrorPage />}
+      <Suspense fallback={null}>
+        {/* Pages */}
+        {page === "create-ecology" && <CreateEcology />}
+        {page === "evolution" && <EvolutionPage />}
+        {page === "codex" && <CodexPage />}
+        {page === "codex-detail" && <CodexDetailPage />}
+        {page === "fossils" && <FossilPage />}
+        {page === "logs" && <LogPage />}
+        {page === "settings" && <SettingsPage />}
+        {page === "error" && <ErrorPage />}
 
-      {/* Modals */}
-      {modalType === "species-discovery" && <SpeciesDiscovery />}
-      {modalType === "talent-awakening" && <TalentAwakening />}
-      {modalType === "offline-return" && <OfflineReturn />}
-      {modalType === "system-unlock" && <SystemUnlock />}
+        {/* Modals */}
+        {modalType === "species-discovery" && <SpeciesDiscovery />}
+        {modalType === "talent-awakening" && <TalentAwakening />}
+        {modalType === "offline-return" && <OfflineReturn />}
+        {modalType === "ecology-event" && <EcologyEventModal />}
+        {modalType === "system-unlock" && <SystemUnlock />}
 
-      {/* Sheets */}
-      {sheetType === "strategy" && <StrategySheet />}
+        {/* Sheets */}
+        {sheetType === "strategy" && <StrategySheet />}
+      </Suspense>
 
       {/* Guide — only on home page */}
       {page === "home" && <GuideOverlay />}

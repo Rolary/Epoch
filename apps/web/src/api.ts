@@ -111,6 +111,14 @@ export async function selectTalentApi(saveId: string, talentId: string) {
   return data.save;
 }
 
+export async function chooseEcologyEvent(saveId: string, eventId: string, optionId: string) {
+  const data = await fetchJson<{ save: import("@eco-era/shared").GameState }>(
+    `/saves/${saveId}/events/choose`,
+    { method: "POST", body: JSON.stringify({ eventId, optionId }) },
+  );
+  return data.save;
+}
+
 export async function getSpecies(saveId: string) {
   const data = await fetchJson<{ species: import("@eco-era/shared").SpeciesRecord[] }>(
     `/saves/${saveId}/species`,

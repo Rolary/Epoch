@@ -98,6 +98,17 @@ export function SettingsPage() {
         </div>
       </section>
 
+      {(save.historyTags?.length ?? 0) >= 2 && (
+        <section className="archive-section">
+          <h3 className="archive-section-title">生命倾向</h3>
+          <div className="archive-list">
+            {save.historyTags.slice(-5).map((tag) => (
+              <ArchiveRow key={tag} label={historyTagLabel(tag)} value={historyTagCopy(tag)} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="archive-section">
         <h3 className="archive-section-title">存档信息</h3>
         <div className="archive-list">
@@ -137,6 +148,40 @@ export function SettingsPage() {
       </section>
     </div>
   );
+}
+
+function historyTagLabel(tag: string): string {
+  const map: Record<string, string> = {
+    heat_tolerant: "耐热倾向",
+    stable_membrane: "稳膜倾向",
+    tidal_rich: "潮汐富集",
+    mineral_catalyst: "矿晶依赖",
+    mutation_biased: "突变偏向",
+    charged: "高能电痕",
+    selection_pressure: "筛选压力",
+    branching: "旁支分化",
+    replication_fidelity: "高保真复制",
+    error_retention: "错误保留",
+    fragment_budding: "断裂繁殖",
+  };
+  return map[tag] ?? tag;
+}
+
+function historyTagCopy(tag: string): string {
+  const map: Record<string, string> = {
+    heat_tolerant: "高温事件收益略高，稳定结构更受考验。",
+    stable_membrane: "稳定性恢复更强，突变速度略慢。",
+    tidal_rich: "回潮更容易带来有机富集。",
+    mineral_catalyst: "矿物表面正在成为反应支点。",
+    mutation_biased: "错误更容易被保留下来。",
+    charged: "高能窗口更常塑造后续谱系。",
+    selection_pressure: "坏事也会沉淀成后来的遗产。",
+    branching: "旁支谱系更容易留下痕迹。",
+    replication_fidelity: "复制更稳，但变化更谨慎。",
+    error_retention: "突变更大胆，潮池更容易波动。",
+    fragment_budding: "断裂也可能成为新的延续方式。",
+  };
+  return map[tag] ?? "这类变化正在写入潮池性格。";
 }
 
 function ArchiveRow({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
