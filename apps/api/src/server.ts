@@ -186,11 +186,11 @@ server.get("/saves/:saveId/logs", async (request, reply) => {
   return { logs: normalizeGameState(save).logs };
 });
 
-server.get("/", async (_request, reply) => sendPublicFile(reply, "index.html"));
-server.get("/index.html", async (_request, reply) => sendPublicFile(reply, "index.html"));
+server.get("/", async (_request, reply) => sendPublicFile(reply, "index.html", "html"));
+server.get("/index.html", async (_request, reply) => sendPublicFile(reply, "index.html", "html"));
 server.get("/assets/*", async (request, reply) => {
   const requestedPath = decodeURIComponent(request.url.split("?")[0]?.slice(1) ?? "");
-  return sendPublicFile(reply, requestedPath);
+  return sendPublicFile(reply, requestedPath, "asset");
 });
 
 function requireGuestKey(value: string | string[] | undefined) {
@@ -260,11 +260,16 @@ function pruneRateBuckets(now: number) {
   }
 }
 
-function sendPublicFile(reply: FastifyReply, requestedPath: string) {
+function sendPublicFile(reply: FastifyReply, requestedPath: string, cacheKind: "asset" | "html") {
   const filePath = resolve(publicRoot, requestedPath);
   if (!filePath.startsWith(`${publicRoot}${sep}`) || !existsSync(filePath) || !statSync(filePath).isFile()) {
     return reply.code(404).send({ message: "Not found" });
   }
+  const stat = statSync(filePath);
+  const etag = `"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
+  reply.header("Cache-Control", cacheKind === "asset" ? "public, max-age=31536000, immutable" : "no-cache");
+  reply.header("ETag", etag);
+  reply.header("Last-Modified", stat.mtime.toUTCString());
   reply.type(contentTypeFor(filePath));
   return reply.send(createReadStream(filePath));
 }

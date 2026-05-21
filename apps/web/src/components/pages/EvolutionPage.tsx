@@ -1,4 +1,5 @@
 import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
+import type { EvolutionNode } from "@eco-era/shared";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { tickSave, unlockNode } from "../../api.js";
 import { useGameStore } from "../../stores/gameStore.js";
@@ -9,6 +10,7 @@ export function EvolutionPage() {
   const setSave = useGameStore((s) => s.setSave);
   const setPage = useUIStore((s) => s.setPage);
   const hideModal = useUIStore((s) => s.hideModal);
+  const pathBlocks = groupEvolutionPath(evolutionNodes);
 
   if (!save) {
     return (
@@ -22,6 +24,7 @@ export function EvolutionPage() {
       </div>
     );
   }
+  const currentSave = save;
 
   const handleUnlock = async (nodeId: string) => {
     try {
@@ -55,49 +58,95 @@ export function EvolutionPage() {
       <h2 className="page-title">生命痕迹</h2>
       <p className="page-hint">这里会记录潮池真正留下的变化。还不能点亮时，先回去继续拖入发光养料。</p>
       <div className="evolution-path">
-        {evolutionNodes.map((node, idx) => {
-          const unlocked = save.unlockedNodes.includes(node.id);
-          const canUnlock = canUnlockEvolutionNode(save, node.id);
-          const copy = nodeCopyFor(node.id, node.name, node.description);
-          let stateClass = "locked";
-          if (unlocked) stateClass = "unlocked";
-          else if (canUnlock) stateClass = "available";
-
+        {pathBlocks.map((block, idx) => {
+          if (block.type === "branch") {
+            const groupUnlocked = block.nodes.some((node) => currentSave.unlockedNodes.includes(node.id));
+            const groupAvailable = block.nodes.some((node) => canUnlockEvolutionNode(currentSave, node.id));
+            return (
+              <div key={block.id} className={`evolution-branch-block ${groupUnlocked ? "unlocked" : groupAvailable ? "available" : "locked"}`}>
+                {idx > 0 && <div className={`node-connector branch-entry ${groupUnlocked || groupAvailable ? "active" : ""}`} />}
+                <div className="branch-fork-cap">
+                  <span className="branch-fork-title">复制开始分叉</span>
+                  <span className="branch-fork-desc">只能留下一个主倾向，后续生命会沿着它分化。</span>
+                </div>
+                <div className="branch-fork-lines" aria-hidden="true" />
+                <div className="branch-node-grid">
+                  {block.nodes.map((node) => renderNode(node, true))}
+                </div>
+              </div>
+            );
+          }
           return (
-            <div key={node.id} className="evolution-node-row">
-              {idx > 0 && <div className={`node-connector ${unlocked ? "active" : ""}`} />}
-              <button
-                className={`evolution-node ${stateClass}`}
-                disabled={!canUnlock}
-                onClick={() => handleUnlock(node.id)}
-              >
-                <div className={`node-circle ${stateClass}`}>
-                  <img className="node-icon-img" src={iconFor(node.id)} alt="" aria-hidden="true" />
-                  <span className="node-state-mark">{unlocked ? "OK" : canUnlock ? "!" : ""}</span>
-                </div>
-                <div className="node-info">
-                  <span className="node-name">{copy.title}</span>
-                  <span className="node-desc">{copy.description}</span>
-                  <span className="term-badge node-term">{node.name}</span>
-                  {node.branchHint && <span className="node-branch-hint">{node.branchHint}</span>}
-                  {!unlocked && (
-                    <span className="node-cost">
-                      {Object.entries(node.cost)
-                        .map(([k, v]) => `${labelFor(k)} ${v}`)
-                        .join(" · ")}
-                    </span>
-                  )}
-                  {canUnlock && <span className="node-action">{actionFor(node.id)}</span>}
-                  {unlocked && <span className="node-action confirmed">已留下痕迹</span>}
-                  {!unlocked && !canUnlock && <span className="node-action waiting">继续积累材料</span>}
-                </div>
-              </button>
+            <div key={block.node.id} className="evolution-node-row">
+              {idx > 0 && <div className={`node-connector ${currentSave.unlockedNodes.includes(block.node.id) ? "active" : ""}`} />}
+              {renderNode(block.node, false)}
             </div>
           );
         })}
       </div>
     </div>
   );
+
+  function renderNode(node: EvolutionNode, branchNode: boolean) {
+    const unlocked = currentSave.unlockedNodes.includes(node.id);
+    const canUnlock = canUnlockEvolutionNode(currentSave, node.id);
+    const copy = nodeCopyFor(node.id, node.name, node.description);
+    let stateClass = "locked";
+    if (unlocked) stateClass = "unlocked";
+    else if (canUnlock) stateClass = "available";
+
+    return (
+      <button
+        key={node.id}
+        className={`evolution-node ${stateClass} ${branchNode ? "branch-node" : ""}`}
+        disabled={!canUnlock}
+        onClick={() => handleUnlock(node.id)}
+      >
+        <div className={`node-circle ${stateClass}`}>
+          <img className="node-icon-img" src={iconFor(node.id)} alt="" aria-hidden="true" />
+          <span className="node-state-mark">{unlocked ? "OK" : canUnlock ? "!" : ""}</span>
+        </div>
+        <div className="node-info">
+          <span className="node-name">{copy.title}</span>
+          <span className="node-desc">{copy.description}</span>
+          <span className="term-badge node-term">{node.name}</span>
+          {node.branchHint && <span className="node-branch-hint">{node.branchHint}</span>}
+          {!unlocked && (
+            <span className="node-cost">
+              {Object.entries(node.cost)
+                .map(([k, v]) => `${labelFor(k)} ${v}`)
+                .join(" · ")}
+            </span>
+          )}
+          {canUnlock && <span className="node-action">{actionFor(node.id)}</span>}
+          {unlocked && <span className="node-action confirmed">已留下痕迹</span>}
+          {!unlocked && !canUnlock && <span className="node-action waiting">继续积累材料</span>}
+        </div>
+      </button>
+    );
+  }
+}
+
+type PathBlock =
+  | { type: "node"; node: EvolutionNode }
+  | { type: "branch"; id: string; nodes: EvolutionNode[] };
+
+function groupEvolutionPath(nodes: EvolutionNode[]): PathBlock[] {
+  const blocks: PathBlock[] = [];
+  const grouped = new Set<string>();
+  for (let index = 0; index < nodes.length; index++) {
+    const node = nodes[index];
+    if (!node.branchGroupId) {
+      blocks.push({ type: "node", node });
+      continue;
+    }
+
+    if (grouped.has(node.branchGroupId)) continue;
+    grouped.add(node.branchGroupId);
+    const branchNodes = nodes.filter((item) => item.branchGroupId === node.branchGroupId);
+    blocks.push({ type: "branch", id: node.branchGroupId, nodes: branchNodes });
+  }
+  return blocks;
 }
 
 function actionFor(nodeId: string): string {
