@@ -38,16 +38,24 @@ export function getDatabaseUrl() {
 
 function getPool() {
   if (pool) return pool;
+  pool = new Pool(getDatabaseConfig());
+  return pool;
+}
+
+function getDatabaseConfig(): PoolConfig {
+  const url = new URL(getDatabaseUrl());
+  const ssl = getDatabaseSslConfig();
   const config: PoolConfig = {
-    connectionString: getDatabaseUrl(),
+    host: url.hostname,
+    port: url.port ? Number(url.port) : 5432,
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    database: decodeURIComponent(url.pathname.replace(/^\//, "")),
     max: Number(process.env.PG_POOL_MAX ?? 10),
   };
 
-  const ssl = getDatabaseSslConfig();
   if (ssl) config.ssl = ssl;
-
-  pool = new Pool(config);
-  return pool;
+  return config;
 }
 
 function getDatabaseSslConfig(): PoolConfig["ssl"] {
