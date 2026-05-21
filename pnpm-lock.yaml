@@ -8,6 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.12.3
+      '@types/react':
+        specifier: ^19.2.7
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.12(@types/node@24.12.3)(esbuild@0.27.7)(tsx@4.21.0))
@@ -29,6 +38,9 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
       vite:
         specifier: ^8.0.12
         version: 8.0.12(@types/node@24.12.3)(esbuild@0.27.7)(tsx@4.21.0)
@@ -39,18 +51,6 @@ importers:
         specifier: ^5.0.13
         version: 5.0.13(@types/react@19.2.14)(react@19.2.6)
     devDependencies:
-      '@types/node':
-        specifier: ^24.10.1
-        version: 24.12.3
-      '@types/react':
-        specifier: ^19.2.7
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
       vitest:
         specifier: ^4.1.6
         version: 4.1.6(@types/node@24.12.3)(vite@8.0.12(@types/node@24.12.3)(esbuild@0.27.7)(tsx@4.21.0))

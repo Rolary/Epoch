@@ -20,6 +20,9 @@
     "packages/*"
   ],
   "dependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
     "fastify": "^5.8.5",
@@ -27,15 +30,12 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
     "vite": "^8.0.12",
     "zod": "^4.4.3",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "typescript": "^6.0.3",
     "vitest": "^4.1.6"
   }
 }
