@@ -30,6 +30,18 @@ export declare const uiAssets: {
         readonly system: string;
         readonly reward: string;
     };
+    readonly species: {
+        readonly producer: string;
+        readonly decomposer: string;
+        readonly symbiont: string;
+        readonly extremophile: string;
+        readonly filterer: string;
+        readonly catalyst: string;
+    };
+    readonly events: {
+        readonly hotSpring: string;
+        readonly clearTide: string;
+    };
     readonly evolution: {
         readonly organicRichness: string;
         readonly replicatingChain: string;

@@ -6,6 +6,8 @@ import cardTide from "./ui/card-tide.png";
 import emblemDiscovery from "./ui/emblem-discovery.png";
 import emblemReward from "./ui/emblem-reward.png";
 import emblemSystem from "./ui/emblem-system.png";
+import eventClearTide from "./ui/events/event-clear-tide.png";
+import eventHotSpring from "./ui/events/event-hot-spring.png";
 import evolutionMetabolicLoop from "./ui/evolution/metabolic-loop.png";
 import evolutionOrganicRichness from "./ui/evolution/organic-richness.png";
 import evolutionPhotoPigment from "./ui/evolution/photo-pigment.png";
@@ -23,6 +25,12 @@ import resourceMinerals from "./ui/resource-minerals.png";
 import resourceMutation from "./ui/resource-mutation.png";
 import resourceOrganic from "./ui/resource-organic.png";
 import resourceStability from "./ui/resource-stability.png";
+import speciesCatalyst from "./ui/species/species-catalyst.png";
+import speciesDecomposer from "./ui/species/species-decomposer.png";
+import speciesExtremophile from "./ui/species/species-extremophile.png";
+import speciesFilterer from "./ui/species/species-filterer.png";
+import speciesProducer from "./ui/species/species-producer.png";
+import speciesSymbiont from "./ui/species/species-symbiont.png";
 
 export const uiAssets = {
   backgrounds: {
@@ -55,6 +63,18 @@ export const uiAssets = {
     discovery: emblemDiscovery,
     system: emblemSystem,
     reward: emblemReward,
+  },
+  species: {
+    producer: speciesProducer,
+    decomposer: speciesDecomposer,
+    symbiont: speciesSymbiont,
+    extremophile: speciesExtremophile,
+    filterer: speciesFilterer,
+    catalyst: speciesCatalyst,
+  },
+  events: {
+    hotSpring: eventHotSpring,
+    clearTide: eventClearTide,
   },
   evolution: {
     organicRichness: evolutionOrganicRichness,

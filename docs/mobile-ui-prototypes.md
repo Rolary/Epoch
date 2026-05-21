@@ -6,24 +6,24 @@
 
 | 编号 | 页面 | 文件 | 当前命名 |
 | --- | --- | --- | --- |
-| 00 | 视觉风格方向 | `references/mobile-ui-prototypes/00-style-direction.png` | 深色潮池、微光、生物感 |
-| 01 | 创建生态 | `references/mobile-ui-prototypes/01-create-ecology.png` | 命名生态、源质印记 |
-| 02 | 潮池首页 | `references/mobile-ui-prototypes/02-tide-pool-home.png` | 主线、潮池、拖拽养料 |
-| 03 | 环境选择 | `references/mobile-ui-prototypes/03-environment-choice.png` | 底部半屏选择 |
-| 04 | 物种发现 | `references/mobile-ui-prototypes/04-species-discovery.png` | 第一种生命出现 |
-| 05 | 演化路径 | `references/mobile-ui-prototypes/05-evolution-path.png` | 节点路径与可解锁提醒 |
-| 06 | 图鉴列表 | `references/mobile-ui-prototypes/06-codex-list.png` | 物种记录 |
-| 07 | 物种详情 | `references/mobile-ui-prototypes/07-species-detail.png` | 生态位、影响、谱系 |
-| 08 | 源质印记觉醒 | `references/mobile-ui-prototypes/08-talent-awakening.png` | 三选一长期倾向 |
-| 09 | 化石遗产 | `references/mobile-ui-prototypes/09-fossil-legacy.png` | 历史沉淀 |
-| 10 | 离线收益 | `references/mobile-ui-prototypes/10-offline-return.png` | 回归反馈 |
-| 11 | 连接异常 | `references/mobile-ui-prototypes/11-connection-error.png` | 游戏化错误兜底 |
-| 12 | 生态档案 | `references/mobile-ui-prototypes/12-settings-save.png` | 身份、成长、状态、存档 |
-| 13 | 入口解锁 | `references/mobile-ui-prototypes/13-system-unlock.png` | 新入口奖励反馈 |
-| 14 | 生态事件 | `references/mobile-ui-prototypes/14-ecology-event.png` | 事件与选择 |
-| 15 | 策略操作 | `references/mobile-ui-prototypes/15-strategy-actions.png` | 操作卡片 |
-| 16 | 空状态 | `references/mobile-ui-prototypes/16-empty-state.png` | 世界观空状态 |
-| 17 | 首次引导 | `references/mobile-ui-prototypes/17-first-guide.png` | 短提示，不讲长教程 |
+| 00 | 视觉风格方向 | `docs/references/mobile-ui-prototypes/00-style-direction.png` | 深色潮池、微光、生物感 |
+| 01 | 创建生态 | `docs/references/mobile-ui-prototypes/01-create-ecology.png` | 命名生态、源质印记 |
+| 02 | 潮池首页 | `docs/references/mobile-ui-prototypes/02-tide-pool-home.png` | 主线、潮池、拖拽养料 |
+| 03 | 环境选择 | `docs/references/mobile-ui-prototypes/03-environment-choice.png` | 底部半屏选择 |
+| 04 | 物种发现 | `docs/references/mobile-ui-prototypes/04-species-discovery.png` | 第一种生命出现 |
+| 05 | 演化路径 | `docs/references/mobile-ui-prototypes/05-evolution-path.png` | 节点路径与可解锁提醒 |
+| 06 | 图鉴列表 | `docs/references/mobile-ui-prototypes/06-codex-list.png` | 物种记录 |
+| 07 | 物种详情 | `docs/references/mobile-ui-prototypes/07-species-detail.png` | 生态位、影响、谱系 |
+| 08 | 源质印记觉醒 | `docs/references/mobile-ui-prototypes/08-talent-awakening.png` | 三选一长期倾向 |
+| 09 | 化石遗产 | `docs/references/mobile-ui-prototypes/09-fossil-legacy.png` | 历史沉淀 |
+| 10 | 离线收益 | `docs/references/mobile-ui-prototypes/10-offline-return.png` | 回归反馈 |
+| 11 | 连接异常 | `docs/references/mobile-ui-prototypes/11-connection-error.png` | 游戏化错误兜底 |
+| 12 | 生态档案 | `docs/references/mobile-ui-prototypes/12-settings-save.png` | 身份、成长、状态、存档 |
+| 13 | 入口解锁 | `docs/references/mobile-ui-prototypes/13-system-unlock.png` | 新入口奖励反馈 |
+| 14 | 生态事件 | `docs/references/mobile-ui-prototypes/14-ecology-event.png` | 事件与选择 |
+| 15 | 策略操作 | `docs/references/mobile-ui-prototypes/15-strategy-actions.png` | 操作卡片 |
+| 16 | 空状态 | `docs/references/mobile-ui-prototypes/16-empty-state.png` | 世界观空状态 |
+| 17 | 首次引导 | `docs/references/mobile-ui-prototypes/17-first-guide.png` | 短提示，不讲长教程 |
 
 ## 2. 当前视觉方向
 

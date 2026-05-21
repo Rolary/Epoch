@@ -1,0 +1,12 @@
+environment:
+  NODE_ENV: production
+packages:
+  - name: functions
+    actions:
+      - name: health
+        runtime: nodejs:24
+        main: index.js
+        web: false
+        limits:
+          timeout: 5000
+          memory: 128

@@ -1,5 +1,6 @@
 import type { EcologyEvent } from "@eco-era/shared";
 import { chooseEcologyEvent } from "../../api.js";
+import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
 import { GameModal } from "./GameModal.js";
@@ -28,6 +29,7 @@ export function EcologyEventModal() {
   return (
     <GameModal title={event.title}>
       <div className="ecology-event-modal">
+        <img className="event-visual" src={eventAssetFor(event)} alt="" aria-hidden="true" />
         <p className="event-description">{event.description}</p>
         <span className="event-tendency">潮池正在显露：{event.tendencyTag}</span>
         <div className="event-options">
@@ -42,6 +44,13 @@ export function EcologyEventModal() {
       </div>
     </GameModal>
   );
+}
+
+function eventAssetFor(event: EcologyEvent): string {
+  if (/hot|spring|heat|thermal|volcanic|泉|热/.test(event.id + event.title + event.tendencyTag)) {
+    return uiAssets.events.hotSpring;
+  }
+  return uiAssets.events.clearTide;
 }
 
 function effectCopy(

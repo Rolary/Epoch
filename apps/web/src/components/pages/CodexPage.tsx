@@ -8,6 +8,15 @@ const SPECIES_CARD_ASSETS = [
   uiAssets.cards.tide,
 ] as const;
 
+const SPECIES_ROLE_ASSETS: Record<string, string> = {
+  producer: uiAssets.species.producer,
+  decomposer: uiAssets.species.decomposer,
+  symbiont: uiAssets.species.symbiont,
+  extremophile: uiAssets.species.extremophile,
+  filterer: uiAssets.species.filterer,
+  catalyst: uiAssets.species.catalyst,
+};
+
 export function CodexPage() {
   const species = useGameStore((s) => s.species());
   const setPage = useUIStore((s) => s.setPage);
@@ -45,7 +54,7 @@ export function CodexPage() {
           >
             <div className={`card-visual asset-card rarity-${sp.status}`}>
               <img
-                src={SPECIES_CARD_ASSETS[indexForId(sp.id) % SPECIES_CARD_ASSETS.length]}
+                src={speciesAssetFor(sp.ecologicalRole, sp.id)}
                 alt=""
                 aria-hidden="true"
               />
@@ -78,7 +87,7 @@ export function CodexDetailPage() {
       <button className="btn-back" onClick={() => setPage("codex")}>← 图鉴</button>
       <div className="detail-visual asset-detail">
         <img
-          src={SPECIES_CARD_ASSETS[indexForId(sp.id) % SPECIES_CARD_ASSETS.length]}
+          src={speciesAssetFor(sp.ecologicalRole, sp.id)}
           alt=""
           aria-hidden="true"
         />
@@ -177,6 +186,10 @@ function labelRes(key: string): string {
     stability: "稳定性", mutation: "突变", biomass: "生物量",
   };
   return m[key] ?? key;
+}
+
+function speciesAssetFor(role: string, id: string): string {
+  return SPECIES_ROLE_ASSETS[role] ?? SPECIES_CARD_ASSETS[indexForId(id) % SPECIES_CARD_ASSETS.length];
 }
 
 function indexForId(id: string): number {
