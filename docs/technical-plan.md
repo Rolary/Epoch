@@ -93,6 +93,7 @@ POST /saves/:saveId/tick
 POST /saves/:saveId/actions/environment
 POST /saves/:saveId/evolution/unlock
 POST /saves/:saveId/talents/select
+POST /saves/:saveId/tidal-echo
 
 GET  /saves/:saveId/species
 GET  /saves/:saveId/logs
@@ -103,6 +104,7 @@ GET  /saves/:saveId/logs
 - `/saves/:saveId` 和 `/tick` 都会经过 `advanceState(normalizeGameState(save))`。
 - 环境操作与演化解锁由后端校验，前端只提交玩家意图。
 - `/logs` 保留 API 名称，前端玩家侧展示为 `生命史 / 潮池记忆`。
+- `/tidal-echo` 为后续潮汐回响预留：服务端负责校验解锁条件、资源成本、保底计数、奖池结果和存档写入；前端只提交单次或十连意图。
 
 ## 5. 前端路线
 
@@ -151,3 +153,12 @@ corepack pnpm run build
 - `第一章基线`：已经完成，后续改动不能破坏。
 - `第二章当前目标`：当前开发要实现的内容。
 - `后续方向`：长期设想，不能误写成当前目标。
+
+## 8. 后续技术方向：潮汐回响
+
+潮汐回响详见 `docs/tidal-echo-gacha.md`。第一版技术落点建议：
+
+- `GameState` 增加回响统计字段，例如 `echoPity`, `echoRarePity`, `echoTrace`, `totalEchoes`。
+- `game-core` 新增纯函数负责校验解锁、扣除多资源成本、生成普通资源或源质印记结果、更新保底和写入日志。
+- API 使用 `POST /saves/:saveId/tidal-echo`，服务端负责所有概率、保底和存档结算，前端只提交单次或十连意图。
+- 前端新增潮汐回响入口、资源不足提示、单次/十连选择和结果揭示弹层；源质印记结果应复用现有印记选择/持有逻辑。
