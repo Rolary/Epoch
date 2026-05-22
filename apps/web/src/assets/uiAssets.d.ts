@@ -1,3 +1,4 @@
+export declare function loadUiAssetUrlMap(): Promise<void>;
 export declare const uiAssets: {
     readonly backgrounds: {
         readonly tidepoolBoard: string;

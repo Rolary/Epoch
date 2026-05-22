@@ -33,65 +33,90 @@ import speciesProducer from "./ui/species/species-producer.png";
 import speciesSymbiont from "./ui/species/species-symbiont.png";
 
 const imageParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-const imageSource = imageParams?.get("imageSource") ?? import.meta.env.VITE_IMAGE_SOURCE ?? "local";
+const imageSource = imageParams?.get("imageSource") ?? import.meta.env.VITE_IMAGE_SOURCE ?? "db";
 const imageBaseUrl = (imageParams?.get("imageBaseUrl") ?? import.meta.env.VITE_IMAGE_BASE_URL ?? "").replace(/\/+$/, "");
 const useRemoteImages = imageSource === "remote" && imageBaseUrl.length > 0;
+const useDatabaseImages = imageSource !== "local" && !useRemoteImages;
+let databaseAssetUrls: Record<string, string> = {};
+
+export async function loadUiAssetUrlMap(): Promise<void> {
+  if (!useDatabaseImages || typeof window === "undefined") return;
+
+  try {
+    const response = await fetch("/api/meta/ui-assets");
+    if (!response.ok) return;
+    const data = (await response.json()) as { assets?: Array<{ path?: string; remoteUrl?: string }> };
+    databaseAssetUrls = Object.fromEntries(
+      (data.assets ?? [])
+        .map((asset) => [asset.path?.trim() ?? "", asset.remoteUrl?.trim() ?? ""] as const)
+        .filter(([path, remoteUrl]) => path.length > 0 && remoteUrl.length > 0),
+    );
+    if (import.meta.env.DEV) {
+      console.info(`[ui-assets] loaded ${Object.keys(databaseAssetUrls).length} database asset url(s)`);
+    }
+  } catch {
+    databaseAssetUrls = {};
+  }
+}
 
 function image(path: string, localAsset: string): string {
+  if (useDatabaseImages) {
+    return databaseAssetUrls[path] ?? localAsset;
+  }
   return useRemoteImages ? `${imageBaseUrl}/${path.replace(/^\/+/, "")}` : localAsset;
 }
 
 export const uiAssets = {
   backgrounds: {
-    tidepoolBoard: image("bg-tidepool-board.png", bgTidepoolBoard),
-    homeTidepool: image("bg-home-tidepool.png", bgHomeTidepool),
+    get tidepoolBoard() { return image("bg-tidepool-board.png", bgTidepoolBoard); },
+    get homeTidepool() { return image("bg-home-tidepool.png", bgHomeTidepool); },
   },
   scene: {
-    poolCenterpiece: image("pool-centerpiece.png", poolCenterpiece),
+    get poolCenterpiece() { return image("pool-centerpiece.png", poolCenterpiece); },
   },
   resources: {
-    organic: image("resource-organic.png", resourceOrganic),
-    energy: image("resource-energy.png", resourceEnergy),
-    minerals: image("resource-minerals.png", resourceMinerals),
-    stability: image("resource-stability.png", resourceStability),
-    mutation: image("resource-mutation.png", resourceMutation),
-    biomass: image("resource-biomass.png", resourceBiomass),
+    get organic() { return image("resource-organic.png", resourceOrganic); },
+    get energy() { return image("resource-energy.png", resourceEnergy); },
+    get minerals() { return image("resource-minerals.png", resourceMinerals); },
+    get stability() { return image("resource-stability.png", resourceStability); },
+    get mutation() { return image("resource-mutation.png", resourceMutation); },
+    get biomass() { return image("resource-biomass.png", resourceBiomass); },
   },
   pickups: {
-    crystal: image("pickup-crystal.png", pickupCrystal),
-    spark: image("pickup-spark.png", pickupSpark),
-    droplet: image("pickup-droplet.png", pickupDroplet),
-    pulse: image("pickup-pulse.png", pickupPulse),
+    get crystal() { return image("pickup-crystal.png", pickupCrystal); },
+    get spark() { return image("pickup-spark.png", pickupSpark); },
+    get droplet() { return image("pickup-droplet.png", pickupDroplet); },
+    get pulse() { return image("pickup-pulse.png", pickupPulse); },
   },
   cards: {
-    crystal: image("card-crystal.png", cardCrystal),
-    energy: image("card-energy.png", cardEnergy),
-    tide: image("card-tide.png", cardTide),
+    get crystal() { return image("card-crystal.png", cardCrystal); },
+    get energy() { return image("card-energy.png", cardEnergy); },
+    get tide() { return image("card-tide.png", cardTide); },
   },
   emblems: {
-    discovery: image("emblem-discovery.png", emblemDiscovery),
-    system: image("emblem-system.png", emblemSystem),
-    reward: image("emblem-reward.png", emblemReward),
+    get discovery() { return image("emblem-discovery.png", emblemDiscovery); },
+    get system() { return image("emblem-system.png", emblemSystem); },
+    get reward() { return image("emblem-reward.png", emblemReward); },
   },
   species: {
-    producer: image("species/species-producer.png", speciesProducer),
-    decomposer: image("species/species-decomposer.png", speciesDecomposer),
-    symbiont: image("species/species-symbiont.png", speciesSymbiont),
-    extremophile: image("species/species-extremophile.png", speciesExtremophile),
-    filterer: image("species/species-filterer.png", speciesFilterer),
-    catalyst: image("species/species-catalyst.png", speciesCatalyst),
+    get producer() { return image("species/species-producer.png", speciesProducer); },
+    get decomposer() { return image("species/species-decomposer.png", speciesDecomposer); },
+    get symbiont() { return image("species/species-symbiont.png", speciesSymbiont); },
+    get extremophile() { return image("species/species-extremophile.png", speciesExtremophile); },
+    get filterer() { return image("species/species-filterer.png", speciesFilterer); },
+    get catalyst() { return image("species/species-catalyst.png", speciesCatalyst); },
   },
   events: {
-    hotSpring: image("events/event-hot-spring.png", eventHotSpring),
-    clearTide: image("events/event-clear-tide.png", eventClearTide),
+    get hotSpring() { return image("events/event-hot-spring.png", eventHotSpring); },
+    get clearTide() { return image("events/event-clear-tide.png", eventClearTide); },
   },
   evolution: {
-    organicRichness: image("evolution/organic-richness.png", evolutionOrganicRichness),
-    replicatingChain: image("evolution/replicating-chain.png", evolutionReplicatingChain),
-    primitiveVesicle: image("evolution/primitive-vesicle.png", evolutionPrimitiveVesicle),
-    metabolicLoop: image("evolution/metabolic-loop.png", evolutionMetabolicLoop),
-    protoCell: image("evolution/proto-cell.png", evolutionProtoCell),
-    photoPigment: image("evolution/photo-pigment.png", evolutionPhotoPigment),
+    get organicRichness() { return image("evolution/organic-richness.png", evolutionOrganicRichness); },
+    get replicatingChain() { return image("evolution/replicating-chain.png", evolutionReplicatingChain); },
+    get primitiveVesicle() { return image("evolution/primitive-vesicle.png", evolutionPrimitiveVesicle); },
+    get metabolicLoop() { return image("evolution/metabolic-loop.png", evolutionMetabolicLoop); },
+    get protoCell() { return image("evolution/proto-cell.png", evolutionProtoCell); },
+    get photoPigment() { return image("evolution/photo-pigment.png", evolutionPhotoPigment); },
   },
 } as const;
 

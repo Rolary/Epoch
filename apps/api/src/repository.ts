@@ -1,10 +1,16 @@
 import { Pool, type PoolConfig } from "pg";
-import type { GameState } from "@eco-era/shared";
+import { uiAssetPaths, type GameState, type UiAssetUrl } from "@eco-era/shared";
 
 const DEV_DATABASE_URL = "postgres://admin:123456@localhost:5432/epoch";
 
 interface SaveRow {
   state_json: GameState | string;
+}
+
+interface UiAssetUrlRow {
+  path: string;
+  remote_url: string | null;
+  updated_at: Date | string;
 }
 
 let pool: Pool | undefined;
@@ -27,6 +33,12 @@ export const schemaSql = `
 
   CREATE INDEX IF NOT EXISTS guest_saves_save_id_idx ON guest_saves(save_id);
   CREATE INDEX IF NOT EXISTS saves_updated_at_idx ON saves(updated_at DESC);
+
+  CREATE TABLE IF NOT EXISTS ui_asset_urls (
+    path TEXT PRIMARY KEY,
+    remote_url TEXT NOT NULL DEFAULT '',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
 `;
 
 export function getDatabaseUrl() {
@@ -70,6 +82,7 @@ async function ensureSchema() {
 
   schemaReady = getPool()
     .query(schemaSql)
+    .then(() => seedUiAssetUrls())
     .then(() => undefined)
     .catch((error) => {
       schemaReady = undefined;
@@ -77,6 +90,17 @@ async function ensureSchema() {
     });
 
   return schemaReady;
+}
+
+async function seedUiAssetUrls() {
+  await getPool().query(
+    `
+    INSERT INTO ui_asset_urls (path)
+    SELECT unnest($1::text[])
+    ON CONFLICT (path) DO NOTHING
+    `,
+    [uiAssetPaths]
+  );
 }
 
 function parseSave(row: SaveRow | undefined) {
@@ -149,6 +173,27 @@ export async function putSave(guestKey: string, save: GameState) {
   }
 
   return save;
+}
+
+function parseUiAssetUrl(row: UiAssetUrlRow): UiAssetUrl {
+  const updatedAt = row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString();
+  return {
+    path: row.path,
+    remoteUrl: row.remote_url ?? "",
+    updatedAt,
+  };
+}
+
+export async function listUiAssetUrls() {
+  await ensureSchema();
+  const result = await getPool().query<UiAssetUrlRow>(
+    `
+    SELECT path, remote_url, updated_at
+    FROM ui_asset_urls
+    ORDER BY path ASC
+    `
+  );
+  return result.rows.map(parseUiAssetUrl);
 }
 
 export async function closeRepository() {

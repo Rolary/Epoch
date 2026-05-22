@@ -16,7 +16,7 @@ import {
   talentCatalog,
   unlockEvolutionNode
 } from "@eco-era/game-core";
-import { closeRepository, getSave, listSaves, putSave } from "./repository.js";
+import { closeRepository, getSave, listSaves, listUiAssetUrls, putSave } from "./repository.js";
 
 const publicRoot = resolve(process.cwd(), "apps/web/dist");
 const isProduction = process.env.NODE_ENV === "production";
@@ -62,6 +62,7 @@ server.post("/auth/guest", async () => ({
 server.get("/meta/evolution-nodes", async () => ({ nodes: evolutionNodes }));
 server.get("/meta/talents", async () => ({ talents: talentCatalog }));
 server.get("/meta/talent-choices", async () => ({ choices: rollTalentChoices(undefined, 3) }));
+server.get("/meta/ui-assets", async () => ({ assets: await listUiAssetUrls() }));
 
 server.get("/saves", async (request, reply) => {
   const guestKey = requireGuestKey(request.headers["x-guest-key"]);
