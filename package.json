@@ -13,6 +13,8 @@
     "preview:web:host": "pnpm run build:gzip && vite preview apps/web --host 0.0.0.0",
     "start": "tsx apps/api/src/server.ts",
     "start:api": "tsx apps/api/src/server.ts",
+    "assets:compress": "powershell -ExecutionPolicy Bypass -File scripts/compress-ui-assets.ps1",
+    "assets:restore-originals": "powershell -ExecutionPolicy Bypass -File scripts/compress-ui-assets.ps1 -RestoreOriginals",
     "build": "tsc -b && vite build apps/web",
     "build:gzip": "pnpm run build && node scripts/gzip-dist.mjs apps/web/dist",
     "typecheck": "tsc -b",
