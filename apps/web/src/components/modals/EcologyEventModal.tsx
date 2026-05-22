@@ -9,6 +9,7 @@ export function EcologyEventModal() {
   const save = useGameStore((s) => s.save);
   const setSave = useGameStore((s) => s.setSave);
   const hideModal = useUIStore((s) => s.hideModal);
+  const snoozeEcologyEvent = useUIStore((s) => s.snoozeEcologyEvent);
   const event = save?.pendingEcologyEvent as EcologyEvent | null | undefined;
 
   if (!save || !event) {
@@ -19,6 +20,7 @@ export function EcologyEventModal() {
   const choose = async (optionId: string) => {
     try {
       const next = await chooseEcologyEvent(save.id, event.id, optionId);
+      snoozeEcologyEvent(null);
       setSave(next);
       hideModal();
     } catch {
@@ -26,21 +28,31 @@ export function EcologyEventModal() {
     }
   };
 
+  const snooze = () => {
+    snoozeEcologyEvent(event.id);
+    hideModal();
+  };
+
   return (
-    <GameModal title={event.title}>
+    <GameModal title={event.title} onClose={() => snoozeEcologyEvent(event.id)}>
       <div className="ecology-event-modal">
         <img className="event-visual" src={eventAssetFor(event)} alt="" aria-hidden="true" />
+        <span className="event-choice-kicker">潮池时刻 · 选择一项回应</span>
         <p className="event-description">{event.description}</p>
         <span className="event-tendency">潮池正在显露：{event.tendencyTag}</span>
         <div className="event-options">
-          {event.options.map((option) => (
+          {event.options.map((option, index) => (
             <button key={option.id} className="event-option" onClick={() => choose(option.id)}>
+              <span className="event-option-index">{index + 1}</span>
               <span className="event-option-title">{option.title}</span>
               <span className="event-option-desc">{option.description}</span>
               <span className="event-option-effect">{effectCopy(option.resourceEffect, option.environmentEffect)}</span>
             </button>
           ))}
         </div>
+        <button className="btn-secondary event-snooze" onClick={snooze}>
+          稍后再选
+        </button>
       </div>
     </GameModal>
   );

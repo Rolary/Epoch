@@ -460,6 +460,16 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .branch-fork-lines::after { content: ""; position: absolute; top: -2px; width: 2px; height: 24px; background: rgba(245,208,120,0.58); box-shadow: 0 0 10px rgba(245,208,120,0.16); }
 .branch-fork-lines::before { left: 16%; }
 .branch-fork-lines::after { right: 16%; }
+.evolution-branch-block.locked .node-connector.branch-entry,
+.evolution-branch-block.locked .branch-fork-lines { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.06); }
+.evolution-branch-block.locked .branch-fork-lines::before,
+.evolution-branch-block.locked .branch-fork-lines::after { background: rgba(255,255,255,0.08); box-shadow: none; }
+.evolution-branch-block.locked .branch-fork-cap { border-color: rgba(255,255,255,0.07); background: rgba(255,255,255,0.025); box-shadow: none; }
+.evolution-branch-block.locked .branch-fork-cap::before,
+.evolution-branch-block.locked .branch-fork-cap::after { background: rgba(255,255,255,0.12); box-shadow: none; }
+.evolution-branch-block.locked .branch-fork-label { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.34); }
+.evolution-branch-block.locked .branch-fork-title { color: rgba(255,255,255,0.42); }
+.evolution-branch-block.locked .branch-fork-desc { color: rgba(255,255,255,0.32); }
 .branch-node-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
 .evolution-node { display: flex; align-items: center; gap: 14px; background: none; border: none; color: #fff; cursor: pointer; padding: 8px 0; font-family: inherit; text-align: left; width: 100%; border-radius: 10px; transition: all 0.2s ease; }
 .evolution-node:disabled { cursor: default; opacity: 0.4; }
@@ -592,14 +602,17 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 }
 .ecology-event-modal { display: flex; flex-direction: column; gap: 12px; }
 .event-visual { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; border: 1px solid rgba(245,208,120,0.22); box-shadow: 0 0 18px rgba(79,195,247,0.12); }
+.event-choice-kicker { width: fit-content; border-radius: 999px; padding: 3px 9px; background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.24); color: rgba(210,246,255,0.9); font-size: 10px; font-weight: 900; }
 .event-description { color: rgba(255,255,255,0.68); font-size: 13px; line-height: 1.6; }
 .event-tendency { width: fit-content; border-radius: 999px; padding: 4px 9px; background: rgba(245,208,120,0.1); border: 1px solid rgba(245,208,120,0.28); color: #F5D078; font-size: 11px; font-weight: 800; }
 .event-options { display: flex; flex-direction: column; gap: 8px; }
-.event-option { width: 100%; border: 1px solid rgba(79,195,247,0.18); border-radius: 10px; background: rgba(8,18,28,0.76); color: #fff; padding: 10px; display: flex; flex-direction: column; gap: 5px; text-align: left; font-family: inherit; cursor: pointer; }
-.event-option:hover { border-color: rgba(245,208,120,0.46); background: rgba(14,28,36,0.9); transform: translateY(-1px); }
+.event-option { position: relative; width: 100%; border: 1px solid rgba(245,208,120,0.24); border-radius: 12px; background: linear-gradient(135deg, rgba(14,28,36,0.92), rgba(8,18,28,0.76)); color: #fff; padding: 12px 12px 12px 46px; display: flex; flex-direction: column; gap: 5px; text-align: left; font-family: inherit; cursor: pointer; box-shadow: inset 0 0 18px rgba(245,208,120,0.035); transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; }
+.event-option:hover { border-color: rgba(245,208,120,0.72); background: linear-gradient(135deg, rgba(22,38,42,0.96), rgba(13,28,36,0.9)); transform: translateY(-2px); box-shadow: 0 0 18px rgba(245,208,120,0.16), inset 0 0 18px rgba(245,208,120,0.055); }
+.event-option-index { position: absolute; left: 12px; top: 13px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(245,208,120,0.16); border: 1px solid rgba(245,208,120,0.48); color: #F5D078; font-size: 11px; font-weight: 900; }
 .event-option-title { color: #4FC3F7; font-size: 13px; font-weight: 900; }
 .event-option-desc { color: rgba(255,255,255,0.58); font-size: 11px; line-height: 1.45; }
 .event-option-effect { color: rgba(102,187,106,0.9); font-size: 10px; line-height: 1.4; }
+.event-snooze { width: 100%; color: rgba(255,255,255,0.62); font-size: 12px; }
 
 /* Discovery Modal */
 .discovery-content { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }

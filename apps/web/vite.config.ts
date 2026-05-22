@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   build: {
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -27,5 +28,11 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
+  },
+  preview: {
+    host: "0.0.0.0",
+    port: 5173,
+    strictPort: true,
+    allowedHosts: ["rolar.cn"],
   },
 });

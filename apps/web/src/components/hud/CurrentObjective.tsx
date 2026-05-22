@@ -35,24 +35,28 @@ export function CurrentObjective() {
   const objectiveScope = getObjectiveScope();
   const [detailsOpen, setDetailsOpen] = useState(() => localStorage.getItem(scopedObjectiveKey(DETAILS_STORAGE_NAME)) === "1");
   const [minimized, setMinimized] = useState(() => objectiveAutoShownScopes.has(getObjectiveScope()));
+  const [manuallyOpened, setManuallyOpened] = useState(false);
 
   useEffect(() => {
     setDetailsOpen(localStorage.getItem(scopedObjectiveKey(DETAILS_STORAGE_NAME)) === "1");
     setMinimized(objectiveAutoShownScopes.has(objectiveScope));
+    setManuallyOpened(false);
   }, [objectiveScope]);
 
   useEffect(() => {
     if (minimized) return;
+    if (manuallyOpened) return;
     if (objectiveAutoShownScopes.has(objectiveScope)) return;
     const timer = window.setTimeout(() => {
       objectiveAutoShownScopes.add(objectiveScope);
       setMinimized(true);
     }, AUTO_MINIMIZE_DELAY);
     return () => window.clearTimeout(timer);
-  }, [minimized, objectiveScope]);
+  }, [minimized, manuallyOpened, objectiveScope]);
 
   const minimizeObjective = () => {
     objectiveAutoShownScopes.add(objectiveScope);
+    setManuallyOpened(false);
     setMinimized(true);
   };
 
@@ -79,11 +83,15 @@ export function CurrentObjective() {
       role="button"
       tabIndex={0}
       onClick={() => {
-        if (minimized) setMinimized(false);
+        if (minimized) {
+          setManuallyOpened(true);
+          setMinimized(false);
+        }
       }}
       onKeyDown={(event) => {
         if (minimized && (event.key === "Enter" || event.key === " ")) {
           event.preventDefault();
+          setManuallyOpened(true);
           setMinimized(false);
         }
       }}

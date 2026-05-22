@@ -37,6 +37,7 @@ export interface UIStore {
   strategyCooldownUntil: number;
   seenUnlockHints: string[];
   unlockGuideTarget: string | null;
+  snoozedEcologyEventId: string | null;
 
   setPage: (page: Page) => void;
   showModal: (type: NonNullable<ModalType>, data?: Record<string, unknown>) => void;
@@ -52,6 +53,7 @@ export interface UIStore {
   markUnlockHintSeen: (id: string) => void;
   setUnlockGuideTarget: (id: string | null) => void;
   hydrateScopedUIState: () => void;
+  snoozeEcologyEvent: (id: string | null) => void;
 }
 
 function getPlayerStorageScope(): string {
@@ -89,6 +91,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   strategyCooldownUntil: 0,
   seenUnlockHints: readScopedSeenUnlockHints(),
   unlockGuideTarget: null,
+  snoozedEcologyEventId: null,
 
   setPage: (page) => set({ page, modalType: null, sheetType: null }),
 
@@ -120,12 +123,14 @@ export const useUIStore = create<UIStore>((set, get) => ({
       return { seenUnlockHints };
     }),
   setUnlockGuideTarget: (id) => set({ unlockGuideTarget: id }),
+  snoozeEcologyEvent: (id) => set({ snoozedEcologyEventId: id }),
   hydrateScopedUIState: () =>
     set({
       guide: readScopedGuideState(),
       guideStep: 0,
       seenUnlockHints: readScopedSeenUnlockHints(),
       unlockGuideTarget: null,
+      snoozedEcologyEventId: null,
       modalType: null,
       modalData: {},
       sheetType: null,

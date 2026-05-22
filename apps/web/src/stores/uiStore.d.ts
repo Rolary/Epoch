@@ -14,6 +14,7 @@ export interface UIStore {
     strategyCooldownUntil: number;
     seenUnlockHints: string[];
     unlockGuideTarget: string | null;
+    snoozedEcologyEventId: string | null;
     setPage: (page: Page) => void;
     showModal: (type: NonNullable<ModalType>, data?: Record<string, unknown>) => void;
     hideModal: () => void;
@@ -28,6 +29,7 @@ export interface UIStore {
     markUnlockHintSeen: (id: string) => void;
     setUnlockGuideTarget: (id: string | null) => void;
     hydrateScopedUIState: () => void;
+    snoozeEcologyEvent: (id: string | null) => void;
 }
 export declare const useUIStore: import("zustand").UseBoundStore<import("zustand").StoreApi<UIStore>>;
 //# sourceMappingURL=uiStore.d.ts.map

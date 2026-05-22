@@ -32,57 +32,66 @@ import speciesFilterer from "./ui/species/species-filterer.png";
 import speciesProducer from "./ui/species/species-producer.png";
 import speciesSymbiont from "./ui/species/species-symbiont.png";
 
+const imageParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+const imageSource = imageParams?.get("imageSource") ?? import.meta.env.VITE_IMAGE_SOURCE ?? "local";
+const imageBaseUrl = (imageParams?.get("imageBaseUrl") ?? import.meta.env.VITE_IMAGE_BASE_URL ?? "").replace(/\/+$/, "");
+const useRemoteImages = imageSource === "remote" && imageBaseUrl.length > 0;
+
+function image(path: string, localAsset: string): string {
+  return useRemoteImages ? `${imageBaseUrl}/${path.replace(/^\/+/, "")}` : localAsset;
+}
+
 export const uiAssets = {
   backgrounds: {
-    tidepoolBoard: bgTidepoolBoard,
-    homeTidepool: bgHomeTidepool,
+    tidepoolBoard: image("bg-tidepool-board.png", bgTidepoolBoard),
+    homeTidepool: image("bg-home-tidepool.png", bgHomeTidepool),
   },
   scene: {
-    poolCenterpiece,
+    poolCenterpiece: image("pool-centerpiece.png", poolCenterpiece),
   },
   resources: {
-    organic: resourceOrganic,
-    energy: resourceEnergy,
-    minerals: resourceMinerals,
-    stability: resourceStability,
-    mutation: resourceMutation,
-    biomass: resourceBiomass,
+    organic: image("resource-organic.png", resourceOrganic),
+    energy: image("resource-energy.png", resourceEnergy),
+    minerals: image("resource-minerals.png", resourceMinerals),
+    stability: image("resource-stability.png", resourceStability),
+    mutation: image("resource-mutation.png", resourceMutation),
+    biomass: image("resource-biomass.png", resourceBiomass),
   },
   pickups: {
-    crystal: pickupCrystal,
-    spark: pickupSpark,
-    droplet: pickupDroplet,
-    pulse: pickupPulse,
+    crystal: image("pickup-crystal.png", pickupCrystal),
+    spark: image("pickup-spark.png", pickupSpark),
+    droplet: image("pickup-droplet.png", pickupDroplet),
+    pulse: image("pickup-pulse.png", pickupPulse),
   },
   cards: {
-    crystal: cardCrystal,
-    energy: cardEnergy,
-    tide: cardTide,
+    crystal: image("card-crystal.png", cardCrystal),
+    energy: image("card-energy.png", cardEnergy),
+    tide: image("card-tide.png", cardTide),
   },
   emblems: {
-    discovery: emblemDiscovery,
-    system: emblemSystem,
-    reward: emblemReward,
+    discovery: image("emblem-discovery.png", emblemDiscovery),
+    system: image("emblem-system.png", emblemSystem),
+    reward: image("emblem-reward.png", emblemReward),
   },
   species: {
-    producer: speciesProducer,
-    decomposer: speciesDecomposer,
-    symbiont: speciesSymbiont,
-    extremophile: speciesExtremophile,
-    filterer: speciesFilterer,
-    catalyst: speciesCatalyst,
+    producer: image("species/species-producer.png", speciesProducer),
+    decomposer: image("species/species-decomposer.png", speciesDecomposer),
+    symbiont: image("species/species-symbiont.png", speciesSymbiont),
+    extremophile: image("species/species-extremophile.png", speciesExtremophile),
+    filterer: image("species/species-filterer.png", speciesFilterer),
+    catalyst: image("species/species-catalyst.png", speciesCatalyst),
   },
   events: {
-    hotSpring: eventHotSpring,
-    clearTide: eventClearTide,
+    hotSpring: image("events/event-hot-spring.png", eventHotSpring),
+    clearTide: image("events/event-clear-tide.png", eventClearTide),
   },
   evolution: {
-    organicRichness: evolutionOrganicRichness,
-    replicatingChain: evolutionReplicatingChain,
-    primitiveVesicle: evolutionPrimitiveVesicle,
-    metabolicLoop: evolutionMetabolicLoop,
-    protoCell: evolutionProtoCell,
-    photoPigment: evolutionPhotoPigment,
+    organicRichness: image("evolution/organic-richness.png", evolutionOrganicRichness),
+    replicatingChain: image("evolution/replicating-chain.png", evolutionReplicatingChain),
+    primitiveVesicle: image("evolution/primitive-vesicle.png", evolutionPrimitiveVesicle),
+    metabolicLoop: image("evolution/metabolic-loop.png", evolutionMetabolicLoop),
+    protoCell: image("evolution/proto-cell.png", evolutionProtoCell),
+    photoPigment: image("evolution/photo-pigment.png", evolutionPhotoPigment),
   },
 } as const;
 

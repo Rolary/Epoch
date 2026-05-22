@@ -126,6 +126,7 @@ export function App() {
   const markUnlockHintSeen = useUIStore((s) => s.markUnlockHintSeen);
   const unlockGuideTarget = useUIStore((s) => s.unlockGuideTarget);
   const hydrateScopedUIState = useUIStore((s) => s.hydrateScopedUIState);
+  const snoozedEcologyEventId = useUIStore((s) => s.snoozedEcologyEventId);
   const updateLastTick = useGameStore((s) => s.updateLastTick);
   const absorbQueue = useGameStore((s) => s.absorbQueue);
   const dequeueAbsorb = useGameStore((s) => s.dequeueAbsorb);
@@ -285,8 +286,9 @@ export function App() {
 
   useEffect(() => {
     if (!save?.pendingEcologyEvent || modalType || page !== "home") return;
+    if (save.pendingEcologyEvent.id === snoozedEcologyEventId) return;
     showModal("ecology-event");
-  }, [save?.pendingEcologyEvent?.id, modalType, page]);
+  }, [save?.pendingEcologyEvent?.id, snoozedEcologyEventId, modalType, page]);
 
   useEffect(() => {
     if (!save) return;

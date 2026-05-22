@@ -1,7 +1,17 @@
 import { useState, type ReactNode } from "react";
 import { useUIStore } from "../../stores/uiStore.js";
 
-export function GameModal({ children, title, closing: closingProp = false }: { children: ReactNode; title?: string; closing?: boolean }) {
+export function GameModal({
+  children,
+  title,
+  closing: closingProp = false,
+  onClose,
+}: {
+  children: ReactNode;
+  title?: string;
+  closing?: boolean;
+  onClose?: () => void;
+}) {
   const hideModal = useUIStore((s) => s.hideModal);
   const [closing, setClosing] = useState(false);
   const isClosing = closing || closingProp;
@@ -9,7 +19,10 @@ export function GameModal({ children, title, closing: closingProp = false }: { c
   const close = () => {
     if (isClosing) return;
     setClosing(true);
-    window.setTimeout(hideModal, 180);
+    window.setTimeout(() => {
+      onClose?.();
+      hideModal();
+    }, 180);
   };
 
   return (
