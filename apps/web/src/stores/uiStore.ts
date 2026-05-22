@@ -7,6 +7,7 @@ export type Page =
   | "evolution"
   | "codex"
   | "codex-detail"
+  | "talents"
   | "fossils"
   | "logs"
   | "settings"

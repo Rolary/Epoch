@@ -1,17 +1,9 @@
 import { useState } from "react";
 import { getTalentChoices, selectTalentApi } from "../../api.js";
-import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
+import { talentAssetFor } from "../talents/talentPresentation.js";
 import { GameModal } from "./GameModal.js";
-
-const TALENT_ASSETS: Record<string, string> = {
-  crystal: uiAssets.cards.crystal,
-  spark: uiAssets.cards.energy,
-  tide: uiAssets.cards.tide,
-  membrane: uiAssets.resources.stability,
-  mutation: uiAssets.resources.mutation,
-};
 
 export function TalentAwakening() {
   const hideModal = useUIStore((s) => s.hideModal);
@@ -70,7 +62,7 @@ export function TalentAwakening() {
             >
               <img
                 className="talent-icon"
-                src={TALENT_ASSETS[t.icon] ?? uiAssets.emblems.system}
+                src={talentAssetFor(t)}
                 alt=""
                 aria-hidden="true"
               />

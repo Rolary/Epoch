@@ -4,14 +4,7 @@ import { createSave, ensureGuest, getTalentChoices, restoreGuestKey } from "../.
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
-
-const TALENT_ASSETS: Record<string, string> = {
-  crystal: uiAssets.cards.crystal,
-  spark: uiAssets.cards.energy,
-  tide: uiAssets.cards.tide,
-  membrane: uiAssets.resources.stability,
-  mutation: uiAssets.resources.mutation,
-};
+import { talentAssetFor } from "../talents/talentPresentation.js";
 
 export function CreateEcology() {
   const [name, setName] = useState("");
@@ -186,7 +179,7 @@ export function CreateEcology() {
               >
                 <img
                   className="talent-icon"
-                  src={TALENT_ASSETS[t.icon] ?? uiAssets.emblems.system}
+                  src={talentAssetFor(t)}
                   alt=""
                   aria-hidden="true"
                 />

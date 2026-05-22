@@ -25,6 +25,16 @@ import resourceMinerals from "./ui/resource-minerals.png";
 import resourceMutation from "./ui/resource-mutation.png";
 import resourceOrganic from "./ui/resource-organic.png";
 import resourceStability from "./ui/resource-stability.png";
+import talentEpicBlackTideOath from "./ui/talents/talent-epic-black-tide-oath.png";
+import talentEpicGeneticReturn from "./ui/talents/talent-epic-genetic-return.png";
+import talentEpicProtocellHerald from "./ui/talents/talent-epic-protocell-herald.png";
+import talentEpicStardustCatalyst from "./ui/talents/talent-epic-stardust-catalyst.png";
+import talentEpicSymbiosisEmber from "./ui/talents/talent-epic-symbiosis-ember.png";
+import talentTypeCrystal from "./ui/talents/talent-type-crystal.png";
+import talentTypeMembrane from "./ui/talents/talent-type-membrane.png";
+import talentTypeMutation from "./ui/talents/talent-type-mutation.png";
+import talentTypeSpark from "./ui/talents/talent-type-spark.png";
+import talentTypeTide from "./ui/talents/talent-type-tide.png";
 import speciesCatalyst from "./ui/species/species-catalyst.png";
 import speciesDecomposer from "./ui/species/species-decomposer.png";
 import speciesExtremophile from "./ui/species/species-extremophile.png";
@@ -81,6 +91,18 @@ export const uiAssets = {
     get stability() { return image("resource-stability.png", resourceStability); },
     get mutation() { return image("resource-mutation.png", resourceMutation); },
     get biomass() { return image("resource-biomass.png", resourceBiomass); },
+  },
+  talents: {
+    get typeCrystal() { return image("talents/talent-type-crystal.png", talentTypeCrystal); },
+    get typeTide() { return image("talents/talent-type-tide.png", talentTypeTide); },
+    get typeSpark() { return image("talents/talent-type-spark.png", talentTypeSpark); },
+    get typeMembrane() { return image("talents/talent-type-membrane.png", talentTypeMembrane); },
+    get typeMutation() { return image("talents/talent-type-mutation.png", talentTypeMutation); },
+    get epicStardustCatalyst() { return image("talents/talent-epic-stardust-catalyst.png", talentEpicStardustCatalyst); },
+    get epicBlackTideOath() { return image("talents/talent-epic-black-tide-oath.png", talentEpicBlackTideOath); },
+    get epicProtocellHerald() { return image("talents/talent-epic-protocell-herald.png", talentEpicProtocellHerald); },
+    get epicSymbiosisEmber() { return image("talents/talent-epic-symbiosis-ember.png", talentEpicSymbiosisEmber); },
+    get epicGeneticReturn() { return image("talents/talent-epic-genetic-return.png", talentEpicGeneticReturn); },
   },
   pickups: {
     get crystal() { return image("pickup-crystal.png", pickupCrystal); },

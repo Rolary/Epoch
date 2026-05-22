@@ -18,6 +18,7 @@ const CreateEcology = lazy(() => import("./components/pages/CreateEcology.js").t
 const EvolutionPage = lazy(() => import("./components/pages/EvolutionPage.js").then((m) => ({ default: m.EvolutionPage })));
 const CodexPage = lazy(() => import("./components/pages/CodexPage.js").then((m) => ({ default: m.CodexPage })));
 const CodexDetailPage = lazy(() => import("./components/pages/CodexPage.js").then((m) => ({ default: m.CodexDetailPage })));
+const TalentArchivePage = lazy(() => import("./components/pages/TalentArchivePage.js").then((m) => ({ default: m.TalentArchivePage })));
 const FossilPage = lazy(() => import("./components/pages/FossilPage.js").then((m) => ({ default: m.FossilPage })));
 const LogPage = lazy(() => import("./components/pages/LogPage.js").then((m) => ({ default: m.LogPage })));
 const SettingsPage = lazy(() => import("./components/pages/SettingsPage.js").then((m) => ({ default: m.SettingsPage })));
@@ -405,6 +406,7 @@ export function App() {
         {page === "evolution" && <EvolutionPage />}
         {page === "codex" && <CodexPage />}
         {page === "codex-detail" && <CodexDetailPage />}
+        {page === "talents" && <TalentArchivePage />}
         {page === "fossils" && <FossilPage />}
         {page === "logs" && <LogPage />}
         {page === "settings" && <SettingsPage />}

@@ -33,7 +33,22 @@ export interface Talent {
   consumable?: boolean;
   instantEffect?: Partial<Record<ResourceKey, number>>;
   trait?: { id: string; name: string; desc: string };
-  icon: "crystal" | "spark" | "tide" | "membrane" | "mutation";
+  icon:
+    | "crystal"
+    | "spark"
+    | "tide"
+    | "membrane"
+    | "mutation"
+    | "type_crystal"
+    | "type_tide"
+    | "type_spark"
+    | "type_membrane"
+    | "type_mutation"
+    | "epic_stardust_catalyst"
+    | "epic_black_tide_oath"
+    | "epic_protocell_herald"
+    | "epic_symbiosis_ember"
+    | "epic_genetic_return";
   summary: string;
   description: string;
   effects: Partial<Record<ResourceKey, number>>;
@@ -178,6 +193,16 @@ export const uiAssetPaths = [
   "resource-mutation.png",
   "resource-organic.png",
   "resource-stability.png",
+  "talents/talent-epic-black-tide-oath.png",
+  "talents/talent-epic-genetic-return.png",
+  "talents/talent-epic-protocell-herald.png",
+  "talents/talent-epic-stardust-catalyst.png",
+  "talents/talent-epic-symbiosis-ember.png",
+  "talents/talent-type-crystal.png",
+  "talents/talent-type-membrane.png",
+  "talents/talent-type-mutation.png",
+  "talents/talent-type-spark.png",
+  "talents/talent-type-tide.png",
   "species/species-catalyst.png",
   "species/species-decomposer.png",
   "species/species-extremophile.png",

@@ -422,6 +422,162 @@ export const talentCatalog: Talent[] = [
     description: "吸收能量闪光时可能带动周围元素同时入池。",
     effects: { energy: 0.18 },
     trait: { id: "chain_reaction", name: "连锁反应", desc: "吸收能量闪光时50%概率带动附近2个元素入池" }
+  },
+  // ── Common 扩展 ──
+  {
+    id: "exposed_rock_bed",
+    name: "露岩温床", tier: 1, rarity: "common", weight: 45,
+    icon: "type_crystal", summary: "矿物质 +10%，有机质 +5%",
+    description: "退潮后露出的粗糙岩面让分子更容易附着，早期富集更稳。",
+    effects: { minerals: 0.10, organic: 0.05 }
+  },
+  {
+    id: "shallow_filter_layer",
+    name: "浅潮滤层", tier: 1, rarity: "common", weight: 45,
+    icon: "type_tide", summary: "有机质 +9%，生物量 +5%",
+    description: "细小潮沟反复筛入可用碎片，薄膜边缘获得更多养分。",
+    effects: { organic: 0.09, biomass: 0.05 }
+  },
+  {
+    id: "afterheat_sediment",
+    name: "余热沉积", tier: 1, rarity: "common", weight: 40,
+    icon: "type_spark", summary: "能量 +9%，稳定性 +4%",
+    description: "白昼残留的热量被沉积物缓慢释放，反应窗口更长。",
+    effects: { energy: 0.09, stability: 0.04 }
+  },
+  {
+    id: "membrane_glimmer",
+    name: "膜泡微光", tier: 1, rarity: "common", weight: 10,
+    consumable: true, instantEffect: { stability: 18, biomass: 8 },
+    icon: "type_membrane", summary: "+18 稳定性，+8 生物量",
+    description: "一批脆弱膜泡短暂成形，为潮池留下可用的边界材料。",
+    effects: {}
+  },
+  {
+    id: "mutation_ember",
+    name: "突变余烬", tier: 1, rarity: "common", weight: 10,
+    consumable: true, instantEffect: { mutation: 18, energy: 12 },
+    icon: "type_mutation", summary: "+18 突变点，+12 能量",
+    description: "残留电痕点亮异常链体，少量错误被保存为新的可能。",
+    effects: {}
+  },
+  // ── Rare 扩展 ──
+  {
+    id: "brine_cycle",
+    name: "矿盐循环", tier: 1, rarity: "rare", weight: 26,
+    icon: "type_crystal", summary: "矿物质 +16%，稳定性 +9%",
+    description: "反复蒸发的盐壳让离子浓度更可预测，结构更容易停留。",
+    effects: { minerals: 0.16, stability: 0.09 }
+  },
+  {
+    id: "charge_tide_window",
+    name: "电荷潮窗", tier: 1, rarity: "rare", weight: 26,
+    icon: "type_spark", summary: "能量 +17%，有机质 +7%",
+    description: "潮水带来的电荷差打开了温和的高能反应窗口。",
+    effects: { energy: 0.17, organic: 0.07 }
+  },
+  {
+    id: "algae_film_prelude",
+    name: "藻膜前奏", tier: 1, rarity: "rare", weight: 24,
+    icon: "type_tide", summary: "生物量 +14%，能量 +10%",
+    description: "最早的薄层色素影子浮在水面，让后续代谢更早靠近光。",
+    effects: { biomass: 0.14, energy: 0.10 }
+  },
+  {
+    id: "homeostatic_shell",
+    name: "稳态壳层", tier: 1, rarity: "rare", weight: 24,
+    icon: "type_membrane", summary: "稳定性 +16%，突变 +4%",
+    description: "微小边界结构开始隔开内外环境，变化不再轻易散失。",
+    effects: { stability: 0.16, mutation: 0.04 }
+  },
+  {
+    id: "split_chain_bed",
+    name: "裂链温床", tier: 1, rarity: "rare", weight: 22,
+    icon: "type_mutation", summary: "突变 +14%，矿物质 +9%",
+    description: "断裂的链体贴附在矿物表面，错误与催化互相保存。",
+    effects: { mutation: 0.14, minerals: 0.09 }
+  },
+  // ── Legendary 扩展 ──
+  {
+    id: "deep_tide_greenhouse",
+    name: "深潮温室", tier: 1, rarity: "legendary", weight: 15,
+    icon: "type_tide", summary: "有机质 +14% · 深潮回补",
+    description: "更深的潮槽像温室一样储存养料，低潮期也能缓慢回补。",
+    effects: { organic: 0.14 },
+    trait: { id: "deep_tide_refill", name: "深潮回补", desc: "有机质低于40时，潮汐倾向更容易补回有机质" }
+  },
+  {
+    id: "lattice_memory",
+    name: "晶格记忆", tier: 1, rarity: "legendary", weight: 15,
+    icon: "type_crystal", summary: "矿物质 +14% · 晶面复写",
+    description: "矿物晶格记录了成功反应的角度，后续结构更容易重复。",
+    effects: { minerals: 0.14 },
+    trait: { id: "lattice_rewrite", name: "晶面复写", desc: "矿晶相关事件更容易沉淀为长期倾向" }
+  },
+  {
+    id: "boundary_chorus",
+    name: "边界合唱", tier: 1, rarity: "legendary", weight: 14,
+    icon: "type_membrane", summary: "稳定性 +13% · 群膜共振",
+    description: "多个膜泡以相近节奏涨缩，脆弱边界开始互相支撑。",
+    effects: { stability: 0.13 },
+    trait: { id: "membrane_chorus", name: "群膜共振", desc: "稳定性收益更容易和生物量收益同时出现" }
+  },
+  {
+    id: "post_disaster_revival",
+    name: "灾后复苏", tier: 1, rarity: "legendary", weight: 14,
+    icon: "type_spark", summary: "能量 +13% · 复苏窗口",
+    description: "剧烈扰动后留下的能量梯度，反而成为下一轮生命的窗口。",
+    effects: { energy: 0.13 },
+    trait: { id: "revival_window", name: "复苏窗口", desc: "低稳定性后的恢复事件更容易留下正面收益" }
+  },
+  {
+    id: "lineage_drift",
+    name: "谱系偏航", tier: 1, rarity: "legendary", weight: 13,
+    icon: "type_mutation", summary: "突变 +16% · 旁支偏航",
+    description: "一部分谱系会主动偏离主流路线，让生态更早出现旁支。",
+    effects: { mutation: 0.16 },
+    trait: { id: "branch_drift", name: "旁支偏航", desc: "旁支、筛选与突变相关生命史更容易出现" }
+  },
+  // ── Epic 扩展·源初专属 ──
+  {
+    id: "stardust_catalyst",
+    name: "星尘催化", tier: 1, rarity: "epic", weight: 6,
+    icon: "epic_stardust_catalyst", summary: "矿物质 +15%，能量 +12% · 星尘反应",
+    description: "微量陨尘落入潮池，陌生晶面让常规反应突然变得高效。",
+    effects: { minerals: 0.15, energy: 0.12 },
+    trait: { id: "stardust_reaction", name: "星尘反应", desc: "矿物与能量同时充足时，催化收益更容易放大" }
+  },
+  {
+    id: "black_tide_oath",
+    name: "黑潮誓约", tier: 1, rarity: "epic", weight: 6,
+    icon: "epic_black_tide_oath", summary: "有机质 +16%，突变 +11% · 黑潮沉约",
+    description: "一次深色回潮带来未知有机碎片，潮池记住了更大胆的组合。",
+    effects: { organic: 0.16, mutation: 0.11 },
+    trait: { id: "black_tide_vow", name: "黑潮沉约", desc: "高波动与潮汐富集更容易同时沉淀" }
+  },
+  {
+    id: "protocell_herald",
+    name: "原核先声", tier: 1, rarity: "epic", weight: 6,
+    icon: "epic_protocell_herald", summary: "生物量 +16%，稳定性 +10% · 细胞前兆",
+    description: "膜、代谢与复制的片段短暂同频，像是在预告真正细胞的到来。",
+    effects: { biomass: 0.16, stability: 0.10 },
+    trait: { id: "cellular_omen", name: "细胞前兆", desc: "膜泡与代谢节点附近更容易出现物种记录" }
+  },
+  {
+    id: "symbiosis_ember",
+    name: "共生火种", tier: 1, rarity: "epic", weight: 5,
+    icon: "epic_symbiosis_ember", summary: "稳定性 +12%，有机质 +12% · 共生萌发",
+    description: "两类脆弱结构开始交换残余物，互养关系第一次有了火种。",
+    effects: { stability: 0.12, organic: 0.12 },
+    trait: { id: "symbiosis_seedling", name: "共生萌发", desc: "共生、滤食与边缘摄食倾向更容易连接" }
+  },
+  {
+    id: "genetic_return_tide",
+    name: "遗传回潮", tier: 1, rarity: "epic", weight: 5,
+    icon: "epic_genetic_return", summary: "突变 +13%，生物量 +13% · 遗传回响",
+    description: "旧链体片段被潮水带回，后来的生命似乎能借到远古错误。",
+    effects: { mutation: 0.13, biomass: 0.13 },
+    trait: { id: "genetic_echo", name: "遗传回响", desc: "化石、遗产与新印记觉醒更容易形成叙事连接" }
   }
 ];
 
@@ -1115,7 +1271,27 @@ function historyTagsForTalent(talentId: string) {
     split_growth: ["branching"],
     mutation_spark: ["mutation_biased"],
     ancient_echo: ["selection_pressure"],
-    chain_lightning: ["charged"]
+    chain_lightning: ["charged"],
+    exposed_rock_bed: ["mineral_catalyst"],
+    shallow_filter_layer: ["tidal_rich", "edge_feeding"],
+    afterheat_sediment: ["heat_tolerant"],
+    membrane_glimmer: ["stable_membrane"],
+    mutation_ember: ["mutation_biased"],
+    brine_cycle: ["mineral_catalyst", "stable_membrane"],
+    charge_tide_window: ["charged", "tidal_rich"],
+    algae_film_prelude: ["edge_feeding"],
+    homeostatic_shell: ["stable_membrane"],
+    split_chain_bed: ["mutation_biased", "mineral_catalyst"],
+    deep_tide_greenhouse: ["tidal_rich"],
+    lattice_memory: ["mineral_catalyst"],
+    boundary_chorus: ["stable_membrane", "symbiotic_seed"],
+    post_disaster_revival: ["sheltered", "selection_pressure"],
+    lineage_drift: ["branching", "mutation_biased"],
+    stardust_catalyst: ["mineral_catalyst", "charged"],
+    black_tide_oath: ["tidal_rich", "volatile"],
+    protocell_herald: ["stable_membrane", "edge_feeding"],
+    symbiosis_ember: ["symbiotic_seed", "edge_feeding"],
+    genetic_return_tide: ["selection_pressure", "branching"]
   };
   return map[talentId] ?? [];
 }

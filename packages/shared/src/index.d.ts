@@ -18,7 +18,7 @@ export interface Talent {
         name: string;
         desc: string;
     };
-    icon: "crystal" | "spark" | "tide" | "membrane" | "mutation";
+    icon: "crystal" | "spark" | "tide" | "membrane" | "mutation" | "type_crystal" | "type_tide" | "type_spark" | "type_membrane" | "type_mutation" | "epic_stardust_catalyst" | "epic_black_tide_oath" | "epic_protocell_herald" | "epic_symbiosis_ember" | "epic_genetic_return";
     summary: string;
     description: string;
     effects: Partial<Record<ResourceKey, number>>;
@@ -124,7 +124,7 @@ export interface GameState {
 export interface GuestAuthResponse {
     guestKey: string;
 }
-export declare const uiAssetPaths: readonly ["bg-tidepool-board.png", "bg-home-tidepool.png", "card-crystal.png", "card-energy.png", "card-tide.png", "emblem-discovery.png", "emblem-reward.png", "emblem-system.png", "events/event-clear-tide.png", "events/event-hot-spring.png", "evolution/metabolic-loop.png", "evolution/organic-richness.png", "evolution/photo-pigment.png", "evolution/primitive-vesicle.png", "evolution/proto-cell.png", "evolution/replicating-chain.png", "pickup-crystal.png", "pickup-droplet.png", "pickup-pulse.png", "pickup-spark.png", "pool-centerpiece.png", "resource-biomass.png", "resource-energy.png", "resource-minerals.png", "resource-mutation.png", "resource-organic.png", "resource-stability.png", "species/species-catalyst.png", "species/species-decomposer.png", "species/species-extremophile.png", "species/species-filterer.png", "species/species-producer.png", "species/species-symbiont.png"];
+export declare const uiAssetPaths: readonly ["bg-tidepool-board.png", "bg-home-tidepool.png", "card-crystal.png", "card-energy.png", "card-tide.png", "emblem-discovery.png", "emblem-reward.png", "emblem-system.png", "events/event-clear-tide.png", "events/event-hot-spring.png", "evolution/metabolic-loop.png", "evolution/organic-richness.png", "evolution/photo-pigment.png", "evolution/primitive-vesicle.png", "evolution/proto-cell.png", "evolution/replicating-chain.png", "pickup-crystal.png", "pickup-droplet.png", "pickup-pulse.png", "pickup-spark.png", "pool-centerpiece.png", "resource-biomass.png", "resource-energy.png", "resource-minerals.png", "resource-mutation.png", "resource-organic.png", "resource-stability.png", "talents/talent-epic-black-tide-oath.png", "talents/talent-epic-genetic-return.png", "talents/talent-epic-protocell-herald.png", "talents/talent-epic-stardust-catalyst.png", "talents/talent-epic-symbiosis-ember.png", "talents/talent-type-crystal.png", "talents/talent-type-membrane.png", "talents/talent-type-mutation.png", "talents/talent-type-spark.png", "talents/talent-type-tide.png", "species/species-catalyst.png", "species/species-decomposer.png", "species/species-extremophile.png", "species/species-filterer.png", "species/species-producer.png", "species/species-symbiont.png"];
 export type UiAssetPath = (typeof uiAssetPaths)[number];
 export interface UiAssetUrl {
     path: UiAssetPath | string;

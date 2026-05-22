@@ -18,7 +18,7 @@ function isNavUnlocked(navId: string): boolean {
   if (!save) return navId === "home" || navId === "settings";
   if (navId === "home" || navId === "settings") return true;
   if (navId === "evolution") {
-    return save.unlockedNodes.length > 0 || save.resources.organic >= 10;
+    return canAnyNodeBeUnlocked();
   }
   if (navId === "codex") return save.species.length > 0;
   if (navId === "fossils") return save.legacies.length > 0;

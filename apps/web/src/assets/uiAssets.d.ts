@@ -15,6 +15,18 @@ export declare const uiAssets: {
         readonly mutation: string;
         readonly biomass: string;
     };
+    readonly talents: {
+        readonly typeCrystal: string;
+        readonly typeTide: string;
+        readonly typeSpark: string;
+        readonly typeMembrane: string;
+        readonly typeMutation: string;
+        readonly epicStardustCatalyst: string;
+        readonly epicBlackTideOath: string;
+        readonly epicProtocellHerald: string;
+        readonly epicSymbiosisEmber: string;
+        readonly epicGeneticReturn: string;
+    };
     readonly pickups: {
         readonly crystal: string;
         readonly spark: string;

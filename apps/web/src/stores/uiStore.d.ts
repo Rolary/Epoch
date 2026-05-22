@@ -1,4 +1,4 @@
-export type Page = "create-ecology" | "home" | "evolution" | "codex" | "codex-detail" | "fossils" | "logs" | "settings" | "error";
+export type Page = "create-ecology" | "home" | "evolution" | "codex" | "codex-detail" | "talents" | "fossils" | "logs" | "settings" | "error";
 export type ModalType = "species-discovery" | "talent-awakening" | "offline-return" | "ecology-event" | "system-unlock" | null;
 export type SheetType = "strategy" | "environment" | null;
 export interface UIStore {

@@ -227,6 +227,7 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 /* === Talent Cards === */
 .talent-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 .talent-cards.compact { gap: 8px; }
+.talent-cards.archive { gap: 10px; }
 .talent-card {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.08);
@@ -242,6 +243,8 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .talent-card.selected {
   transform: translateY(-3px);
 }
+.talent-card-owned { cursor: default; }
+.talent-card-owned:hover { transform: none; }
 .talent-card.selected {
   box-shadow: 0 0 28px rgba(79,195,247,0.42), inset 0 0 24px rgba(79,195,247,0.08);
 }
@@ -430,6 +433,15 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .talent-summary { font-size: 12px; color: #66BB6A; }
 .talent-desc { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.5; }
 .talent-trait { font-size: 11px; color: #FFD54F; background: rgba(255,213,79,0.08); border-radius: 6px; padding: 4px 8px; line-height: 1.5; border-left: 2px solid rgba(255,213,79,0.3); }
+.talent-card-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.talent-card-meta { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.talent-rarity-pill,
+.talent-owned-badge { width: fit-content; border-radius: 999px; padding: 3px 8px; font-size: 10px; font-weight: 900; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); }
+.talent-rarity-pill.rarity-common { color: rgba(255,255,255,0.68); background: rgba(255,255,255,0.06); }
+.talent-rarity-pill.rarity-rare { color: #4FC3F7; background: rgba(79,195,247,0.1); border-color: rgba(79,195,247,0.26); }
+.talent-rarity-pill.rarity-legendary { color: #D681E8; background: rgba(186,104,200,0.1); border-color: rgba(186,104,200,0.26); }
+.talent-rarity-pill.rarity-epic { color: #FFD54F; background: rgba(255,213,79,0.1); border-color: rgba(255,213,79,0.28); }
+.talent-owned-badge { align-self: start; color: rgba(102,187,106,0.92); background: rgba(102,187,106,0.1); border-color: rgba(102,187,106,0.28); }
 
 /* === Buttons === */
 .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #4FC3F7 0%, #29B6F6 100%); border: none; border-radius: 14px; color: #0D0D1A; font-weight: 700; font-size: 16px; cursor: pointer; font-family: inherit; box-shadow: 0 0 20px rgba(79,195,247,0.25); transition: all 0.2s ease; }
@@ -974,11 +986,23 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .archive-copy-btn { flex: 0 0 auto; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(79,195,247,0.24); background: rgba(79,195,247,0.07); color: rgba(79,195,247,0.82); font-family: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
 .archive-copy-btn:hover,
 .archive-copy-btn.active { border-color: rgba(245,208,120,0.42); background: rgba(245,208,120,0.1); color: #F5D078; }
+.archive-link-card { width: 100%; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; border: 1px solid rgba(79,195,247,0.18); background: rgba(255,255,255,0.045); color: #fff; text-align: left; font-family: inherit; cursor: pointer; transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease; }
+.archive-link-card:hover { transform: translateY(-1px); border-color: rgba(79,195,247,0.38); background: rgba(79,195,247,0.07); }
+.archive-link-icon { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(219,172,78,0.32); }
+.archive-link-copy { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.archive-link-title { color: rgba(255,255,255,0.88); font-size: 14px; font-weight: 900; }
+.archive-link-desc { color: rgba(255,255,255,0.46); font-size: 11px; line-height: 1.45; }
+.archive-link-count { min-width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(245,208,120,0.12); border: 1px solid rgba(245,208,120,0.32); color: #F5D078; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
 .danger-zone { margin-top: 18px; padding: 12px; border-radius: 12px; background: rgba(239,83,80,0.06); border: 1px solid rgba(239,83,80,0.18); display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .danger-title { color: rgba(239,83,80,0.86); margin-bottom: 0; }
+.talent-archive-section { margin-bottom: 14px; }
+.talent-progress-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 
 @media (max-width: 380px) {
   .archive-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .talent-progress-grid { grid-template-columns: 1fr; }
+  .talent-card-head { grid-template-columns: 44px minmax(0, 1fr); }
+  .talent-owned-badge { grid-column: 1 / -1; }
   .memory-card { grid-template-columns: 42px minmax(0, 1fr); gap: 9px; }
   .memory-timeline::before { left: 31px; }
 }

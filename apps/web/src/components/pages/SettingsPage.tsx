@@ -114,6 +114,18 @@ export function SettingsPage() {
       </section>
 
       <section className="archive-section">
+        <h3 className="archive-section-title">源质印记</h3>
+        <button className="archive-link-card" type="button" onClick={() => setPage("talents")}>
+          <img className="archive-link-icon" src={uiAssets.talents.typeCrystal} alt="" aria-hidden="true" />
+          <span className="archive-link-copy">
+            <span className="archive-link-title">查看已拥有印记</span>
+            <span className="archive-link-desc">只显示已经融入或已经回响过的源质印记。</span>
+          </span>
+          <span className="archive-link-count">{(save.talents?.length ?? 0) + new Set(save.consumedTalents ?? []).size}</span>
+        </button>
+      </section>
+
+      <section className="archive-section">
         <h3 className="archive-section-title">当前状态</h3>
         <div className="archive-state-grid">
           <ArchiveMetric label="生命成形" value={`${lifeProgress}%`} />
