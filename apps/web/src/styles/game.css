@@ -217,6 +217,12 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .eco-input { width: 100%; padding: 12px 50px 12px 16px; background: rgba(26,26,46,0.8); border: 1px solid rgba(79,195,247,0.3); border-radius: 12px; color: #fff; font-size: 16px; font-family: inherit; outline: none; transition: border 0.2s; }
 .eco-input:focus { border-color: #4FC3F7; box-shadow: 0 0 12px rgba(79,195,247,0.15); }
 .input-count { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 11px; color: rgba(255,255,255,0.35); }
+.restore-panel { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+.restore-toggle { align-self: center; background: none; border: none; color: rgba(245,208,120,0.78); font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; padding: 4px 8px; }
+.restore-toggle:hover { color: #F5D078; text-shadow: 0 0 10px rgba(245,208,120,0.24); }
+.restore-form { display: flex; flex-direction: column; gap: 9px; padding: 10px; border-radius: 12px; background: rgba(8,16,24,0.58); border: 1px solid rgba(245,208,120,0.16); }
+.restore-input { padding-right: 16px; font-family: Consolas, "Courier New", monospace; font-size: 13px; }
+.restore-button { width: 100%; }
 
 /* === Talent Cards === */
 .talent-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; }
@@ -964,6 +970,10 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .archive-label { color: rgba(255,255,255,0.48); font-size: 12px; }
 .archive-value { min-width: 0; color: rgba(255,255,255,0.82); font-size: 12px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .archive-value.mono { font-family: Consolas, "Courier New", monospace; color: rgba(255,255,255,0.5); font-size: 11px; }
+.archive-value-group { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: 1; }
+.archive-copy-btn { flex: 0 0 auto; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(79,195,247,0.24); background: rgba(79,195,247,0.07); color: rgba(79,195,247,0.82); font-family: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
+.archive-copy-btn:hover,
+.archive-copy-btn.active { border-color: rgba(245,208,120,0.42); background: rgba(245,208,120,0.1); color: #F5D078; }
 .danger-zone { margin-top: 18px; padding: 12px; border-radius: 12px; background: rgba(239,83,80,0.06); border: 1px solid rgba(239,83,80,0.18); display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .danger-title { color: rgba(239,83,80,0.86); margin-bottom: 0; }
 

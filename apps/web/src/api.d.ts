@@ -6,6 +6,8 @@ export declare function clearLocalStorage(): void;
 export declare function authGuest(): Promise<string>;
 export declare function ensureGuest(): Promise<string>;
 export declare function createSave(name: string, talentId?: string): Promise<import("@eco-era/shared").GameState>;
+export declare function listSaves(guestKeyOverride?: string): Promise<import("@eco-era/shared").GameState[]>;
+export declare function restoreGuestKey(key: string): Promise<import("@eco-era/shared").GameState>;
 export declare function getSave(saveId: string): Promise<import("@eco-era/shared").GameState>;
 export declare function tickSave(saveId: string): Promise<import("@eco-era/shared").GameState>;
 export declare function applyAction(saveId: string, action: string): Promise<import("@eco-era/shared").GameState>;

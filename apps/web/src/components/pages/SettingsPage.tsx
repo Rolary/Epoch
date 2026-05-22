@@ -1,6 +1,7 @@
 import { evolutionNodes } from "@eco-era/game-core";
 import type { GameState, ResourceKey } from "@eco-era/shared";
-import { useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { clearLocalStorage, getGuestKey, getSaveId } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
@@ -38,6 +39,30 @@ export function SettingsPage() {
   const setError = useGameStore((s) => s.setError);
   const setPage = useUIStore((s) => s.setPage);
   const [confirming, setConfirming] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "manual">("idle");
+
+  useEffect(() => {
+    if (copyStatus === "idle") return;
+    const timer = window.setTimeout(() => setCopyStatus("idle"), 1800);
+    return () => window.clearTimeout(timer);
+  }, [copyStatus]);
+
+  const copyGuestKey = async () => {
+    const key = getGuestKey();
+    if (!key) {
+      setCopyStatus("manual");
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(key);
+      setCopyStatus("copied");
+    } catch {
+      window.prompt("复制这段游客印记，用它可以恢复生态档案。", key);
+      setCopyStatus("manual");
+    }
+  };
 
   if (!save) {
     return (
@@ -47,7 +72,7 @@ export function SettingsPage() {
         <section className="archive-section">
           <h3 className="archive-section-title">存档信息</h3>
           <div className="archive-list">
-            <ArchiveRow label="游客印记" value={getGuestKey()} mono />
+            <ArchiveRow label="游客印记" value={getGuestKey()} mono action={<CopyKeyButton status={copyStatus} onCopy={copyGuestKey} />} />
             <ArchiveRow label="当前状态" value="尚未创建潮池" />
           </div>
         </section>
@@ -112,7 +137,7 @@ export function SettingsPage() {
       <section className="archive-section">
         <h3 className="archive-section-title">存档信息</h3>
         <div className="archive-list">
-          <ArchiveRow label="游客印记" value={getGuestKey()} mono />
+          <ArchiveRow label="游客印记" value={getGuestKey()} mono action={<CopyKeyButton status={copyStatus} onCopy={copyGuestKey} />} />
           <ArchiveRow label="存档 ID" value={getSaveId().slice(0, 16)} mono />
           <ArchiveRow label="最近记录" value={formatDateTime(save.updatedAt)} />
         </div>
@@ -196,12 +221,34 @@ function historyTagCopy(tag: string): string {
   return map[tag] ?? "这类变化正在写入潮池性格。";
 }
 
-function ArchiveRow({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+function ArchiveRow({
+  label,
+  value,
+  mono = false,
+  action,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  action?: ReactNode;
+}) {
   return (
     <div className="archive-row">
       <span className="archive-label">{label}</span>
-      <span className={`archive-value ${mono ? "mono" : ""}`}>{value}</span>
+      <span className="archive-value-group">
+        <span className={`archive-value ${mono ? "mono" : ""}`}>{value || "尚未生成"}</span>
+        {action}
+      </span>
     </div>
+  );
+}
+
+function CopyKeyButton({ status, onCopy }: { status: "idle" | "copied" | "manual"; onCopy: () => void }) {
+  const label = status === "copied" ? "已复制" : status === "manual" ? "请手动复制" : "复制";
+  return (
+    <button className={`archive-copy-btn ${status !== "idle" ? "active" : ""}`} type="button" onClick={onCopy}>
+      {label}
+    </button>
   );
 }
 

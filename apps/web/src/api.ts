@@ -76,6 +76,29 @@ export async function createSave(name: string, talentId?: string) {
   return data.save;
 }
 
+export async function listSaves(guestKeyOverride?: string) {
+  const headers = guestKeyOverride ? { "x-guest-key": guestKeyOverride } : undefined;
+  const data = await fetchJson<{ saves: import("@eco-era/shared").GameState[] }>("/saves", { headers });
+  return data.saves;
+}
+
+export async function restoreGuestKey(key: string) {
+  const restoredKey = key.trim();
+  if (!restoredKey) {
+    throw new Error("请输入旧游客印记");
+  }
+
+  const saves = await listSaves(restoredKey);
+  const save = saves[0];
+  if (!save) {
+    throw new Error("没有找到这个印记下的生态档案");
+  }
+
+  setGuestKey(restoredKey);
+  setSaveId(save.id);
+  return save;
+}
+
 export async function getSave(saveId: string) {
   const data = await fetchJson<{ save: import("@eco-era/shared").GameState }>(
     `/saves/${saveId}`,

@@ -1,6 +1,6 @@
 import type { Talent } from "@eco-era/shared";
 import { useState } from "react";
-import { createSave, ensureGuest, getTalentChoices } from "../../api.js";
+import { createSave, ensureGuest, getTalentChoices, restoreGuestKey } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
@@ -21,6 +21,8 @@ export function CreateEcology() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"name" | "talent">("name");
   const [rollCount, setRollCount] = useState(0);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreKey, setRestoreKey] = useState("");
   const MAX_ROLLS = 30;
   const setSave = useGameStore((s) => s.setSave);
   const setSaveId = useGameStore((s) => s.setSaveId);
@@ -58,6 +60,27 @@ export function CreateEcology() {
       setPage("home");
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!restoreKey.trim()) {
+      setError("请输入旧游客印记");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const save = await restoreGuestKey(restoreKey);
+      setSave(save);
+      setSaveId(save.id);
+      hydrateScopedUIState();
+      setGuestReady(true);
+      setPage("home");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "恢复失败");
     } finally {
       setLoading(false);
     }
@@ -105,6 +128,38 @@ export function CreateEcology() {
           <button className="btn-primary" onClick={handleNameSubmit} disabled={!name.trim() || loading}>
             {loading ? "连接中..." : "确认名称"}
           </button>
+          <div className="restore-panel">
+            <button
+              className="restore-toggle"
+              type="button"
+              onClick={() => {
+                setRestoreOpen((open) => !open);
+                setError(null);
+              }}
+            >
+              {restoreOpen ? "收起旧印记" : "用旧印记恢复"}
+            </button>
+            {restoreOpen && (
+              <div className="restore-form">
+                <input
+                  className="eco-input restore-input"
+                  type="text"
+                  value={restoreKey}
+                  onChange={(e) => setRestoreKey(e.target.value)}
+                  placeholder="粘贴游客印记 guest_..."
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  spellCheck={false}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRestore();
+                  }}
+                />
+                <button className="btn-secondary restore-button" type="button" onClick={handleRestore} disabled={loading}>
+                  {loading ? "寻找中..." : "恢复最近档案"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
