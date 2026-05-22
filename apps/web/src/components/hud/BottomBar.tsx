@@ -39,6 +39,10 @@ export function BottomBar() {
   const setPage = useUIStore((s) => s.setPage);
   const page = useUIStore((s) => s.page);
   const showSheet = useUIStore((s) => s.showSheet);
+  const seenUnlockHints = useUIStore((s) => s.seenUnlockHints);
+  const markUnlockHintSeen = useUIStore((s) => s.markUnlockHintSeen);
+  const unlockGuideTarget = useUIStore((s) => s.unlockGuideTarget);
+  const setUnlockGuideTarget = useUIStore((s) => s.setUnlockGuideTarget);
   const save = useGameStore((s) => s.save);
   const isCreate = page === "create-ecology";
 
@@ -50,21 +54,39 @@ export function BottomBar() {
   return (
     <div className="bottom-bar">
       <div className="nav-icons">
-        {NAV_ITEMS.filter((item) => isNavUnlocked(item.id)).map((item) => (
-          <button
-            key={item.id}
-            className={`nav-btn ${page === item.id ? "active" : ""} ${
-              item.id === "evolution" && evolutionAlert ? "glow-alert" : ""
-            }`}
-            onClick={() => setPage(item.id)}
-          >
-            <img className="nav-icon" src={item.asset} alt="" aria-hidden="true" />
-            <span className="nav-label">{item.label}</span>
-          </button>
-        ))}
+        {NAV_ITEMS.filter((item) => isNavUnlocked(item.id)).map((item) => {
+          const isNew = item.id !== "home" && item.id !== "settings" && !seenUnlockHints.includes(item.id);
+          const isGuideTarget = unlockGuideTarget === item.id;
+          return (
+            <button
+              key={item.id}
+              className={`nav-btn ${page === item.id ? "active" : ""} ${
+                item.id === "evolution" && evolutionAlert ? "glow-alert" : ""
+              } ${isNew ? "new-unlock" : ""} ${isGuideTarget ? "unlock-guide-target" : ""}`}
+              onClick={() => {
+                markUnlockHintSeen(item.id);
+                if (isGuideTarget) setUnlockGuideTarget(null);
+                setPage(item.id);
+              }}
+            >
+              <img className="nav-icon" src={item.asset} alt="" aria-hidden="true" />
+              <span className="nav-label">{item.label}</span>
+            </button>
+          );
+        })}
       </div>
       {canStrategize && (
-        <button className="strategy-fab" data-tooltip="生态干预" onClick={() => showSheet("strategy")}>
+        <button
+          className={`strategy-fab ${seenUnlockHints.includes("strategy") ? "" : "new-unlock guide-pulse"} ${
+            unlockGuideTarget === "strategy" ? "unlock-guide-target" : ""
+          }`}
+          data-tooltip="生态干预"
+          onClick={() => {
+            markUnlockHintSeen("strategy");
+            if (unlockGuideTarget === "strategy") setUnlockGuideTarget(null);
+            showSheet("strategy");
+          }}
+        >
           <img className="fab-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
         </button>
       )}

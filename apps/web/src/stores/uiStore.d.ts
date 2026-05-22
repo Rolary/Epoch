@@ -12,6 +12,8 @@ export interface UIStore {
     speciesDetailId: string | null;
     pendingTalentModal: boolean;
     strategyCooldownUntil: number;
+    seenUnlockHints: string[];
+    unlockGuideTarget: string | null;
     setPage: (page: Page) => void;
     showModal: (type: NonNullable<ModalType>, data?: Record<string, unknown>) => void;
     hideModal: () => void;
@@ -23,6 +25,9 @@ export interface UIStore {
     setSpeciesDetailId: (id: string | null) => void;
     setPendingTalentModal: (pending: boolean) => void;
     setStrategyCooldown: (seconds: number) => void;
+    markUnlockHintSeen: (id: string) => void;
+    setUnlockGuideTarget: (id: string | null) => void;
+    hydrateScopedUIState: () => void;
 }
 export declare const useUIStore: import("zustand").UseBoundStore<import("zustand").StoreApi<UIStore>>;
 //# sourceMappingURL=uiStore.d.ts.map

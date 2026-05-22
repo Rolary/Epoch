@@ -60,14 +60,20 @@ export function EvolutionPage() {
       <div className="evolution-path">
         {pathBlocks.map((block, idx) => {
           if (block.type === "branch") {
-            const groupUnlocked = block.nodes.some((node) => currentSave.unlockedNodes.includes(node.id));
+            const selectedBranch = block.nodes.find((node) => currentSave.unlockedNodes.includes(node.id));
+            const groupUnlocked = Boolean(selectedBranch);
             const groupAvailable = block.nodes.some((node) => canUnlockEvolutionNode(currentSave, node.id));
             return (
               <div key={block.id} className={`evolution-branch-block ${groupUnlocked ? "unlocked" : groupAvailable ? "available" : "locked"}`}>
                 {idx > 0 && <div className={`node-connector branch-entry ${groupUnlocked || groupAvailable ? "active" : ""}`} />}
                 <div className="branch-fork-cap">
-                  <span className="branch-fork-title">复制开始分叉</span>
-                  <span className="branch-fork-desc">只能留下一个主倾向，后续生命会沿着它分化。</span>
+                  <span className="branch-fork-label">分支选择</span>
+                  <span className="branch-fork-title">
+                    {selectedBranch ? `已选择：${selectedBranch.name}` : "复制开始分叉"}
+                  </span>
+                  <span className="branch-fork-desc">
+                    {selectedBranch ? "其他复制倾向已沉入旁路，主线继续向第一种生命成形推进。" : "只能留下一个主倾向，后续生命会沿着它分化。"}
+                  </span>
                 </div>
                 <div className="branch-fork-lines" aria-hidden="true" />
                 <div className="branch-node-grid">
@@ -90,10 +96,12 @@ export function EvolutionPage() {
   function renderNode(node: EvolutionNode, branchNode: boolean) {
     const unlocked = currentSave.unlockedNodes.includes(node.id);
     const canUnlock = canUnlockEvolutionNode(currentSave, node.id);
+    const branchBlocked = isBranchBlocked(node, currentSave.unlockedNodes);
     const copy = nodeCopyFor(node.id, node.name, node.description);
     let stateClass = "locked";
     if (unlocked) stateClass = "unlocked";
     else if (canUnlock) stateClass = "available";
+    else if (branchBlocked) stateClass = "blocked";
 
     return (
       <button
@@ -104,7 +112,7 @@ export function EvolutionPage() {
       >
         <div className={`node-circle ${stateClass}`}>
           <img className="node-icon-img" src={iconFor(node.id)} alt="" aria-hidden="true" />
-          <span className="node-state-mark">{unlocked ? "OK" : canUnlock ? "!" : ""}</span>
+          <span className="node-state-mark">{unlocked ? (branchNode ? "已选" : "已亮") : canUnlock ? "可" : branchBlocked ? "旁路" : ""}</span>
         </div>
         <div className="node-info">
           <span className="node-name">{copy.title}</span>
@@ -120,11 +128,17 @@ export function EvolutionPage() {
           )}
           {canUnlock && <span className="node-action">{actionFor(node.id)}</span>}
           {unlocked && <span className="node-action confirmed">已留下痕迹</span>}
-          {!unlocked && !canUnlock && <span className="node-action waiting">继续积累材料</span>}
+          {branchBlocked && <span className="node-action blocked">分支已锁定</span>}
+          {!unlocked && !canUnlock && !branchBlocked && <span className="node-action waiting">继续积累材料</span>}
         </div>
       </button>
     );
   }
+}
+
+function isBranchBlocked(node: EvolutionNode, unlocked: string[]) {
+  if (!node.branchGroupId || unlocked.includes(node.id)) return false;
+  return evolutionNodes.some((item) => item.branchGroupId === node.branchGroupId && unlocked.includes(item.id));
 }
 
 type PathBlock =

@@ -23,9 +23,13 @@ export function setSaveId(id: string): void {
 }
 
 export function clearLocalStorage(): void {
+  guestKey = "";
   localStorage.removeItem("eco-era-guest-key");
   localStorage.removeItem("eco-era-save-id");
   localStorage.removeItem("eco-era-guide-done");
+  localStorage.removeItem("eco-era-seen-unlock-hints");
+  localStorage.removeItem("eco-era-objective-details-open");
+  localStorage.removeItem("eco-era-objective-minimized");
 }
 
 async function fetchJson<T>(

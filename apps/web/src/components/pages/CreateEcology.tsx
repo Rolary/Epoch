@@ -26,6 +26,7 @@ export function CreateEcology() {
   const setSaveId = useGameStore((s) => s.setSaveId);
   const setGuestReady = useGameStore((s) => s.setGuestReady);
   const setPage = useUIStore((s) => s.setPage);
+  const hydrateScopedUIState = useUIStore((s) => s.hydrateScopedUIState);
 
   const handleNameSubmit = async () => {
     if (!name.trim() || name.trim().length > 16) return;
@@ -52,6 +53,7 @@ export function CreateEcology() {
       const save = await createSave(name.trim(), selectedTalent);
       setSave(save);
       setSaveId(save.id);
+      hydrateScopedUIState();
       setGuestReady(true);
       setPage("home");
     } catch (e) {

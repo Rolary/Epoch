@@ -3,10 +3,11 @@ import type { ResourceKey } from "@eco-era/shared";
 import { useEffect, useState } from "react";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
+import { getGuestKey, getSaveId } from "../../api.js";
 
-const DETAILS_STORAGE_KEY = "eco-era-objective-details-open";
-const MINIMIZED_STORAGE_KEY = "eco-era-objective-minimized";
-const AUTO_MINIMIZE_DELAY = 4200;
+const DETAILS_STORAGE_NAME = "objective-details-open";
+const AUTO_MINIMIZE_DELAY = 5400;
+const objectiveAutoShownScopes = new Set<string>();
 
 const RES_LABELS: Record<string, { asset: string; label: string }> = {
   organic: { asset: uiAssets.resources.organic, label: "有机质" },
@@ -31,30 +32,34 @@ const LIFE_HISTORY_CHAPTERS = [
 
 export function CurrentObjective() {
   const save = useGameStore((s) => s.save);
-  const [detailsOpen, setDetailsOpen] = useState(() => localStorage.getItem(DETAILS_STORAGE_KEY) === "1");
-  const [minimized, setMinimized] = useState(() => localStorage.getItem(MINIMIZED_STORAGE_KEY) === "1");
+  const objectiveScope = getObjectiveScope();
+  const [detailsOpen, setDetailsOpen] = useState(() => localStorage.getItem(scopedObjectiveKey(DETAILS_STORAGE_NAME)) === "1");
+  const [minimized, setMinimized] = useState(() => objectiveAutoShownScopes.has(getObjectiveScope()));
+
+  useEffect(() => {
+    setDetailsOpen(localStorage.getItem(scopedObjectiveKey(DETAILS_STORAGE_NAME)) === "1");
+    setMinimized(objectiveAutoShownScopes.has(objectiveScope));
+  }, [objectiveScope]);
 
   useEffect(() => {
     if (minimized) return;
-    if (localStorage.getItem(MINIMIZED_STORAGE_KEY) === "1") return;
+    if (objectiveAutoShownScopes.has(objectiveScope)) return;
     const timer = window.setTimeout(() => {
-      localStorage.setItem(MINIMIZED_STORAGE_KEY, "1");
+      objectiveAutoShownScopes.add(objectiveScope);
       setMinimized(true);
     }, AUTO_MINIMIZE_DELAY);
     return () => window.clearTimeout(timer);
-  }, [minimized]);
+  }, [minimized, objectiveScope]);
 
   const minimizeObjective = () => {
-    localStorage.setItem(MINIMIZED_STORAGE_KEY, "1");
+    objectiveAutoShownScopes.add(objectiveScope);
     setMinimized(true);
   };
 
   if (!save) return null;
 
   const unlocked = save.unlockedNodes;
-  const nextNode = evolutionNodes.find(
-    (node) => !unlocked.includes(node.id) && node.requires.every((required) => unlocked.includes(required)),
-  );
+  const nextNode = evolutionNodes.find((node) => isReachableNextNode(node, unlocked));
 
   const objective = getObjective(save, nextNode);
   const percent = Math.min(100, Math.round((objective.progress / Math.max(1, objective.target)) * 100));
@@ -63,7 +68,7 @@ export function CurrentObjective() {
   const toggleDetails = () => {
     setDetailsOpen((open) => {
       const next = !open;
-      localStorage.setItem(DETAILS_STORAGE_KEY, next ? "1" : "0");
+      localStorage.setItem(scopedObjectiveKey(DETAILS_STORAGE_NAME), next ? "1" : "0");
       return next;
     });
   };
@@ -147,8 +152,8 @@ export function CurrentObjective() {
                   </span>
                 ))}
               </div>
-              <div className="life-history-arc" aria-label="这颗星球的生命史">
-                <span className="life-history-title">这颗星球的生命史</span>
+              <div className="life-history-arc" aria-label="远景时间轴">
+                <span className="life-history-title">远景时间轴</span>
                 <div className="life-history-chapters">
                   {LIFE_HISTORY_CHAPTERS.map((chapter, index) => (
                     <span key={chapter} className={`life-history-chapter ${index === 0 ? "current" : "future"}`}>
@@ -283,4 +288,22 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     term: fallbackName,
     progressLabel: "阶段进度",
   };
+}
+
+function isReachableNextNode(node: typeof evolutionNodes[number], unlocked: string[]) {
+  if (unlocked.includes(node.id)) return false;
+  if (!node.requires.every((required) => unlocked.includes(required))) return false;
+  if (!node.branchGroupId) return true;
+  return !evolutionNodes.some(
+    (item) => item.branchGroupId === node.branchGroupId && unlocked.includes(item.id),
+  );
+}
+
+function scopedObjectiveKey(name: string): string {
+  return `eco-era:${getObjectiveScope()}:${name}`;
+}
+
+function getObjectiveScope(): string {
+  const scope = getSaveId() || getGuestKey() || "anonymous";
+  return scope;
 }

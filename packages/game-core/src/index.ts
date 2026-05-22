@@ -34,7 +34,7 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "replication_fidelity",
     name: "高保真复制",
     description: "复制链更少出错，潮池更容易稳定延续，但突变机会减少。",
-    cost: { organic: 40, stability: 18 },
+    cost: { organic: 42, energy: 24, minerals: 16 },
     requires: ["replicating_chain"],
     branchGroupId: "replication_strategy",
     branchHint: "复制路线只能留下一个主倾向。"
@@ -43,7 +43,7 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "error_retention",
     name: "错误保留",
     description: "一部分复制错误被保留下来，带来更多可能，也让潮池更不安定。",
-    cost: { energy: 42, mutation: 14 },
+    cost: { organic: 42, energy: 24, minerals: 16 },
     requires: ["replicating_chain"],
     branchGroupId: "replication_strategy",
     branchHint: "复制路线只能留下一个主倾向。"
@@ -59,7 +59,7 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "fragment_budding",
     name: "断裂繁殖",
     description: "链体断裂后仍能延续，旁支谱系更容易出现。",
-    cost: { organic: 48, minerals: 16 },
+    cost: { organic: 42, energy: 24, minerals: 16 },
     requires: ["replicating_chain"],
     branchGroupId: "replication_strategy",
     branchHint: "复制路线只能留下一个主倾向。"
@@ -551,9 +551,7 @@ export function advanceState(input: GameState, now = new Date()): GameState {
     }
   }
 
-  if (!next.pendingEcologyEvent) {
-    next.pendingEcologyEvent = rollEcologyEvent(next);
-  }
+  maybeAssignEcologyEvent(next);
 
   return next;
 }
@@ -569,9 +567,9 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
     next.resources.minerals = clamp(next.resources.minerals + 0.4, 0, 999999);
     next.resources.stability = clamp(next.resources.stability + 0.25 + next.environment.mineralFlow * 0.08, 0, 100);
     next.resources.mutation = clamp(next.resources.mutation + next.environment.volatility * 0.2, 0, 999999);
-    next.logs.unshift(createLog("event", catalyzeMessage(next)));
+    addLog(next, "event", catalyzeMessage(next));
     if (wasQuiet) {
-      next.logs.unshift(createLog("event", "这些微小变化还称不上生命，却会成为后来一切的底色。"));
+      addLog(next, "event", "这些微小变化还称不上生命，却会成为后来一切的底色。");
     }
   }
 
@@ -604,9 +602,7 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
   }
 
   next.planetProfile = calculatePlanetProfile(next);
-  if (!next.pendingEcologyEvent) {
-    next.pendingEcologyEvent = rollEcologyEvent(next);
-  }
+  maybeAssignEcologyEvent(next);
   next.updatedAt = now;
   return next;
 }
@@ -650,9 +646,7 @@ export function unlockEvolutionNode(input: GameState, nodeId: string): GameState
     next.logs.unshift(createLog("event", `复制链留下了「${node.name}」倾向，后来的生命会沿着这道痕迹分化。`));
   }
   next.planetProfile = calculatePlanetProfile(next);
-  if (!next.pendingEcologyEvent) {
-    next.pendingEcologyEvent = rollEcologyEvent(next);
-  }
+  maybeAssignEcologyEvent(next);
   next.updatedAt = new Date().toISOString();
   return next;
 }
@@ -673,7 +667,10 @@ export function availableEcologyEvents(state: GameState): EcologyEvent[] {
 
 export function rollEcologyEvent(state: GameState): EcologyEvent | null {
   if ((state.pendingTalentChoices ?? []).length > 0) return null;
-  if (state.unlockedNodes.length === 0 && state.resources.organic < 18) return null;
+  if (state.unlockedNodes.length === 0) return null;
+  if (state.logs.slice(0, 6).some((log) => log.message.includes("潮池事件出现"))) return null;
+  const eventChance = state.species.length > 0 ? 0.28 : 0.16;
+  if (Math.random() > eventChance) return null;
   const events = availableEcologyEvents(state);
   if (events.length === 0) return null;
   const talentIds = new Set((state.talents ?? []).map((talent) => talent.id));
@@ -893,6 +890,19 @@ export function createLog(type: EvolutionLog["type"], message: string): Evolutio
     message,
     createdAt: new Date().toISOString()
   };
+}
+
+function addLog(state: GameState, type: EvolutionLog["type"], message: string) {
+  if (state.logs[0]?.type === type && state.logs[0]?.message === message) return;
+  state.logs.unshift(createLog(type, message));
+}
+
+function maybeAssignEcologyEvent(state: GameState) {
+  if (state.pendingEcologyEvent) return;
+  const event = rollEcologyEvent(state);
+  if (!event) return;
+  state.pendingEcologyEvent = event;
+  addLog(state, "system", `潮池事件出现：${event.title}`);
 }
 
 function shouldCreateSpecies(state: GameState) {

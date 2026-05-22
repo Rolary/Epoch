@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { getGuestKey, getSaveId } from "../api.js";
 
 export type Page =
   | "create-ecology"
@@ -34,6 +35,8 @@ export interface UIStore {
   speciesDetailId: string | null;
   pendingTalentModal: boolean;
   strategyCooldownUntil: number;
+  seenUnlockHints: string[];
+  unlockGuideTarget: string | null;
 
   setPage: (page: Page) => void;
   showModal: (type: NonNullable<ModalType>, data?: Record<string, unknown>) => void;
@@ -46,6 +49,29 @@ export interface UIStore {
   setSpeciesDetailId: (id: string | null) => void;
   setPendingTalentModal: (pending: boolean) => void;
   setStrategyCooldown: (seconds: number) => void;
+  markUnlockHintSeen: (id: string) => void;
+  setUnlockGuideTarget: (id: string | null) => void;
+  hydrateScopedUIState: () => void;
+}
+
+function getPlayerStorageScope(): string {
+  return getSaveId() || getGuestKey() || "anonymous";
+}
+
+function scopedStorageKey(name: string): string {
+  return `eco-era:${getPlayerStorageScope()}:${name}`;
+}
+
+function readScopedSeenUnlockHints(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(scopedStorageKey("seen-unlock-hints")) ?? "[]") as string[];
+  } catch {
+    return [];
+  }
+}
+
+function readScopedGuideState(): boolean {
+  return localStorage.getItem(scopedStorageKey("guide-done")) !== "1";
 }
 
 export const useUIStore = create<UIStore>((set, get) => ({
@@ -55,12 +81,14 @@ export const useUIStore = create<UIStore>((set, get) => ({
   modalData: {},
   sheetData: {},
 
-  guide: !localStorage.getItem("eco-era-guide-done"),
+  guide: readScopedGuideState(),
   guideStep: 0,
 
   speciesDetailId: null,
   pendingTalentModal: false,
   strategyCooldownUntil: 0,
+  seenUnlockHints: readScopedSeenUnlockHints(),
+  unlockGuideTarget: null,
 
   setPage: (page) => set({ page, modalType: null, sheetType: null }),
 
@@ -72,7 +100,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   setGuide: (show) => {
     set({ guide: show });
-    if (!show) localStorage.setItem("eco-era-guide-done", "1");
+    if (!show) localStorage.setItem(scopedStorageKey("guide-done"), "1");
   },
 
   setGuideStep: (step) => set({ guideStep: step }),
@@ -85,4 +113,22 @@ export const useUIStore = create<UIStore>((set, get) => ({
   setSpeciesDetailId: (id) => set({ speciesDetailId: id }),
   setPendingTalentModal: (pending) => set({ pendingTalentModal: pending }),
   setStrategyCooldown: (seconds) => set({ strategyCooldownUntil: Date.now() + seconds * 1000 }),
+  markUnlockHintSeen: (id) =>
+    set((state) => {
+      const seenUnlockHints = Array.from(new Set([...state.seenUnlockHints, id]));
+      localStorage.setItem(scopedStorageKey("seen-unlock-hints"), JSON.stringify(seenUnlockHints));
+      return { seenUnlockHints };
+    }),
+  setUnlockGuideTarget: (id) => set({ unlockGuideTarget: id }),
+  hydrateScopedUIState: () =>
+    set({
+      guide: readScopedGuideState(),
+      guideStep: 0,
+      seenUnlockHints: readScopedSeenUnlockHints(),
+      unlockGuideTarget: null,
+      modalType: null,
+      modalData: {},
+      sheetType: null,
+      sheetData: {},
+    }),
 }));
