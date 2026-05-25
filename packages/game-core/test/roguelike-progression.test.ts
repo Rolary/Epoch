@@ -4,9 +4,11 @@ import {
   applyEcologyEventChoice,
   advanceState,
   availableEcologyEvents,
+  calculateEcologyScore,
   calculateResourceDelta,
   canUnlockEvolutionNode,
   createInitialState,
+  talentCatalog,
   unlockEvolutionNode
 } from "../src/index.js";
 
@@ -102,6 +104,62 @@ describe("roguelike life-history progression", () => {
 
     expect(next.legacies[0].numericEffects).toMatchObject({ energy: 0.02, mutation: 0.01 });
     expect(next.legacies[0].tradeoffEffects).toMatchObject({ stability: -0.005 });
+  });
+
+  it("scores ecology progress above passive resource hoards", () => {
+    const base = createInitialState("score-base");
+    const hoard = {
+      ...base,
+      resources: { organic: 999999, energy: 999999, minerals: 999999, stability: 100, mutation: 999999, biomass: 999999 }
+    };
+    const progressed = {
+      ...base,
+      currentEra: "proto_cell" as const,
+      resources: { organic: 120, energy: 80, minerals: 60, stability: 82, mutation: 30, biomass: 45 },
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell"],
+      species: [
+        speciesRecord("sp-producer", "蓝膜浮群", "producer", { energy: 0.09, organic: 0.03 }),
+        speciesRecord("sp-filterer", "潮筛微囊", "filterer", { biomass: 0.04, stability: 0.02 })
+      ],
+      talents: [{ ...talentCatalog[0], id: "score-talent" }],
+      legacies: [
+        {
+          id: "legacy-score",
+          sourceSpeciesId: "sp-producer",
+          name: "蓝膜浮群遗痕",
+          type: "ancestor" as const,
+          description: "",
+          effect: "",
+          numericEffects: { energy: 0.03 },
+          createdAt: "2026-05-21T00:00:00.000Z"
+        }
+      ]
+    };
+
+    expect(calculateEcologyScore(progressed)).toBeGreaterThan(calculateEcologyScore(hoard));
+  });
+
+  it("adds score for species, legacies and talents", () => {
+    const base = createInitialState("score-growth");
+    const richer = {
+      ...base,
+      species: [speciesRecord("sp-catalyst", "晶面催化群", "catalyst", { energy: 0.04, mutation: 0.02 })],
+      legacies: [
+        {
+          id: "legacy-catalyst",
+          sourceSpeciesId: "sp-catalyst",
+          name: "晶面催化群遗痕",
+          type: "fossil" as const,
+          description: "",
+          effect: "",
+          numericEffects: { mutation: 0.01 },
+          createdAt: "2026-05-21T00:00:00.000Z"
+        }
+      ],
+      talents: [{ ...talentCatalog[0], id: "score-talent" }]
+    };
+
+    expect(calculateEcologyScore(richer)).toBeGreaterThan(calculateEcologyScore(base));
   });
 });
 

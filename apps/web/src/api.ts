@@ -106,6 +106,14 @@ export async function getSave(saveId: string) {
   return data.save;
 }
 
+export async function renameSave(saveId: string, name: string) {
+  const data = await fetchJson<{ save: import("@eco-era/shared").GameState }>(
+    `/saves/${saveId}`,
+    { method: "PATCH", body: JSON.stringify({ name }) },
+  );
+  return data.save;
+}
+
 export async function tickSave(saveId: string) {
   const data = await fetchJson<{ save: import("@eco-era/shared").GameState }>(
     `/saves/${saveId}/tick`,
@@ -172,6 +180,12 @@ export async function getTalentChoices() {
     "/meta/talent-choices",
   );
   return data.choices;
+}
+
+export async function getLeaderboard(limit = 50) {
+  return fetchJson<import("@eco-era/shared").LeaderboardResponse>(
+    `/leaderboard?limit=${encodeURIComponent(String(limit))}`,
+  );
 }
 
 export async function healthCheck(): Promise<boolean> {

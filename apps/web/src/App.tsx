@@ -21,6 +21,7 @@ const CodexDetailPage = lazy(() => import("./components/pages/CodexPage.js").the
 const TalentArchivePage = lazy(() => import("./components/pages/TalentArchivePage.js").then((m) => ({ default: m.TalentArchivePage })));
 const FossilPage = lazy(() => import("./components/pages/FossilPage.js").then((m) => ({ default: m.FossilPage })));
 const LogPage = lazy(() => import("./components/pages/LogPage.js").then((m) => ({ default: m.LogPage })));
+const LeaderboardPage = lazy(() => import("./components/pages/LeaderboardPage.js").then((m) => ({ default: m.LeaderboardPage })));
 const SettingsPage = lazy(() => import("./components/pages/SettingsPage.js").then((m) => ({ default: m.SettingsPage })));
 const ErrorPage = lazy(() => import("./components/pages/ErrorPage.js").then((m) => ({ default: m.ErrorPage })));
 const SpeciesDiscovery = lazy(() => import("./components/modals/SpeciesDiscovery.js").then((m) => ({ default: m.SpeciesDiscovery })));
@@ -437,6 +438,7 @@ export function App() {
         {page === "talents" && <TalentArchivePage />}
         {page === "fossils" && <FossilPage />}
         {page === "logs" && <LogPage />}
+        {page === "leaderboard" && <LeaderboardPage />}
         {page === "settings" && <SettingsPage />}
         {page === "error" && <ErrorPage />}
 

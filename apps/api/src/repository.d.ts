@@ -3,6 +3,10 @@ export declare const schemaSql = "\n  CREATE TABLE IF NOT EXISTS saves (\n    id
 export declare function getDatabaseUrl(): string;
 export declare function listSaves(guestKey: string): Promise<GameState[]>;
 export declare function getSave(guestKey: string, saveId: string): Promise<GameState | undefined>;
+export declare function listLeaderboardSaves(guestKey?: string): Promise<{
+    save: GameState;
+    isMine: boolean;
+}[]>;
 export declare function putSave(guestKey: string, save: GameState): Promise<GameState>;
 export declare function listUiAssetUrls(): Promise<UiAssetUrl[]>;
 export declare function closeRepository(): Promise<void>;

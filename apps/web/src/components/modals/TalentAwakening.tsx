@@ -1,3 +1,4 @@
+import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { getTalentChoices, selectTalentApi } from "../../api.js";
 import { useGameStore } from "../../stores/gameStore.js";
@@ -11,7 +12,7 @@ export function TalentAwakening() {
   const setSave = useGameStore((s) => s.setSave);
   const [talents, setTalents] = useState(save?.pendingTalentChoices ?? []);
   const [rollCount, setRollCount] = useState(0);
-  const MAX_ROLLS = 3;
+  const MAX_ROLLS = 1;
 
   const handleSelect = async (talentId: string) => {
     if (!save) return;
@@ -48,8 +49,8 @@ export function TalentAwakening() {
             刷新次数 {rollCount}/{MAX_ROLLS}
           </span>
           {rollCount < MAX_ROLLS && (
-            <button className="btn-ghost" onClick={handleReroll}>
-              刷新印记
+            <button className="reroll-icon-btn" onClick={handleReroll} aria-label="刷新印记">
+              <RefreshCw size={18} aria-hidden="true" />
             </button>
           )}
         </div>

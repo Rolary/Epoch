@@ -10,6 +10,7 @@ export type Page =
   | "talents"
   | "fossils"
   | "logs"
+  | "leaderboard"
   | "settings"
   | "error";
 

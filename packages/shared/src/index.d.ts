@@ -121,6 +121,24 @@ export interface GameState {
     createdAt: string;
     updatedAt: string;
 }
+export interface LeaderboardEntry {
+    rank: number;
+    ecologyName: string;
+    score: number;
+    currentEra: EraId;
+    planetProfile: PlanetProfile;
+    unlockedNodes: number;
+    speciesCount: number;
+    legacyCount: number;
+    talentCount: number;
+    updatedAt: string;
+    isMine?: boolean;
+}
+export interface LeaderboardResponse {
+    entries: LeaderboardEntry[];
+    mine?: LeaderboardEntry;
+    generatedAt: string;
+}
 export interface GuestAuthResponse {
     guestKey: string;
 }

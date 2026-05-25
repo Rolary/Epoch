@@ -7,6 +7,10 @@ interface SaveRow {
   state_json: GameState | string;
 }
 
+interface LeaderboardSaveRow extends SaveRow {
+  is_mine: boolean | null;
+}
+
 interface UiAssetUrlRow {
   path: string;
   remote_url: string | null;
@@ -137,6 +141,34 @@ export async function getSave(guestKey: string, saveId: string) {
   );
 
   return parseSave(result.rows[0]);
+}
+
+export async function listLeaderboardSaves(guestKey?: string) {
+  await ensureSchema();
+  const result = await getPool().query<LeaderboardSaveRow>(
+    `
+    SELECT saves.state_json,
+           CASE
+             WHEN $1::text IS NULL THEN false
+             ELSE EXISTS (
+               SELECT 1
+               FROM guest_saves
+               WHERE guest_saves.save_id = saves.id
+                 AND guest_saves.guest_key = $1
+             )
+           END AS is_mine
+    FROM saves
+    ORDER BY saves.updated_at DESC
+    `,
+    [guestKey ?? null]
+  );
+
+  return result.rows
+    .map((row) => {
+      const save = parseSave(row);
+      return save ? { save, isMine: Boolean(row.is_mine) } : undefined;
+    })
+    .filter((item): item is { save: GameState; isMine: boolean } => Boolean(item));
 }
 
 export async function putSave(guestKey: string, save: GameState) {

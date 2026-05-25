@@ -7,6 +7,7 @@ import {
   advanceState,
   applyEcologyEventChoice,
   applyEnvironmentAction,
+  calculateEcologyScore,
   canUnlockEvolutionNode,
   createInitialState,
   evolutionNodes,
@@ -16,7 +17,8 @@ import {
   talentCatalog,
   unlockEvolutionNode
 } from "@eco-era/game-core";
-import { closeRepository, getSave, listSaves, listUiAssetUrls, putSave } from "./repository.js";
+import type { GameState, LeaderboardEntry } from "@eco-era/shared";
+import { closeRepository, getSave, listLeaderboardSaves, listSaves, listUiAssetUrls, putSave } from "./repository.js";
 
 const publicRoot = resolve(process.cwd(), "apps/web/dist");
 const isProduction = process.env.NODE_ENV === "production";
@@ -64,6 +66,25 @@ server.get("/meta/talents", async () => ({ talents: talentCatalog }));
 server.get("/meta/talent-choices", async () => ({ choices: rollTalentChoices(undefined, 3) }));
 server.get("/meta/ui-assets", async () => ({ assets: await listUiAssetUrls() }));
 
+server.get("/leaderboard", async (request) => {
+  const guestKey = requireGuestKey(request.headers["x-guest-key"]);
+  const { limit } = request.query as { limit?: string };
+  const cappedLimit = clampLeaderboardLimit(limit);
+  const saves = await listLeaderboardSaves(guestKey);
+  const ranked = saves
+    .map(({ save, isMine }) => ({ save: normalizeGameState(save), isMine, score: calculateEcologyScore(save) }))
+    .sort(compareLeaderboardRows)
+    .map(({ save, isMine, score }, index) => toLeaderboardEntry(save, score, index + 1, isMine));
+  const entries = ranked.slice(0, cappedLimit);
+  const mine = ranked.find((entry) => entry.isMine);
+
+  return {
+    entries,
+    mine: mine && !entries.some((entry) => entry.rank === mine.rank) ? mine : undefined,
+    generatedAt: new Date().toISOString()
+  };
+});
+
 server.get("/saves", async (request, reply) => {
   const guestKey = requireGuestKey(request.headers["x-guest-key"]);
   if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
@@ -89,6 +110,21 @@ server.get("/saves/:saveId", async (request, reply) => {
   const advanced = advanceState(normalizeGameState(save));
   await putSave(guestKey, advanced);
   return { save: advanced };
+});
+
+server.patch("/saves/:saveId", async (request, reply) => {
+  const guestKey = requireGuestKey(request.headers["x-guest-key"]);
+  if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
+  const { saveId } = request.params as { saveId: string };
+  const { name } = (request.body ?? {}) as { name?: string };
+  const nextName = name?.trim();
+  if (!nextName) return reply.code(400).send({ message: "生态名不能为空" });
+  if (nextName.length > 16) return reply.code(400).send({ message: "生态名最多 16 个字" });
+  const save = await getSave(guestKey, saveId);
+  if (!save) return reply.code(404).send({ message: "存档不存在" });
+  const next = { ...normalizeGameState(save), name: nextName, updatedAt: new Date().toISOString() };
+  await putSave(guestKey, next);
+  return { save: next };
 });
 
 server.post("/saves/:saveId/tick", async (request, reply) => {
@@ -222,9 +258,10 @@ interface RateRule {
 const rateRules: RateRule[] = [
   { id: "auth", methods: ["POST"], pattern: /^\/auth\/guest$/, limit: 12, windowMs: 60_000 },
   { id: "create-save", methods: ["POST"], pattern: /^\/saves$/, limit: 20, windowMs: 60_000 },
+  { id: "leaderboard", methods: ["GET"], pattern: /^\/leaderboard$/, limit: 90, windowMs: 60_000 },
   { id: "tick", methods: ["POST"], pattern: /^\/saves\/[^/]+\/tick$/, limit: 90, windowMs: 60_000 },
   { id: "write-save", methods: ["POST"], pattern: /^\/saves\/[^/]+\//, limit: 120, windowMs: 60_000 },
-  { id: "api", pattern: /^\/(auth|meta|saves)(\/|$)/, limit: 360, windowMs: 60_000 },
+  { id: "api", pattern: /^\/(auth|leaderboard|meta|saves)(\/|$)/, limit: 360, windowMs: 60_000 },
 ];
 
 const rateBuckets = new Map<string, RateBucket>();
@@ -259,6 +296,38 @@ function pruneRateBuckets(now: number) {
   for (const [key, bucket] of rateBuckets) {
     if (bucket.resetAt <= now) rateBuckets.delete(key);
   }
+}
+
+function clampLeaderboardLimit(value: string | undefined) {
+  const parsed = Number(value ?? 50);
+  if (!Number.isFinite(parsed)) return 50;
+  return Math.min(100, Math.max(10, Math.floor(parsed)));
+}
+
+function compareLeaderboardRows(
+  a: { save: GameState; score: number },
+  b: { save: GameState; score: number },
+) {
+  if (b.score !== a.score) return b.score - a.score;
+  const updatedDiff = new Date(b.save.updatedAt).getTime() - new Date(a.save.updatedAt).getTime();
+  if (updatedDiff !== 0) return updatedDiff;
+  return a.save.name.localeCompare(b.save.name, "zh-Hans-CN");
+}
+
+function toLeaderboardEntry(save: GameState, score: number, rank: number, isMine: boolean): LeaderboardEntry {
+  return {
+    rank,
+    ecologyName: save.name,
+    score,
+    currentEra: save.currentEra,
+    planetProfile: save.planetProfile,
+    unlockedNodes: save.unlockedNodes.length,
+    speciesCount: save.species.length,
+    legacyCount: save.legacies.length,
+    talentCount: save.talents.length + new Set(save.consumedTalents ?? []).size,
+    updatedAt: save.updatedAt,
+    ...(isMine ? { isMine: true } : {})
+  };
 }
 
 function sendPublicFile(reply: FastifyReply, requestedPath: string, cacheKind: "asset" | "html") {

@@ -1004,6 +1004,41 @@ export function calculatePlanetProfile(state: GameState): PlanetProfile {
   return "balanced";
 }
 
+const ERA_SCORE: Record<GameState["currentEra"], number> = {
+  primordial_pool: 0,
+  self_replicators: 260,
+  proto_cell: 640,
+  photosynthesis_eve: 1040
+};
+
+export function calculateEcologyScore(input: GameState): number {
+  const state = normalizeGameState(input);
+  const livingSpecies = state.species.filter((item) => item.status !== "extinct" && item.status !== "fossilized").length;
+  const resourceScore =
+    cappedResourceScore(state.resources.organic, 1200, 0.055) +
+    cappedResourceScore(state.resources.energy, 1200, 0.05) +
+    cappedResourceScore(state.resources.minerals, 1200, 0.05) +
+    cappedResourceScore(state.resources.biomass, 900, 0.09) +
+    cappedResourceScore(state.resources.mutation, 700, 0.075) +
+    Math.max(0, Math.min(100, state.resources.stability)) * 0.85;
+
+  const score =
+    ERA_SCORE[state.currentEra] +
+    state.unlockedNodes.length * 115 +
+    livingSpecies * 90 +
+    Math.max(0, state.species.length - livingSpecies) * 28 +
+    state.legacies.length * 72 +
+    state.talents.length * 34 +
+    new Set(state.consumedTalents ?? []).size * 12 +
+    resourceScore;
+
+  return Math.max(0, Math.round(score));
+}
+
+function cappedResourceScore(value: number, cap: number, weight: number) {
+  return Math.min(Math.max(0, value), cap) * weight;
+}
+
 export function generateSpeciesTemplate(state: GameState): SpeciesRecord {
   const now = new Date().toISOString();
   const role = pickRole(state);

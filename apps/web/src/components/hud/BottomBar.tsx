@@ -10,6 +10,7 @@ const NAV_ITEMS: Array<{ id: Page; asset: string; label: string }> = [
   { id: "codex", asset: uiAssets.emblems.discovery, label: "图鉴" },
   { id: "fossils", asset: uiAssets.cards.tide, label: "遗产" },
   { id: "logs", asset: uiAssets.emblems.system, label: "生命史" },
+  { id: "leaderboard", asset: uiAssets.emblems.reward, label: "排行" },
   { id: "settings", asset: uiAssets.resources.energy, label: "档案" },
 ];
 
@@ -17,6 +18,7 @@ function isNavUnlocked(navId: string): boolean {
   const save = useGameStore.getState().save;
   if (!save) return navId === "home" || navId === "settings";
   if (navId === "home" || navId === "settings") return true;
+  if (navId === "leaderboard") return true;
   if (navId === "evolution") return hasEvolutionAccess();
   if (navId === "codex") return save.species.length > 0;
   if (navId === "fossils") return save.legacies.length > 0;

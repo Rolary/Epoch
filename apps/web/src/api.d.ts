@@ -9,6 +9,7 @@ export declare function createSave(name: string, talentId?: string): Promise<imp
 export declare function listSaves(guestKeyOverride?: string): Promise<import("@eco-era/shared").GameState[]>;
 export declare function restoreGuestKey(key: string): Promise<import("@eco-era/shared").GameState>;
 export declare function getSave(saveId: string): Promise<import("@eco-era/shared").GameState>;
+export declare function renameSave(saveId: string, name: string): Promise<import("@eco-era/shared").GameState>;
 export declare function tickSave(saveId: string): Promise<import("@eco-era/shared").GameState>;
 export declare function applyAction(saveId: string, action: string): Promise<import("@eco-era/shared").GameState>;
 export declare function unlockNode(saveId: string, nodeId: string): Promise<import("@eco-era/shared").GameState>;
@@ -18,5 +19,6 @@ export declare function getSpecies(saveId: string): Promise<import("@eco-era/sha
 export declare function getLogs(saveId: string): Promise<import("@eco-era/shared").EvolutionLog[]>;
 export declare function getEvolutionNodes(): Promise<import("@eco-era/shared").EvolutionNode[]>;
 export declare function getTalentChoices(): Promise<import("@eco-era/shared").Talent[]>;
+export declare function getLeaderboard(limit?: number): Promise<import("@eco-era/shared").LeaderboardResponse>;
 export declare function healthCheck(): Promise<boolean>;
 //# sourceMappingURL=api.d.ts.map

@@ -1,8 +1,9 @@
 import { evolutionNodes } from "@eco-era/game-core";
 import type { GameState, ResourceKey } from "@eco-era/shared";
+import { Check, Pencil, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { clearLocalStorage, getGuestKey, getSaveId } from "../../api.js";
+import { clearLocalStorage, getGuestKey, getSaveId, renameSave } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
@@ -40,6 +41,13 @@ export function SettingsPage() {
   const setPage = useUIStore((s) => s.setPage);
   const [confirming, setConfirming] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "manual">("idle");
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(save?.name ?? "");
+  const [renaming, setRenaming] = useState(false);
+
+  useEffect(() => {
+    if (!editingName) setDraftName(save?.name ?? "");
+  }, [editingName, save?.name]);
 
   useEffect(() => {
     if (copyStatus === "idle") return;
@@ -61,6 +69,27 @@ export function SettingsPage() {
     } catch {
       window.prompt("复制这段游客印记，用它可以恢复生态档案。", key);
       setCopyStatus("manual");
+    }
+  };
+
+  const submitRename = async () => {
+    if (!save || renaming) return;
+    const nextName = draftName.trim();
+    if (!nextName || nextName.length > 16 || nextName === save.name) {
+      setEditingName(false);
+      setDraftName(save.name);
+      return;
+    }
+    setRenaming(true);
+    setError(null);
+    try {
+      const updated = await renameSave(save.id, nextName);
+      setSave(updated);
+      setEditingName(false);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "修改生态名失败");
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -96,7 +125,60 @@ export function SettingsPage() {
         <div className="archive-hero">
           <img className="archive-hero-icon" src={uiAssets.scene.poolCenterpiece} alt="" aria-hidden="true" />
           <div className="archive-hero-copy">
-            <span className="archive-name">{save.name}</span>
+            {editingName ? (
+              <span className="archive-name-edit">
+                <input
+                  className="archive-name-input"
+                  value={draftName}
+                  maxLength={16}
+                  autoFocus
+                  onChange={(event) => setDraftName(event.target.value.slice(0, 16))}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") submitRename();
+                    if (event.key === "Escape") {
+                      setDraftName(save.name);
+                      setEditingName(false);
+                    }
+                  }}
+                />
+                <button
+                  className="archive-icon-btn"
+                  type="button"
+                  aria-label="确认名称"
+                  disabled={renaming}
+                  onClick={submitRename}
+                >
+                  <Check size={14} aria-hidden="true" />
+                </button>
+                <button
+                  className="archive-icon-btn muted"
+                  type="button"
+                  aria-label="取消改名"
+                  disabled={renaming}
+                  onClick={() => {
+                    setDraftName(save.name);
+                    setEditingName(false);
+                  }}
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
+              </span>
+            ) : (
+              <span className="archive-name-row">
+                <span className="archive-name">{save.name}</span>
+                <button
+                  className="archive-icon-btn"
+                  type="button"
+                  aria-label="修改生态名"
+                  onClick={() => {
+                    setDraftName(save.name);
+                    setEditingName(true);
+                  }}
+                >
+                  <Pencil size={13} aria-hidden="true" />
+                </button>
+              </span>
+            )}
             <span className="archive-subtitle">{ERA_LABELS[save.currentEra] ?? save.currentEra}</span>
             <span className="archive-badge">{PROFILE_LABELS[save.planetProfile] ?? "均衡演化"}</span>
           </div>

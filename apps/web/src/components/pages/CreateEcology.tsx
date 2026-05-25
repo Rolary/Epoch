@@ -1,4 +1,5 @@
 import type { Talent } from "@eco-era/shared";
+import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { createSave, ensureGuest, getTalentChoices, restoreGuestKey } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
@@ -16,7 +17,7 @@ export function CreateEcology() {
   const [rollCount, setRollCount] = useState(0);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreKey, setRestoreKey] = useState("");
-  const MAX_ROLLS = 30;
+  const MAX_ROLLS = 3;
   const setSave = useGameStore((s) => s.setSave);
   const setSaveId = useGameStore((s) => s.setSaveId);
   const setGuestReady = useGameStore((s) => s.setGuestReady);
@@ -165,8 +166,8 @@ export function CreateEcology() {
               刷新次数 {rollCount}/{MAX_ROLLS}
             </span>
             {rollCount < MAX_ROLLS && (
-              <button className="btn-ghost" onClick={handleReroll} disabled={loading}>
-                刷新印记
+              <button className="reroll-icon-btn" onClick={handleReroll} disabled={loading} aria-label="刷新印记">
+                <RefreshCw size={18} aria-hidden="true" />
               </button>
             )}
           </div>

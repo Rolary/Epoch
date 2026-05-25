@@ -16,6 +16,7 @@ export declare function rollTalentChoices(state?: GameState, count?: number): Ta
 export declare function normalizeGameState(state: GameState): GameState;
 export declare function canUnlockEvolutionNode(state: GameState, nodeId: string): boolean;
 export declare function calculatePlanetProfile(state: GameState): PlanetProfile;
+export declare function calculateEcologyScore(input: GameState): number;
 export declare function generateSpeciesTemplate(state: GameState): SpeciesRecord;
 export declare function createLog(type: EvolutionLog["type"], message: string): EvolutionLog;
 //# sourceMappingURL=index.d.ts.map
