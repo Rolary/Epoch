@@ -700,16 +700,27 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
   .unlock-icon,
   .event-option,
   .event-option::before,
-  .event-option::after {
+  .event-option::after,
+  .sheet-backdrop,
+  .sheet-backdrop.closing,
+  .bottom-sheet,
+  .bottom-sheet.closing,
+  .bottom-sheet.sheet-drawer,
+  .bottom-sheet.sheet-drawer.closing {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
   }
 }
 
 /* === Bottom Sheet === */
-.sheet-backdrop { position: fixed; inset: 0; z-index: 180; background: rgba(0,0,0,0.5); }
-.bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; z-index: 190; background: #12122A; border-radius: 20px 20px 0 0; border-top: 1px solid rgba(79,195,247,0.15); padding: 8px 16px 16px; box-shadow: 0 -8px 30px rgba(0,0,0,0.5); max-height: 60vh; overflow-y: auto; }
+.sheet-backdrop { position: fixed; inset: 0; z-index: 180; background: rgba(0,0,0,0.5); animation: sheetBackdropIn 0.18s ease both; }
+.sheet-backdrop.closing { animation: sheetBackdropOut 0.2s ease both; }
+.bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; z-index: 190; background: #12122A; border-radius: 20px 20px 0 0; border-top: 1px solid rgba(79,195,247,0.15); padding: 8px 16px 16px; box-shadow: 0 -8px 30px rgba(0,0,0,0.5); max-height: 60vh; overflow-y: auto; animation: bottomSheetIn 0.22s cubic-bezier(.16,1,.3,1) both; }
+.bottom-sheet.closing { animation: bottomSheetOut 0.2s ease both; }
+.bottom-sheet.sheet-drawer { left: auto; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); width: min(360px, calc(100vw - 24px)); max-height: min(70dvh, 520px); border-radius: 16px; border: 1px solid rgba(219,172,78,0.28); background: linear-gradient(180deg, rgba(18,25,40,0.96), rgba(10,16,26,0.98)); box-shadow: 0 18px 48px rgba(0,0,0,0.48), 0 0 32px rgba(79,195,247,0.14), inset 0 0 24px rgba(245,208,120,0.035); transform-origin: right bottom; animation: strategyDrawerIn 0.28s cubic-bezier(.16,1,.3,1) both; }
+.bottom-sheet.sheet-drawer.closing { animation: strategyDrawerOut 0.2s ease both; }
 .sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 4px auto 12px; }
+.sheet-drawer .sheet-handle { margin-top: 2px; background: rgba(245,208,120,0.28); }
 .sheet-title { font-size: 17px; font-weight: 700; color: #4FC3F7; margin-bottom: 4px; }
 .sheet-hint { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 14px; line-height: 1.5; }
 .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -722,6 +733,30 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .strategy-card.cooldown { opacity: 0.35; cursor: not-allowed; filter: grayscale(0.6); }
 .strategy-card.cooldown:hover { transform: none; box-shadow: none; border-color: rgba(255,255,255,0.08); }
 .cooldown-timer { color: #FFD54F; font-size: 11px; margin-left: 6px; }
+@keyframes sheetBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheetBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes bottomSheetIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes bottomSheetOut {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+@keyframes strategyDrawerIn {
+  from { opacity: 0; transform: translateX(112%) scale(0.98); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes strategyDrawerOut {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to { opacity: 0; transform: translateX(112%) scale(0.98); }
+}
 
 /* === Guide Overlay === */
 .guide-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 140px; padding-left: 24px; padding-right: 24px; }

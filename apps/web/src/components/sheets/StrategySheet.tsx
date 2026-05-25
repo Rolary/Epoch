@@ -3,7 +3,7 @@ import { applyAction } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
-import { BottomSheet } from "./BottomSheet.js";
+import { BottomSheet, useCloseSheet } from "./BottomSheet.js";
 
 const ACTIONS = [
   {
@@ -40,7 +40,15 @@ const ACTION_LABELS = new Map(ACTIONS.map((a) => [a.id, a]));
 const COOLDOWN_SECONDS = 30;
 
 export function StrategySheet() {
-  const hideSheet = useUIStore((s) => s.hideSheet);
+  return (
+    <BottomSheet variant="drawer">
+      <StrategySheetContent />
+    </BottomSheet>
+  );
+}
+
+function StrategySheetContent() {
+  const closeSheet = useCloseSheet();
   const save = useGameStore((s) => s.save);
   const setSave = useGameStore((s) => s.setSave);
   const showModal = useUIStore((s) => s.showModal);
@@ -75,7 +83,7 @@ export function StrategySheet() {
       const updated = await applyAction(save.id, action);
       setSave(updated);
       setStrategyCooldown(COOLDOWN_SECONDS);
-      hideSheet();
+      closeSheet();
       const deltas = Object.entries(updated.resources)
         .map(([key, value]) => [key, Math.floor(value - (before[key as keyof typeof before] ?? 0))] as const)
         .filter(([, value]) => value !== 0);
@@ -94,29 +102,27 @@ export function StrategySheet() {
   };
 
   return (
-    <BottomSheet>
-      <div className="strategy-sheet">
-        <h3 className="sheet-title">生态干预</h3>
-        <p className="sheet-hint">
-          干预会带来短期收益，也会留下长期压力。
-          {onCooldown && <span className="cooldown-timer">冷却中 {remaining}s</span>}
-        </p>
-        <div className="strategy-grid">
-          {ACTIONS.map((a) => (
-            <button
-              key={a.id}
-              className={`strategy-card ${onCooldown ? "cooldown" : ""}`}
-              disabled={onCooldown}
-              onClick={() => handleAction(a.id)}
-            >
-              <img className="strategy-icon" src={a.asset} alt="" aria-hidden="true" />
-              <span className="strategy-name">{a.name}</span>
-              <span className="strategy-gain">+ {a.gain}</span>
-              <span className="strategy-cost">- {a.cost}</span>
-            </button>
-          ))}
-        </div>
+    <div className="strategy-sheet">
+      <h3 className="sheet-title">生态干预</h3>
+      <p className="sheet-hint">
+        干预会带来短期收益，也会留下长期压力。
+        {onCooldown && <span className="cooldown-timer">冷却中 {remaining}s</span>}
+      </p>
+      <div className="strategy-grid">
+        {ACTIONS.map((a) => (
+          <button
+            key={a.id}
+            className={`strategy-card ${onCooldown ? "cooldown" : ""}`}
+            disabled={onCooldown}
+            onClick={() => handleAction(a.id)}
+          >
+            <img className="strategy-icon" src={a.asset} alt="" aria-hidden="true" />
+            <span className="strategy-name">{a.name}</span>
+            <span className="strategy-gain">+ {a.gain}</span>
+            <span className="strategy-cost">- {a.cost}</span>
+          </button>
+        ))}
       </div>
-    </BottomSheet>
+    </div>
   );
 }
