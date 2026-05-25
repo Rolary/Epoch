@@ -41,9 +41,8 @@ export function EcologyEventModal() {
         <p className="event-description">{event.description}</p>
         <span className="event-tendency">潮池正在显露：{event.tendencyTag}</span>
         <div className="event-options">
-          {event.options.map((option, index) => (
+          {event.options.map((option) => (
             <button key={option.id} className="event-option" onClick={() => choose(option.id)}>
-              <span className="event-option-index">{index + 1}</span>
               <span className="event-option-title">{option.title}</span>
               <span className="event-option-desc">{option.description}</span>
               <span className="event-option-effect">{effectCopy(option.resourceEffect, option.environmentEffect)}</span>

@@ -30,13 +30,13 @@ export function TopBar() {
     <div className="top-bar">
       <div className="resource-row">
         {RESOURCE_CONFIG.filter(({ key }) => visibleKeys.has(key)).map(({ key, asset, label, color }) => (
-            <div key={key} className="resource-item" data-tooltip={label}>
-              <img className="resource-icon" src={asset} alt="" aria-hidden="true" />
-              <span className="resource-value" style={{ color }}>
-                {Math.floor(resources[key])}
-              </span>
-            </div>
-          ))}
+          <div key={key} className="resource-item" data-tooltip={label}>
+            <img className="resource-icon" src={asset} alt="" aria-hidden="true" />
+            <span className="resource-value" style={{ color }}>
+              {Math.floor(resources[key])}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

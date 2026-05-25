@@ -172,6 +172,7 @@ export const uiAssetPaths = [
   "card-energy.png",
   "card-tide.png",
   "emblem-discovery.png",
+  "emblem-ecology-intervention.png",
   "emblem-reward.png",
   "emblem-system.png",
   "events/event-clear-tide.png",

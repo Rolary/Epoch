@@ -1,5 +1,6 @@
 import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
 import type { EvolutionNode } from "@eco-era/shared";
+import { useMemo, useState } from "react";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { tickSave, unlockNode } from "../../api.js";
 import { useGameStore } from "../../stores/gameStore.js";
@@ -10,7 +11,8 @@ export function EvolutionPage() {
   const setSave = useGameStore((s) => s.setSave);
   const setPage = useUIStore((s) => s.setPage);
   const hideModal = useUIStore((s) => s.hideModal);
-  const pathBlocks = groupEvolutionPath(evolutionNodes);
+  const pathBlocks = useMemo(() => groupEvolutionPath(evolutionNodes), []);
+  const [expandedBranchIds, setExpandedBranchIds] = useState<string[]>([]);
 
   if (!save) {
     return (
@@ -63,10 +65,12 @@ export function EvolutionPage() {
             const selectedBranch = block.nodes.find((node) => currentSave.unlockedNodes.includes(node.id));
             const groupUnlocked = Boolean(selectedBranch);
             const groupAvailable = block.nodes.some((node) => canUnlockEvolutionNode(currentSave, node.id));
+            const branchExpanded = selectedBranch ? expandedBranchIds.includes(block.id) : true;
             return (
-              <div key={block.id} className={`evolution-branch-block ${groupUnlocked ? "unlocked" : groupAvailable ? "available" : "locked"}`}>
+              <div key={block.id} className={`evolution-branch-block ${groupUnlocked ? "unlocked" : groupAvailable ? "available" : "locked"} ${branchExpanded ? "expanded" : "collapsed"}`}>
                 {idx > 0 && <div className={`node-connector branch-entry ${groupUnlocked || groupAvailable ? "active" : ""}`} />}
                 <div className="branch-fork-cap">
+                  <div className="branch-fork-copy">
                   <span className="branch-fork-label">分支选择</span>
                   <span className="branch-fork-title">
                     {selectedBranch ? `已选择：${selectedBranch.name}` : "复制开始分叉"}
@@ -74,11 +78,27 @@ export function EvolutionPage() {
                   <span className="branch-fork-desc">
                     {selectedBranch ? "其他复制倾向已沉入旁路，主线继续向第一种生命成形推进。" : "只能留下一个主倾向，后续生命会沿着它分化。"}
                   </span>
+                  </div>
+                  {selectedBranch && (
+                    <button
+                      className="branch-toggle"
+                      aria-expanded={branchExpanded}
+                      onClick={() => {
+                        setExpandedBranchIds((ids) =>
+                          ids.includes(block.id) ? ids.filter((id) => id !== block.id) : [...ids, block.id],
+                        );
+                      }}
+                    >
+                      {branchExpanded ? "收起" : "展开"}
+                    </button>
+                  )}
                 </div>
-                <div className="branch-fork-lines" aria-hidden="true" />
-                <div className="branch-node-grid">
-                  {block.nodes.map((node) => renderNode(node, true))}
-                </div>
+                {!selectedBranch && <div className="branch-fork-lines" aria-hidden="true" />}
+                {branchExpanded && (
+                  <div className="branch-node-grid">
+                    {block.nodes.map((node) => renderNode(node, true))}
+                  </div>
+                )}
               </div>
             );
           }
@@ -112,7 +132,6 @@ export function EvolutionPage() {
       >
         <div className={`node-circle ${stateClass}`}>
           <img className="node-icon-img" src={iconFor(node.id)} alt="" aria-hidden="true" />
-          <span className="node-state-mark">{unlocked ? (branchNode ? "已选" : "已亮") : canUnlock ? "可" : branchBlocked ? "旁路" : ""}</span>
         </div>
         <div className="node-info">
           <span className="node-name">{copy.title}</span>

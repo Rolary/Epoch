@@ -17,9 +17,7 @@ function isNavUnlocked(navId: string): boolean {
   const save = useGameStore.getState().save;
   if (!save) return navId === "home" || navId === "settings";
   if (navId === "home" || navId === "settings") return true;
-  if (navId === "evolution") {
-    return canAnyNodeBeUnlocked();
-  }
+  if (navId === "evolution") return hasEvolutionAccess();
   if (navId === "codex") return save.species.length > 0;
   if (navId === "fossils") return save.legacies.length > 0;
   if (navId === "logs") return save.logs.length > 3;
@@ -29,26 +27,29 @@ function isNavUnlocked(navId: string): boolean {
 function canAnyNodeBeUnlocked(): boolean {
   const save = useGameStore.getState().save;
   if (!save) return false;
-  return evolutionNodes.some((n) => {
-    if (save.unlockedNodes.includes(n.id)) return false;
-    return canUnlockEvolutionNode(save, n.id);
+  return evolutionNodes.some((node) => {
+    if (save.unlockedNodes.includes(node.id)) return false;
+    return canUnlockEvolutionNode(save, node.id);
   });
+}
+
+function hasEvolutionAccess(): boolean {
+  const save = useGameStore.getState().save;
+  if (!save) return false;
+  return save.unlockedNodes.length > 0 || canAnyNodeBeUnlocked();
 }
 
 export function BottomBar() {
   const setPage = useUIStore((s) => s.setPage);
   const page = useUIStore((s) => s.page);
-  const showSheet = useUIStore((s) => s.showSheet);
   const seenUnlockHints = useUIStore((s) => s.seenUnlockHints);
   const markUnlockHintSeen = useUIStore((s) => s.markUnlockHintSeen);
   const unlockGuideTarget = useUIStore((s) => s.unlockGuideTarget);
   const setUnlockGuideTarget = useUIStore((s) => s.setUnlockGuideTarget);
-  const save = useGameStore((s) => s.save);
   const isCreate = page === "create-ecology";
 
   if (isCreate) return null;
 
-  const canStrategize = save && save.unlockedNodes.length > 0;
   const evolutionAlert = canAnyNodeBeUnlocked();
 
   return (
@@ -75,21 +76,6 @@ export function BottomBar() {
           );
         })}
       </div>
-      {canStrategize && (
-        <button
-          className={`strategy-fab ${seenUnlockHints.includes("strategy") ? "" : "new-unlock guide-pulse"} ${
-            unlockGuideTarget === "strategy" ? "unlock-guide-target" : ""
-          }`}
-          data-tooltip="生态干预"
-          onClick={() => {
-            markUnlockHintSeen("strategy");
-            if (unlockGuideTarget === "strategy") setUnlockGuideTarget(null);
-            showSheet("strategy");
-          }}
-        >
-          <img className="fab-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
-        </button>
-      )}
     </div>
   );
 }

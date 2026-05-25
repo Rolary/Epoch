@@ -44,6 +44,33 @@ type InterventionCue = {
   deltas: Array<[string, number]>;
 };
 
+function TidepoolStrategyButton() {
+  const save = useGameStore((s) => s.save);
+  const showSheet = useUIStore((s) => s.showSheet);
+  const seenUnlockHints = useUIStore((s) => s.seenUnlockHints);
+  const markUnlockHintSeen = useUIStore((s) => s.markUnlockHintSeen);
+  const unlockGuideTarget = useUIStore((s) => s.unlockGuideTarget);
+  const setUnlockGuideTarget = useUIStore((s) => s.setUnlockGuideTarget);
+
+  if (!save || save.unlockedNodes.length === 0) return null;
+
+  return (
+    <button
+      aria-label="生态干预"
+      className={`tidepool-strategy-btn ${seenUnlockHints.includes("strategy") ? "" : "new-unlock guide-pulse"} ${
+        unlockGuideTarget === "strategy" ? "unlock-guide-target" : ""
+      }`}
+      onClick={() => {
+        markUnlockHintSeen("strategy");
+        if (unlockGuideTarget === "strategy") setUnlockGuideTarget(null);
+        showSheet("strategy");
+      }}
+    >
+      <img className="tidepool-strategy-icon" src={uiAssets.emblems.ecologyIntervention} alt="" aria-hidden="true" />
+    </button>
+  );
+}
+
 type UnlockHint = {
   id: string;
   title: string;
@@ -377,6 +404,7 @@ export function App() {
         <div className="hud-layer">
           <TopBar />
           <CurrentObjective />
+          <TidepoolStrategyButton />
         </div>
       )}
 

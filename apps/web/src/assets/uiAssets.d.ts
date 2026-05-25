@@ -40,6 +40,7 @@ export declare const uiAssets: {
     };
     readonly emblems: {
         readonly discovery: string;
+        readonly ecologyIntervention: string;
         readonly system: string;
         readonly reward: string;
     };
