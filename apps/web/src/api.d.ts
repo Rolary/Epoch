@@ -15,6 +15,10 @@ export declare function applyAction(saveId: string, action: string): Promise<imp
 export declare function unlockNode(saveId: string, nodeId: string): Promise<import("@eco-era/shared").GameState>;
 export declare function selectTalentApi(saveId: string, talentId: string): Promise<import("@eco-era/shared").GameState>;
 export declare function chooseEcologyEvent(saveId: string, eventId: string, optionId: string): Promise<import("@eco-era/shared").GameState>;
+export declare function applyEcologyResonance(saveId: string, resonanceId: string): Promise<{
+    save: import("@eco-era/shared").GameState;
+    resonanceResult: import("@eco-era/shared").EcologyResonanceResult;
+}>;
 export declare function getSpecies(saveId: string): Promise<import("@eco-era/shared").SpeciesRecord[]>;
 export declare function getLogs(saveId: string): Promise<import("@eco-era/shared").EvolutionLog[]>;
 export declare function getEvolutionNodes(): Promise<import("@eco-era/shared").EvolutionNode[]>;

@@ -17,9 +17,11 @@ export declare class HomeScene extends Phaser.Scene {
     private causticGraphics;
     private algaeGraphics;
     private cloudGraphics;
+    private ecologyStageGraphics;
     private causticDrift;
     private poolVertices;
     private ambientRedrawTimer;
+    private ecologyStageRedrawTimer;
     private dragElements;
     private draggedElement;
     private dragTrail;
@@ -68,6 +70,8 @@ export declare class HomeScene extends Phaser.Scene {
     private createLightBeams;
     private createPool;
     private createAlgaeAndClouds;
+    private createEcologyStageLayer;
+    private updateEcologyStageLayer;
     private createFloatingParticles;
     private createResourceOrbs;
     private createTitle;

@@ -6,6 +6,7 @@ import Fastify from "fastify";
 import {
   advanceState,
   applyEcologyEventChoice,
+  applyEcologyResonance,
   applyEnvironmentAction,
   calculateEcologyScore,
   canUnlockEvolutionNode,
@@ -65,6 +66,16 @@ server.get("/meta/evolution-nodes", async () => ({ nodes: evolutionNodes }));
 server.get("/meta/talents", async () => ({ talents: talentCatalog }));
 server.get("/meta/talent-choices", async () => ({ choices: rollTalentChoices(undefined, 3) }));
 server.get("/meta/ui-assets", async () => ({ assets: await listUiAssetUrls() }));
+
+server.post("/debug/second-chapter-save", async (request, reply) => {
+  if (isProduction) return reply.code(404).send({ message: "Not found" });
+  const guestKey = requireGuestKey(request.headers["x-guest-key"]);
+  if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
+  const body = (request.body ?? {}) as { stage?: "photo" | "roles" | "cycle" | "complete" };
+  const save = buildSecondChapterDebugSave(createSaveId(), body.stage ?? "cycle");
+  await putSave(guestKey, save);
+  return { save };
+});
 
 server.get("/leaderboard", async (request) => {
   const guestKey = requireGuestKey(request.headers["x-guest-key"]);
@@ -186,6 +197,23 @@ server.post("/saves/:saveId/events/choose", async (request, reply) => {
     return { save: next };
   } catch (error) {
     return reply.code(400).send({ message: error instanceof Error ? error.message : "选择失败" });
+  }
+});
+
+server.post("/saves/:saveId/ecology/resonance", async (request, reply) => {
+  const guestKey = requireGuestKey(request.headers["x-guest-key"]);
+  if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
+  const { saveId } = request.params as { saveId: string };
+  const { resonanceId } = request.body as { resonanceId?: string };
+  const save = await getSave(guestKey, saveId);
+  if (!save || !resonanceId) return reply.code(404).send({ message: "存档或生态共鸣不存在" });
+  try {
+    const advanced = advanceState(normalizeGameState(save));
+    const { state: next, resonanceResult } = applyEcologyResonance(advanced, resonanceId);
+    await putSave(guestKey, next);
+    return { save: next, resonanceResult };
+  } catch (error) {
+    return reply.code(400).send({ message: error instanceof Error ? error.message : "共鸣失败" });
   }
 });
 
@@ -328,6 +356,46 @@ function toLeaderboardEntry(save: GameState, score: number, rank: number, isMine
     updatedAt: save.updatedAt,
     ...(isMine ? { isMine: true } : {})
   };
+}
+
+function buildSecondChapterDebugSave(id: string, stage: "photo" | "roles" | "cycle" | "complete"): GameState {
+  let save = createInitialState(id, "第二章验收潮池");
+  const unlockOrder = [
+    "organic_richness",
+    "replicating_chain",
+    "replication_fidelity",
+    "primitive_vesicle",
+    "metabolic_loop",
+    "proto_cell",
+    "photo_pigment",
+    ...(stage === "photo" ? [] : ["early_producer_film", "decomposition_layer", "tidal_filter_pores"]),
+    ...(stage === "cycle" || stage === "complete" ? ["mutual_ecology_cycle"] : []),
+  ];
+
+  for (const nodeId of unlockOrder) {
+    save = {
+      ...normalizeGameState(save),
+      resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
+    };
+    if (canUnlockEvolutionNode(save, nodeId)) save = unlockEvolutionNode(save, nodeId);
+  }
+
+  if (stage === "complete" && save.pendingEcologyEvent?.id === "bloom_pressure") {
+    save = applyEcologyEventChoice(save, "bloom_pressure", "thin_bloom");
+    save = {
+      ...normalizeGameState(save),
+      resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
+    };
+    if (canUnlockEvolutionNode(save, "ecological_personality")) {
+      save = unlockEvolutionNode(save, "ecological_personality");
+    }
+  }
+
+  return normalizeGameState({
+    ...save,
+    resources: { organic: 1200, energy: 1200, minerals: 1200, stability: 90, mutation: 420, biomass: 900 },
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 function sendPublicFile(reply: FastifyReply, requestedPath: string, cacheKind: "asset" | "html") {

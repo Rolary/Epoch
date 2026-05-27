@@ -154,6 +154,16 @@ export async function chooseEcologyEvent(saveId: string, eventId: string, option
   return data.save;
 }
 
+export async function applyEcologyResonance(saveId: string, resonanceId: string) {
+  return fetchJson<{
+    save: import("@eco-era/shared").GameState;
+    resonanceResult: import("@eco-era/shared").EcologyResonanceResult;
+  }>(
+    `/saves/${saveId}/ecology/resonance`,
+    { method: "POST", body: JSON.stringify({ resonanceId }) },
+  );
+}
+
 export async function getSpecies(saveId: string) {
   const data = await fetchJson<{ species: import("@eco-era/shared").SpeciesRecord[] }>(
     `/saves/${saveId}/species`,

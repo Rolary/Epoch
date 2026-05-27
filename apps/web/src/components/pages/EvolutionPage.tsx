@@ -1,18 +1,57 @@
 import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
 import type { EvolutionNode } from "@eco-era/shared";
 import { useMemo, useState } from "react";
-import { uiAssets } from "../../assets/uiAssets.js";
 import { tickSave, unlockNode } from "../../api.js";
+import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
+
+type ChapterId = "life_birth" | "ecology_burst";
+
+const CHAPTERS: Array<{
+  id: ChapterId;
+  title: string;
+  objective: string;
+  nodeIds: string[];
+}> = [
+  {
+    id: "life_birth",
+    title: "生命诞生篇",
+    objective: "目标：养出第一种追光生命",
+    nodeIds: [
+      "organic_richness",
+      "replicating_chain",
+      "replication_fidelity",
+      "error_retention",
+      "fragment_budding",
+      "primitive_vesicle",
+      "metabolic_loop",
+      "proto_cell",
+      "photo_pigment",
+    ],
+  },
+  {
+    id: "ecology_burst",
+    title: "生态爆发篇",
+    objective: "目标：形成第一个小生态循环",
+    nodeIds: [
+      "early_producer_film",
+      "decomposition_layer",
+      "tidal_filter_pores",
+      "mutual_ecology_cycle",
+      "ecological_personality",
+    ],
+  },
+];
 
 export function EvolutionPage() {
   const save = useGameStore((s) => s.save);
   const setSave = useGameStore((s) => s.setSave);
   const setPage = useUIStore((s) => s.setPage);
   const hideModal = useUIStore((s) => s.hideModal);
-  const pathBlocks = useMemo(() => groupEvolutionPath(evolutionNodes), []);
+  const chapterBlocks = useMemo(() => buildChapterBlocks(evolutionNodes), []);
   const [expandedBranchIds, setExpandedBranchIds] = useState<string[]>([]);
+  const [collapsedChapters, setCollapsedChapters] = useState<Partial<Record<ChapterId, boolean>>>({});
 
   if (!save) {
     return (
@@ -26,7 +65,12 @@ export function EvolutionPage() {
       </div>
     );
   }
+
   const currentSave = save;
+  const currentChapter: ChapterId = currentSave.chapterProgress?.chapter === "ecology_burst" ? "ecology_burst" : "life_birth";
+  const visibleChapters = chapterBlocks.filter((chapter) =>
+    chapter.id === "life_birth" || currentSave.unlockedNodes.includes("photo_pigment") || currentChapter === "ecology_burst",
+  );
 
   const handleUnlock = async (nodeId: string) => {
     try {
@@ -58,60 +102,100 @@ export function EvolutionPage() {
   return (
     <div className="page evolution-page">
       <h2 className="page-title">生命痕迹</h2>
-      <p className="page-hint">这里会记录潮池真正留下的变化。还不能点亮时，先回去继续拖入发光养料。</p>
-      <div className="evolution-path">
-        {pathBlocks.map((block, idx) => {
-          if (block.type === "branch") {
-            const selectedBranch = block.nodes.find((node) => currentSave.unlockedNodes.includes(node.id));
-            const groupUnlocked = Boolean(selectedBranch);
-            const groupAvailable = block.nodes.some((node) => canUnlockEvolutionNode(currentSave, node.id));
-            const branchExpanded = selectedBranch ? expandedBranchIds.includes(block.id) : true;
-            return (
-              <div key={block.id} className={`evolution-branch-block ${groupUnlocked ? "unlocked" : groupAvailable ? "available" : "locked"} ${branchExpanded ? "expanded" : "collapsed"}`}>
-                {idx > 0 && <div className={`node-connector branch-entry ${groupUnlocked || groupAvailable ? "active" : ""}`} />}
-                <div className="branch-fork-cap">
-                  <div className="branch-fork-copy">
-                  <span className="branch-fork-label">分支选择</span>
-                  <span className="branch-fork-title">
-                    {selectedBranch ? `已选择：${selectedBranch.name}` : "复制开始分叉"}
-                  </span>
-                  <span className="branch-fork-desc">
-                    {selectedBranch ? "其他复制倾向已沉入旁路，主线继续向第一种生命成形推进。" : "只能留下一个主倾向，后续生命会沿着它分化。"}
-                  </span>
-                  </div>
-                  {selectedBranch && (
-                    <button
-                      className="branch-toggle"
-                      aria-expanded={branchExpanded}
-                      onClick={() => {
-                        setExpandedBranchIds((ids) =>
-                          ids.includes(block.id) ? ids.filter((id) => id !== block.id) : [...ids, block.id],
-                        );
-                      }}
-                    >
-                      {branchExpanded ? "收起" : "展开"}
-                    </button>
-                  )}
-                </div>
-                {!selectedBranch && <div className="branch-fork-lines" aria-hidden="true" />}
-                {branchExpanded && (
-                  <div className="branch-node-grid">
-                    {block.nodes.map((node) => renderNode(node, true))}
-                  </div>
-                )}
-              </div>
-            );
-          }
+      <p className="page-hint">演化节点按章节收束。完成的章节会折成摘要，当前章节保持展开。</p>
+      <div className="evolution-path chaptered">
+        {visibleChapters.map((chapter) => {
+          const { total, unlocked } = countChapterProgress(chapter, currentSave.unlockedNodes);
+          const completed = chapter.id === "life_birth"
+            ? currentSave.unlockedNodes.includes("photo_pigment")
+            : currentSave.unlockedNodes.includes("ecological_personality") || currentSave.chapterProgress?.stage === "complete";
+          const collapsed = collapsedChapters[chapter.id] ?? (completed && chapter.id !== currentChapter);
+          const available = chapter.nodes.some((node) => canUnlockEvolutionNode(currentSave, node.id));
+
           return (
-            <div key={block.node.id} className="evolution-node-row">
-              {idx > 0 && <div className={`node-connector ${currentSave.unlockedNodes.includes(block.node.id) ? "active" : ""}`} />}
-              {renderNode(block.node, false)}
-            </div>
+            <section key={chapter.id} className={`evolution-chapter ${chapter.id} ${collapsed ? "collapsed" : "expanded"} ${completed ? "completed" : ""} ${chapter.id === currentChapter ? "current" : ""}`}>
+              <button
+                className="evolution-chapter-head"
+                type="button"
+                aria-expanded={!collapsed}
+                onClick={() => setCollapsedChapters((state) => ({ ...state, [chapter.id]: !collapsed }))}
+              >
+                <span className="evolution-chapter-copy">
+                  <span className="evolution-chapter-kicker">{chapter.id === currentChapter ? "当前章节" : completed ? "已完成" : "已开放"}</span>
+                  <span className="evolution-chapter-title">{chapter.title}</span>
+                  <span className="evolution-chapter-goal">{chapter.objective}</span>
+                </span>
+                <span className="evolution-chapter-meta">
+                  <span className={`chapter-progress-dot ${available ? "available" : completed ? "completed" : ""}`} />
+                  <span>{unlocked}/{total}</span>
+                  <span className="chapter-fold-label">{collapsed ? "展开" : "收起"}</span>
+                </span>
+              </button>
+              {collapsed ? (
+                <div className="evolution-chapter-summary">
+                  {completed ? "这一章的关键痕迹已被生命史记住。" : "继续积累资源后会出现新的可点亮痕迹。"}
+                </div>
+              ) : (
+                <div className="evolution-chapter-body">
+                  {chapter.blocks.map((block, idx) => renderBlock(block, idx))}
+                </div>
+              )}
+            </section>
           );
         })}
       </div>
     </div>
   );
+
+  function renderBlock(block: PathBlock, idx: number) {
+    if (block.type === "branch") {
+      const selectedBranch = block.nodes.find((node) => currentSave.unlockedNodes.includes(node.id));
+      const groupUnlocked = Boolean(selectedBranch);
+      const groupAvailable = block.nodes.some((node) => canUnlockEvolutionNode(currentSave, node.id));
+      const branchExpanded = selectedBranch ? expandedBranchIds.includes(block.id) : true;
+      return (
+        <div key={block.id} className={`evolution-branch-block ${groupUnlocked ? "unlocked" : groupAvailable ? "available" : "locked"} ${branchExpanded ? "expanded" : "collapsed"}`}>
+          {idx > 0 && <div className={`node-connector branch-entry ${groupUnlocked || groupAvailable ? "active" : ""}`} />}
+          <div className="branch-fork-cap">
+            <div className="branch-fork-copy">
+              <span className="branch-fork-label">分支选择</span>
+              <span className="branch-fork-title">
+                {selectedBranch ? `已选择：${selectedBranch.name}` : "复制开始分岔"}
+              </span>
+              <span className="branch-fork-desc">
+                {selectedBranch ? "其他复制倾向已沉入旁路，主线继续向第一种生命成形推进。" : "只能留下一种主倾向，后续生命会沿着它分化。"}
+              </span>
+            </div>
+            {selectedBranch && (
+              <button
+                className="branch-toggle"
+                aria-expanded={branchExpanded}
+                onClick={() => {
+                  setExpandedBranchIds((ids) =>
+                    ids.includes(block.id) ? ids.filter((id) => id !== block.id) : [...ids, block.id],
+                  );
+                }}
+              >
+                {branchExpanded ? "收起" : "展开"}
+              </button>
+            )}
+          </div>
+          {!selectedBranch && <div className="branch-fork-lines" aria-hidden="true" />}
+          {branchExpanded && (
+            <div className="branch-node-grid">
+              {block.nodes.map((node) => renderNode(node, true))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return (
+      <div key={block.node.id} className="evolution-node-row">
+        {idx > 0 && <div className={`node-connector ${currentSave.unlockedNodes.includes(block.node.id) ? "active" : ""}`} />}
+        {renderNode(block.node, false)}
+      </div>
+    );
+  }
 
   function renderNode(node: EvolutionNode, branchNode: boolean) {
     const unlocked = currentSave.unlockedNodes.includes(node.id);
@@ -142,7 +226,7 @@ export function EvolutionPage() {
             <span className="node-cost">
               {Object.entries(node.cost)
                 .map(([k, v]) => `${labelFor(k)} ${v}`)
-                .join(" · ")}
+                .join(" / ")}
             </span>
           )}
           {canUnlock && <span className="node-action">{actionFor(node.id)}</span>}
@@ -155,20 +239,53 @@ export function EvolutionPage() {
   }
 }
 
-function isBranchBlocked(node: EvolutionNode, unlocked: string[]) {
-  if (!node.branchGroupId || unlocked.includes(node.id)) return false;
-  return evolutionNodes.some((item) => item.branchGroupId === node.branchGroupId && unlocked.includes(item.id));
-}
-
 type PathBlock =
   | { type: "node"; node: EvolutionNode }
   | { type: "branch"; id: string; nodes: EvolutionNode[] };
 
+type ChapterBlock = {
+  id: ChapterId;
+  title: string;
+  objective: string;
+  nodes: EvolutionNode[];
+  blocks: PathBlock[];
+};
+
+function buildChapterBlocks(nodes: EvolutionNode[]): ChapterBlock[] {
+  return CHAPTERS.map((chapter) => {
+    const chapterNodes = chapter.nodeIds
+      .map((nodeId) => nodes.find((node) => node.id === nodeId))
+      .filter((node): node is EvolutionNode => Boolean(node));
+    return {
+      ...chapter,
+      nodes: chapterNodes,
+      blocks: groupEvolutionPath(chapterNodes),
+    };
+  });
+}
+
+function countChapterProgress(chapter: ChapterBlock, unlockedNodes: string[]) {
+  return chapter.blocks.reduce(
+    (progress, block) => {
+      if (block.type === "node") {
+        return {
+          total: progress.total + 1,
+          unlocked: progress.unlocked + (unlockedNodes.includes(block.node.id) ? 1 : 0),
+        };
+      }
+      return {
+        total: progress.total + 1,
+        unlocked: progress.unlocked + (block.nodes.some((node) => unlockedNodes.includes(node.id)) ? 1 : 0),
+      };
+    },
+    { total: 0, unlocked: 0 },
+  );
+}
+
 function groupEvolutionPath(nodes: EvolutionNode[]): PathBlock[] {
   const blocks: PathBlock[] = [];
   const grouped = new Set<string>();
-  for (let index = 0; index < nodes.length; index++) {
-    const node = nodes[index];
+  for (const node of nodes) {
     if (!node.branchGroupId) {
       blocks.push({ type: "node", node });
       continue;
@@ -182,6 +299,11 @@ function groupEvolutionPath(nodes: EvolutionNode[]): PathBlock[] {
   return blocks;
 }
 
+function isBranchBlocked(node: EvolutionNode, unlocked: string[]) {
+  if (!node.branchGroupId || unlocked.includes(node.id)) return false;
+  return evolutionNodes.some((item) => item.branchGroupId === node.branchGroupId && unlocked.includes(item.id));
+}
+
 function actionFor(nodeId: string): string {
   const map: Record<string, string> = {
     organic_richness: "点亮这道痕迹",
@@ -193,6 +315,11 @@ function actionFor(nodeId: string): string {
     metabolic_loop: "接上能量循环",
     proto_cell: "记录这个跃迁",
     photo_pigment: "追逐第一缕光",
+    early_producer_film: "记录受光生产者",
+    decomposition_layer: "记录分解层",
+    tidal_filter_pores: "记录滤食孔隙",
+    mutual_ecology_cycle: "接上小循环",
+    ecological_personality: "留下生态性格",
   };
   return map[nodeId] ?? "记录这个变化";
 }
@@ -208,9 +335,15 @@ function iconFor(nodeId: string): string {
     metabolic_loop: uiAssets.evolution.metabolicLoop,
     proto_cell: uiAssets.evolution.protoCell,
     photo_pigment: uiAssets.evolution.photoPigment,
+    early_producer_film: uiAssets.species.producer,
+    decomposition_layer: uiAssets.species.decomposer,
+    tidal_filter_pores: uiAssets.species.filterer,
+    mutual_ecology_cycle: uiAssets.emblems.ecologyResonance,
+    ecological_personality: uiAssets.emblems.system,
   };
   return map[nodeId] ?? uiAssets.emblems.discovery;
 }
+
 function labelFor(key: string): string {
   const map: Record<string, string> = {
     organic: "有机质",
@@ -224,64 +357,63 @@ function labelFor(key: string): string {
 }
 
 function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: string) {
-  if (nodeId === "organic_richness") {
-    return {
+  const map: Record<string, { title: string; description: string }> = {
+    organic_richness: {
       title: "第一道生命痕迹",
       description: "复杂分子开始稳定留下痕迹。",
-    };
-  }
-
-  if (nodeId === "replicating_chain") {
-    return {
+    },
+    replicating_chain: {
       title: "让生命学会延续",
       description: "有些结构开始重复自己，生命有了延续的可能。",
-    };
-  }
-
-  if (nodeId === "primitive_vesicle" || nodeId === "proto_cell") {
-    return {
+    },
+    primitive_vesicle: {
       title: "等待第一种生命成形",
       description: "反应被边界包裹，第一批小生命正在接近成形。",
-    };
-  }
-
-  if (nodeId === "replication_fidelity") {
-    return {
+    },
+    proto_cell: {
+      title: "等待第一种生命成形",
+      description: "反应被边界包裹，第一批小生命正在接近成形。",
+    },
+    replication_fidelity: {
       title: "高保真复制",
       description: "复制更稳，潮池会少一些大胆错误。",
-    };
-  }
-
-  if (nodeId === "error_retention") {
-    return {
+    },
+    error_retention: {
       title: "保留复制错误",
       description: "变化会更频繁，潮池也会更容易失衡。",
-    };
-  }
-
-  if (nodeId === "fragment_budding") {
-    return {
+    },
+    fragment_budding: {
       title: "让旁支萌发",
       description: "断裂结构也能延续，后续谱系更容易分叉。",
-    };
-  }
-
-  if (nodeId === "metabolic_loop") {
-    return {
+    },
+    metabolic_loop: {
       title: "让小生命获得能量",
       description: "简单循环开始把外界能量变成更稳定的生命活动。",
-    };
-  }
-
-  if (nodeId === "photo_pigment") {
-    return {
+    },
+    photo_pigment: {
       title: "让生命追逐光",
       description: "一些生命开始靠近光，新的生态爆发正在到来。",
-    };
-  }
-
-  return {
-    title: fallbackName,
-    description: fallbackDescription,
+    },
+    early_producer_film: {
+      title: "出现早期生产者",
+      description: "受光薄膜把光照转成可用能量，潮池出现第一个生态角色。",
+    },
+    decomposition_layer: {
+      title: "出现分解者",
+      description: "旧结构沉入池底，被拆回有机质与矿物，循环开始有底层。",
+    },
+    tidal_filter_pores: {
+      title: "出现滤食者",
+      description: "潮汐孔隙筛入颗粒，让水体稳定和生物量增长连在一起。",
+    },
+    mutual_ecology_cycle: {
+      title: "形成第一个小循环",
+      description: "生产、分解和滤食互相喂养，潮池第一次形成可延续生态。",
+    },
+    ecological_personality: {
+      title: "留下生态性格",
+      description: "生命史归纳这片潮池的长期倾向，第二章完成。",
+    },
   };
+  return map[nodeId] ?? { title: fallbackName, description: fallbackDescription };
 }

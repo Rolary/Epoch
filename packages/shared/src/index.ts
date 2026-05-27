@@ -2,6 +2,24 @@ export type ResourceKey = "organic" | "energy" | "minerals" | "stability" | "mut
 
 export type EraId = "primordial_pool" | "self_replicators" | "proto_cell" | "photosynthesis_eve";
 
+export type LifeHistoryChapter = "life_birth" | "ecology_burst";
+
+export type ChapterTwoStage =
+  | "pursue_light"
+  | "differentiate_roles"
+  | "form_cycle"
+  | "face_imbalance"
+  | "ecological_personality"
+  | "complete";
+
+export interface ChapterProgress {
+  chapter: LifeHistoryChapter;
+  stage: ChapterTwoStage | "life_birth";
+  completedStages: string[];
+  ecologyCycleFormed: boolean;
+  ecologyPersonality?: PlanetProfile;
+}
+
 export type SpeciesStatus = "living" | "flourishing" | "endangered" | "extinct" | "fossilized";
 
 export type EcologicalRole =
@@ -100,6 +118,27 @@ export interface EcologyEvent {
   options: EcologyEventOption[];
 }
 
+export interface EcologyResonance {
+  id: string;
+  title: string;
+  description: string;
+  requiresRoles: EcologicalRole[];
+  resourceEffect?: Partial<Resources>;
+  environmentEffect?: Partial<EnvironmentState>;
+  addHistoryTags: string[];
+  logMessage: string;
+  resultSummary: string;
+}
+
+export interface EcologyResonanceResult {
+  id: string;
+  title: string;
+  summary: string;
+  resourceEffect?: Partial<Resources>;
+  environmentEffect?: Partial<EnvironmentState>;
+  historyTags: string[];
+}
+
 export interface SpeciesRecord {
   id: string;
   parentSpeciesId?: string;
@@ -153,6 +192,10 @@ export interface GameState {
   pendingTalentChoices: Talent[];
   consumedTalents: string[];
   pendingEcologyEvent?: EcologyEvent | null;
+  chapterProgress?: ChapterProgress;
+  pendingEcologyResonances?: EcologyResonance[];
+  resonanceHistory?: string[];
+  lastResonanceAt?: string | null;
   historyTags: string[];
   eventHistory: string[];
   planetProfile: PlanetProfile;

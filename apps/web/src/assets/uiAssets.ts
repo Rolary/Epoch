@@ -5,6 +5,7 @@ import cardEnergy from "./ui/card-energy.png";
 import cardTide from "./ui/card-tide.png";
 import emblemDiscovery from "./ui/emblem-discovery.png";
 import emblemEcologyIntervention from "./ui/emblem-ecology-intervention.png";
+import emblemEcologyResonance from "./ui/emblem-ecology-resonance.png";
 import emblemReward from "./ui/emblem-reward.png";
 import emblemSystem from "./ui/emblem-system.png";
 import eventClearTide from "./ui/events/event-clear-tide.png";
@@ -119,6 +120,7 @@ export const uiAssets = {
   emblems: {
     get discovery() { return image("emblem-discovery.png", emblemDiscovery); },
     get ecologyIntervention() { return image("emblem-ecology-intervention.png", emblemEcologyIntervention); },
+    get ecologyResonance() { return image("emblem-ecology-resonance.png", emblemEcologyResonance); },
     get system() { return image("emblem-system.png", emblemSystem); },
     get reward() { return image("emblem-reward.png", emblemReward); },
   },

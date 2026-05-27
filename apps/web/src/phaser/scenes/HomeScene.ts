@@ -54,9 +54,11 @@ export class HomeScene extends Phaser.Scene {
   private causticGraphics!: Phaser.GameObjects.Graphics;
   private algaeGraphics!: Phaser.GameObjects.Graphics;
   private cloudGraphics!: Phaser.GameObjects.Graphics;
+  private ecologyStageGraphics!: Phaser.GameObjects.Graphics;
   private causticDrift = 0;
   private poolVertices: { x: number; y: number }[] = [];
   private ambientRedrawTimer = 0;
+  private ecologyStageRedrawTimer = 0;
 
   private dragElements: DragElement[] = [];
   private draggedElement: DragElement | null = null;
@@ -95,6 +97,7 @@ export class HomeScene extends Phaser.Scene {
     this.createLightBeams(width, height);
     this.createPool(width, height);
     this.createAlgaeAndClouds(width, height);
+    this.createEcologyStageLayer();
     this.createFloatingParticles(width, height);
     this.createResourceOrbs(width, height);
     this.createTitle(width, height);
@@ -143,6 +146,11 @@ export class HomeScene extends Phaser.Scene {
       this.updateCaustics(this.ambientRedrawTimer);
       this.updateAlgaeAndClouds(this.ambientRedrawTimer);
       this.ambientRedrawTimer = 0;
+    }
+    this.ecologyStageRedrawTimer += delta;
+    if (this.ecologyStageRedrawTimer >= 120) {
+      this.updateEcologyStageLayer();
+      this.ecologyStageRedrawTimer = 0;
     }
     this.updateLightBeams(delta);
   }
@@ -1070,6 +1078,65 @@ export class HomeScene extends Phaser.Scene {
 
   private createAlgaeAndClouds(w: number, _h: number): void {
     // Algae and clouds are created and updated dynamically in updateAlgaeAndClouds
+  }
+
+  private createEcologyStageLayer(): void {
+    this.ecologyStageGraphics = this.add.graphics();
+    this.ecologyStageGraphics.setDepth(3.5);
+  }
+
+  private updateEcologyStageLayer(): void {
+    if (!this.ecologyStageGraphics) return;
+    const save = useGameStore.getState().save;
+    const progress = save?.chapterProgress;
+    this.ecologyStageGraphics.clear();
+    if (progress?.chapter !== "ecology_burst") return;
+
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const t = reducedMotion ? 1 : this.poolPulseTime;
+    const cx = this.cameras.main.width / 2;
+    const cy = this.cameras.main.height / 2 + 40;
+    const stage = progress.stage;
+    const hasImbalance = Boolean(save?.pendingEcologyEvent?.id && /bloom|murky|decomposer/.test(save.pendingEcologyEvent.id));
+
+    if (["pursue_light", "differentiate_roles", "form_cycle", "face_imbalance", "ecological_personality", "complete"].includes(stage)) {
+      this.ecologyStageGraphics.fillStyle(0xF5D078, 0.045 + Math.sin(t * 0.001) * 0.012);
+      this.ecologyStageGraphics.fillEllipse(cx, cy - 34, 176, 38);
+      for (let i = 0; i < 5; i++) {
+        const x = cx - 70 + i * 35 + Math.sin(t * 0.0008 + i) * 4;
+        this.ecologyStageGraphics.lineStyle(1, 0xF5D078, 0.08);
+        this.ecologyStageGraphics.lineBetween(x, cy - 74, x + 12, cy - 18);
+      }
+    }
+
+    if (["form_cycle", "face_imbalance", "ecological_personality", "complete"].includes(stage)) {
+      this.ecologyStageGraphics.fillStyle(0x8D6E63, 0.11);
+      this.ecologyStageGraphics.fillEllipse(cx, cy + 74, 210, 30);
+      this.ecologyStageGraphics.fillStyle(0x66BB6A, 0.08);
+      for (let i = 0; i < 6; i++) {
+        const x = cx - 85 + i * 34;
+        const y = cy + 60 + Math.sin(t * 0.0009 + i) * 8;
+        this.ecologyStageGraphics.fillEllipse(x, y, 26, 7);
+      }
+    }
+
+    if (["face_imbalance", "ecological_personality", "complete"].includes(stage)) {
+      this.ecologyStageGraphics.lineStyle(1, 0x4FC3F7, 0.1);
+      for (let i = 0; i < 4; i++) {
+        const r = 34 + i * 20 + Math.sin(t * 0.001 + i) * 3;
+        this.ecologyStageGraphics.strokeEllipse(cx + 42, cy + 18, r * 1.4, r * 0.45);
+      }
+    }
+
+    if (hasImbalance || stage === "face_imbalance") {
+      this.ecologyStageGraphics.fillStyle(0x607D8B, 0.11 + Math.abs(Math.sin(t * 0.0008)) * 0.04);
+      this.ecologyStageGraphics.fillEllipse(cx - 16, cy + 6, 224, 94);
+    }
+
+    if (stage === "complete") {
+      this.ecologyStageGraphics.lineStyle(2, 0x66BB6A, 0.18);
+      this.ecologyStageGraphics.strokeCircle(cx, cy + 10, 122 + Math.sin(t * 0.001) * 4);
+    }
   }
 
   private createFloatingParticles(w: number, h: number): void {

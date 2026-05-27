@@ -18,7 +18,8 @@ const RES_LABELS: Record<string, { asset: string; label: string }> = {
   biomass: { asset: uiAssets.resources.biomass, label: "生物量" },
 };
 
-const STORY_STAGES = ["加入养料", "留下痕迹", "学会延续", "发现生命"] as const;
+const LIFE_BIRTH_STAGES = ["加入养料", "留下痕迹", "学会延续", "发现生命"] as const;
+const ECOLOGY_BURST_STAGES = ["追逐光照", "分化角色", "形成循环", "面对失衡", "留下性格"] as const;
 const LIFE_HISTORY_CHAPTERS = [
   "生命诞生",
   "生态爆发",
@@ -67,7 +68,9 @@ export function CurrentObjective() {
 
   const objective = getObjective(save, nextNode);
   const percent = Math.min(100, Math.round((objective.progress / Math.max(1, objective.target)) * 100));
-  const currentStageIndex = getCurrentStageIndex(unlocked, save.species.length);
+  const chapterIndex = save.chapterProgress?.chapter === "ecology_burst" ? 1 : 0;
+  const stageLabels = chapterIndex === 1 ? ECOLOGY_BURST_STAGES : LIFE_BIRTH_STAGES;
+  const currentStageIndex = chapterIndex === 1 ? getEcologyStageIndex(save.chapterProgress?.stage) : getCurrentStageIndex(unlocked, save.species.length);
 
   const toggleDetails = () => {
     setDetailsOpen((open) => {
@@ -107,7 +110,7 @@ export function CurrentObjective() {
       ) : (
         <>
           <div className="objective-mainline">
-            <span className="objective-kicker">主线：养出第一只生命</span>
+            <span className="objective-kicker">{chapterIndex === 1 ? "主线：形成第一个小生态循环" : "主线：养出第一只生命"}</span>
             <span className="objective-mainline-actions">
               <button
                 className="objective-toggle"
@@ -149,7 +152,7 @@ export function CurrentObjective() {
           {detailsOpen && (
             <div className="objective-details">
               <div className="storyline-steps" aria-label="主线阶段">
-                {STORY_STAGES.map((stage, index) => (
+                {stageLabels.map((stage, index) => (
                   <span
                     key={stage}
                     className={`storyline-step ${index === currentStageIndex ? "current" : ""} ${
@@ -164,7 +167,7 @@ export function CurrentObjective() {
                 <span className="life-history-title">远景时间轴</span>
                 <div className="life-history-chapters">
                   {LIFE_HISTORY_CHAPTERS.map((chapter, index) => (
-                    <span key={chapter} className={`life-history-chapter ${index === 0 ? "current" : "future"}`}>
+                    <span key={chapter} className={`life-history-chapter ${index === chapterIndex ? "current" : index < chapterIndex ? "done" : "future"}`}>
                       {chapter}
                     </span>
                   ))}
@@ -202,6 +205,10 @@ export function CurrentObjective() {
 }
 
 function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, nextNode: typeof evolutionNodes[number] | undefined) {
+  if (save.chapterProgress?.chapter === "ecology_burst") {
+    return getEcologyObjective(save, nextNode);
+  }
+
   const unlocked = save.unlockedNodes;
   let title = "让潮池活过来";
   let action = "把发光的养料拖进水里";
@@ -250,12 +257,119 @@ function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>
   return { title, action, observation, term, progressLabel, progress, target, costEntries };
 }
 
+function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, nextNode: typeof evolutionNodes[number] | undefined) {
+  const stage = save.chapterProgress?.stage ?? "pursue_light";
+  const stageCopy: Record<string, { title: string; action: string; observation: string; term: string; progressLabel: string; target: number; progress: number }> = {
+    pursue_light: {
+      title: "让生命追逐光",
+      action: "继续积累能量和生物量，点亮受光薄膜",
+      observation: "已有生命开始靠近光照，第二章的生态爆发正在打开。",
+      term: "追逐光照",
+      progressLabel: "光照准备",
+      target: 3,
+      progress: 1,
+    },
+    differentiate_roles: {
+      title: "让生命分化角色",
+      action: "在演化里确认生产者、分解者和滤食者的生态位置",
+      observation: "潮池不再只有一种生命，分工正在变得可见。",
+      term: "生态角色",
+      progressLabel: "已识别角色",
+      target: 3,
+      progress: countEarlyRoles(save),
+    },
+    form_cycle: {
+      title: "接上第一个小循环",
+      action: "让不同角色开始互相喂养，而不是各自存在",
+      observation: "生产、分解和滤食已经靠近，潮池等待第一组循环反馈。",
+      term: "互养循环",
+      progressLabel: "循环条件",
+      target: 3,
+      progress: countEarlyRoles(save),
+    },
+    face_imbalance: {
+      title: "面对繁盛后的失衡",
+      action: "回应潮池事件，让繁盛付出一个代价",
+      observation: "生态不是永远稳定，过度繁盛会压住另一部分生命。",
+      term: "生态平衡",
+      progressLabel: "失衡处理",
+      target: 1,
+      progress: (save.eventHistory ?? []).includes("bloom_pressure") ? 1 : 0,
+    },
+    ecological_personality: {
+      title: "留下生态性格",
+      action: "把这段循环记录为潮池自己的性格",
+      observation: "选择和物种组合正在被生命史归纳成长期倾向。",
+      term: "生态性格",
+      progressLabel: "性格归纳",
+      target: 1,
+      progress: save.unlockedNodes.includes("ecological_personality") ? 1 : 0,
+    },
+    complete: {
+      title: "第一个小生态循环已经形成",
+      action: "这片潮池已经拥有自己的生态循环",
+      observation: "生命不再只是出现，而是开始互相影响、互相延续。",
+      term: "生态爆发",
+      progressLabel: "第二章",
+      target: 1,
+      progress: 1,
+    },
+  };
+  const base = stageCopy[stage] ?? stageCopy.differentiate_roles;
+  const costEntries = nextNode ? Object.entries(nextNode.cost) as Array<[string, number]> : [];
+  if (!nextNode) return { ...base, costEntries };
+
+  const totalRequired = costEntries.reduce((sum, [, value]) => sum + value, 0);
+  const totalHave = costEntries.reduce(
+    (sum, [key, value]) => sum + Math.min(save.resources[key as ResourceKey] ?? 0, value),
+    0,
+  );
+  return {
+    ...base,
+    ...objectiveCopyForNode(nextNode.id, nextNode.name, nextNode.description),
+    action: canUnlockEvolutionNode(save, nextNode.id) ? actionForEcologyNode(nextNode.id) : base.action,
+    progress: Math.max(base.progress, totalHave),
+    target: Math.max(base.target, totalRequired),
+    costEntries,
+  };
+}
+
 function getCurrentStageIndex(unlocked: string[], speciesCount: number) {
   if (speciesCount > 0) return 3;
   if (unlocked.includes("replicating_chain")) return 3;
   if (unlocked.includes("organic_richness")) return 2;
   if (unlocked.length > 0) return 1;
   return 0;
+}
+
+function getEcologyStageIndex(stage: string | undefined) {
+  const map: Record<string, number> = {
+    pursue_light: 0,
+    differentiate_roles: 1,
+    form_cycle: 2,
+    face_imbalance: 3,
+    ecological_personality: 4,
+    complete: 4,
+  };
+  return map[stage ?? "pursue_light"] ?? 0;
+}
+
+function countEarlyRoles(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
+  const roles = new Set(save.species
+    .filter((item) => item.status === "living" || item.status === "flourishing")
+    .map((item) => item.ecologicalRole));
+  return ["producer", "decomposer", "filterer"].filter((role) => roles.has(role as never)).length;
+}
+
+function actionForEcologyNode(nodeId: string) {
+  const map: Record<string, string> = {
+    early_producer_film: "记录受光生产者",
+    decomposition_layer: "记录分解层",
+    tidal_filter_pores: "记录滤食孔隙",
+    mutual_ecology_cycle: "接上这个小循环",
+    ecological_personality: "留下生态性格",
+  };
+  return map[nodeId] ?? "记录这个生态变化";
 }
 
 function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDescription: string) {
@@ -286,6 +400,66 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
       observation: "反应被边界包裹，第一批小生命正在接近成形。",
       term: nodeId === "primitive_vesicle" ? "原始膜泡" : "原初细胞",
       progressLabel: "成形条件",
+    };
+  }
+
+  if (nodeId === "photo_pigment") {
+    return {
+      title: "让生命追逐光",
+      action: "追逐第一缕光",
+      observation: "一些生命开始靠近光，新的生态爆发正在到来。",
+      term: "感光色素",
+      progressLabel: "光照准备",
+    };
+  }
+
+  if (nodeId === "early_producer_film") {
+    return {
+      title: "出现早期生产者",
+      action: "记录受光生产者",
+      observation: "受光薄膜开始把光照变成潮池可以继续使用的能量。",
+      term: "生产者",
+      progressLabel: "分化条件",
+    };
+  }
+
+  if (nodeId === "decomposition_layer") {
+    return {
+      title: "出现分解者",
+      action: "记录分解层",
+      observation: "旧薄膜和碎片沉入池底，被拆回新的材料。",
+      term: "分解者",
+      progressLabel: "分化条件",
+    };
+  }
+
+  if (nodeId === "tidal_filter_pores") {
+    return {
+      title: "出现滤食者",
+      action: "记录滤食孔隙",
+      observation: "潮汐孔隙筛入颗粒，第三类生态角色稳定下来。",
+      term: "滤食者",
+      progressLabel: "分化条件",
+    };
+  }
+
+  if (nodeId === "mutual_ecology_cycle") {
+    return {
+      title: "形成第一个小循环",
+      action: "接上这个小循环",
+      observation: "生产、分解和滤食开始互相喂养，潮池接上了循环。",
+      term: "互养小循环",
+      progressLabel: "循环条件",
+    };
+  }
+
+  if (nodeId === "ecological_personality") {
+    return {
+      title: "留下生态性格",
+      action: "留下生态性格",
+      observation: "生命史开始归纳这片潮池反复展现的生态倾向。",
+      term: "生态性格",
+      progressLabel: "性格归纳",
     };
   }
 

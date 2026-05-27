@@ -1,13 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import type { EcologicalRole, SpeciesRecord } from "@eco-era/shared";
 import {
+  applyEcologyResonance,
   applyEcologyEventChoice,
   advanceState,
+  availableEcologyResonances,
   availableEcologyEvents,
   calculateEcologyScore,
   calculateResourceDelta,
   canUnlockEvolutionNode,
   createInitialState,
+  ecologyEventChanceFor,
+  normalizeGameState,
+  rollEcologyEvent,
   talentCatalog,
   unlockEvolutionNode
 } from "../src/index.js";
@@ -39,6 +44,58 @@ describe("roguelike life-history progression", () => {
 
     expect(events.map((event) => event.id)).toContain("tidal_memory_surge");
     expect(events.map((event) => event.id)).not.toContain("lightning_window");
+  });
+
+  it("keeps ordinary tidepool event chance restrained", () => {
+    const early = {
+      ...createInitialState("event-chance-early"),
+      unlockedNodes: ["organic_richness"]
+    };
+    const withLife = {
+      ...early,
+      species: [speciesRecord("sp-producer", "蓝膜浮群", "producer", {})]
+    };
+    const ecologyBurst = normalizeGameState({
+      ...withLife,
+      currentEra: "photosynthesis_eve" as const,
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
+      chapterProgress: undefined,
+    });
+
+    expect(ecologyEventChanceFor(early)).toBe(0.06);
+    expect(ecologyEventChanceFor(withLife)).toBe(0.1);
+    expect(ecologyEventChanceFor(ecologyBurst)).toBe(0.12);
+
+    vi.spyOn(Math, "random").mockReturnValue(0.13);
+    expect(rollEcologyEvent(ecologyBurst)).toBeNull();
+    vi.restoreAllMocks();
+  });
+
+  it("uses a longer soft interval after recent tidepool events", () => {
+    const state = normalizeGameState({
+      ...createInitialState("event-soft-interval"),
+      currentEra: "proto_cell" as const,
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell"],
+      species: [speciesRecord("sp-producer", "蓝膜浮群", "producer", {})],
+      logs: [
+        ...Array.from({ length: 12 }, (_, index) => ({
+          id: `quiet-${index}`,
+          type: "system" as const,
+          message: "普通潮声",
+          at: "2026-05-21T00:00:00.000Z",
+        })),
+        {
+          id: "recent-event",
+          type: "event" as const,
+          message: "潮池事件出现：回潮",
+          at: "2026-05-21T00:00:00.000Z",
+        },
+      ]
+    });
+
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    expect(rollEcologyEvent(state)).toBeNull();
+    vi.restoreAllMocks();
   });
 
   it("applies ecology event choices and records discoverable history tags", () => {
@@ -160,6 +217,130 @@ describe("roguelike life-history progression", () => {
     };
 
     expect(calculateEcologyScore(richer)).toBeGreaterThan(calculateEcologyScore(base));
+  });
+
+  it("derives second chapter progress for old saves after photosensitive life appears", () => {
+    const oldSave = {
+      ...createInitialState("old-second-chapter"),
+      currentEra: "photosynthesis_eve" as const,
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
+      chapterProgress: undefined
+    };
+
+    const normalized = normalizeGameState(oldSave);
+
+    expect(normalized.chapterProgress?.chapter).toBe("ecology_burst");
+    expect(normalized.chapterProgress?.stage).toBe("differentiate_roles");
+  });
+
+  it("supports a playable second chapter path through three roles, imbalance and personality", () => {
+    let state = {
+      ...createInitialState("chapter-two-path"),
+      currentEra: "photosynthesis_eve" as const,
+      resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"]
+    };
+
+    expect(canUnlockEvolutionNode(state, "early_producer_film")).toBe(true);
+    state = unlockEvolutionNode(state, "early_producer_film");
+    state = unlockEvolutionNode(state, "decomposition_layer");
+    state = unlockEvolutionNode(state, "tidal_filter_pores");
+
+    expect(Array.from(new Set(state.species.map((item) => item.ecologicalRole)))).toEqual(expect.arrayContaining(["producer", "decomposer", "filterer"]));
+    expect(canUnlockEvolutionNode(state, "mutual_ecology_cycle")).toBe(true);
+
+    state = unlockEvolutionNode(state, "mutual_ecology_cycle");
+    expect(state.pendingEcologyEvent?.id).toBe("bloom_pressure");
+    expect(state.chapterProgress?.stage).toBe("face_imbalance");
+
+    state = applyEcologyEventChoice(state, "bloom_pressure", "thin_bloom");
+    expect(state.historyTags).toContain("ecology_imbalance_faced");
+    expect(canUnlockEvolutionNode(state, "ecological_personality")).toBe(true);
+
+    state = unlockEvolutionNode(state, "ecological_personality");
+    expect(state.chapterProgress?.stage).toBe("complete");
+    expect(state.logs[0]?.message).toContain("生态性格");
+  });
+
+  it("records the first ecology combo only once during ticks", () => {
+    const base = {
+      ...createInitialState("combo-log-once"),
+      currentEra: "photosynthesis_eve" as const,
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
+      species: [
+        speciesRecord("sp-producer", "蓝膜浮群", "producer", { energy: 0.09, organic: 0.03 }),
+        speciesRecord("sp-decomposer", "灰晶分解链", "decomposer", { organic: 0.08, minerals: 0.02 }),
+        speciesRecord("sp-filterer", "潮筛微囊", "filterer", { biomass: 0.04, stability: 0.02 })
+      ],
+      lastCalculatedAt: "2026-05-21T00:00:00.000Z"
+    };
+
+    const first = advanceState(base, new Date("2026-05-21T00:00:02.000Z"));
+    const second = advanceState({ ...first, lastCalculatedAt: "2026-05-21T00:00:02.000Z" }, new Date("2026-05-21T00:00:04.000Z"));
+
+    expect(first.logs.filter((log) => log.message.includes("生态组合")).length).toBe(1);
+    expect(second.logs.filter((log) => log.message.includes("生态组合")).length).toBe(1);
+    expect(first.chapterProgress?.ecologyCycleFormed).toBe(true);
+  });
+
+  it("normalizes old saves with empty ecology resonance fields", () => {
+    const normalized = normalizeGameState({
+      ...createInitialState("old-resonance-save"),
+      pendingEcologyResonances: undefined,
+      resonanceHistory: undefined,
+      lastResonanceAt: undefined
+    });
+
+    expect(normalized.pendingEcologyResonances).toEqual([]);
+    expect(normalized.resonanceHistory).toEqual([]);
+    expect(normalized.lastResonanceAt).toBeNull();
+  });
+
+  it("requires second chapter roles and cooldown before ecology resonance", () => {
+    const base = createInitialState("resonance-gate");
+    expect(availableEcologyResonances(base)).toHaveLength(0);
+
+    const oneRole = {
+      ...base,
+      currentEra: "photosynthesis_eve" as const,
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
+      species: [speciesRecord("sp-producer", "蓝膜浮群", "producer", {})],
+    };
+    expect(availableEcologyResonances(oneRole)).toHaveLength(0);
+
+    const twoRoles = {
+      ...oneRole,
+      species: [...oneRole.species, speciesRecord("sp-decomposer", "灰晶分解链", "decomposer", {})],
+    };
+    expect(availableEcologyResonances(twoRoles).map((item) => item.id)).toContain("decomposer_feeds_producer");
+
+    const cooled = {
+      ...twoRoles,
+      lastResonanceAt: "2026-05-21T00:00:10.000Z",
+    };
+    expect(availableEcologyResonances(cooled, new Date("2026-05-21T00:00:20.000Z"))).toHaveLength(0);
+  });
+
+  it("applies ecology resonance without completing the second chapter", () => {
+    const state = {
+      ...createInitialState("resonance-apply"),
+      currentEra: "photosynthesis_eve" as const,
+      resources: { organic: 100, energy: 100, minerals: 100, stability: 70, mutation: 40, biomass: 80 },
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
+      species: [
+        speciesRecord("sp-producer", "蓝膜浮群", "producer", {}),
+        speciesRecord("sp-decomposer", "灰晶分解链", "decomposer", {})
+      ],
+    };
+
+    const { state: next, resonanceResult } = applyEcologyResonance(state, "decomposer_feeds_producer", new Date("2026-05-21T00:01:00.000Z"));
+
+    expect(resonanceResult.title).toContain("分解层");
+    expect(next.resources.organic).toBeGreaterThan(state.resources.organic);
+    expect(next.resonanceHistory).toContain("decomposer_feeds_producer");
+    expect(next.historyTags).toContain("producer_decomposer_resonance");
+    expect(next.logs[0]?.message).toContain("生态共鸣");
+    expect(next.chapterProgress?.stage).toBe("differentiate_roles");
   });
 });
 

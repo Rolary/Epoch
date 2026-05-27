@@ -30,6 +30,7 @@ const TONE_ASSETS: Record<MemoryTone, string> = {
 
 export function LogPage() {
   const logs = useGameStore((s) => s.logs());
+  const save = useGameStore((s) => s.save);
   const setPage = useUIStore((s) => s.setPage);
   const memories = buildMemoryEntries(logs);
 
@@ -56,6 +57,7 @@ export function LogPage() {
     <div className="page log-page memory-page">
       <h2 className="page-title">潮池记忆</h2>
       <p className="page-hint">重复的细小反应会被合并成一段记忆，重要变化会单独留下。</p>
+      {save?.chapterProgress?.stage === "complete" && <ChapterTwoSummary save={save} />}
       <div className="memory-timeline">
         {memories.map((entry) => (
           <article key={entry.id} className={`memory-card memory-${entry.tone}`}>
@@ -74,6 +76,35 @@ export function LogPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+function ChapterTwoSummary({ save }: { save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]> }) {
+  const roles = Array.from(new Set(
+    save.species
+      .filter((item) => item.status === "living" || item.status === "flourishing")
+      .map((item) => roleLabel(item.ecologicalRole)),
+  ));
+  const imbalances = (save.eventHistory ?? [])
+    .filter((id) => ["bloom_pressure", "murky_low_oxygen", "decomposer_layer_spread"].includes(id))
+    .map(eventLabel);
+  const resonances = (save.resonanceHistory ?? []).map(resonanceLabel);
+  return (
+    <section className="chapter-summary-card">
+      <div className="chapter-summary-head">
+        <img src={uiAssets.emblems.ecologyResonance} alt="" aria-hidden="true" />
+        <div>
+          <span className="chapter-summary-kicker">第二章总结</span>
+          <h3>生态爆发篇完成</h3>
+        </div>
+      </div>
+      <p>这片潮池已经形成自己的生态性格：{planetProfileLabel(save.planetProfile)}。</p>
+      <div className="chapter-summary-grid">
+        <span><strong>关键角色</strong>{roles.join(" / ") || "尚未记录"}</span>
+        <span><strong>角色组合</strong>{resonances.at(-1) ?? "生产、分解、滤食接成小循环"}</span>
+        <span><strong>经历失衡</strong>{imbalances.join(" / ") || "繁盛压力"}</span>
+      </div>
+    </section>
   );
 }
 
@@ -114,6 +145,22 @@ function buildMemoryEntries(logs: EvolutionLog[]): MemoryEntry[] {
 }
 
 function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
+  if (/生态共鸣/.test(log.message)) {
+    return keyMemory(log, "species", "生态共鸣被观察到", "两个生态角色之间出现了可读懂的互动方向，这段关系会影响潮池后来的性格。");
+  }
+
+  if (/第一个小生态循环|互养小循环|生态组合显现/.test(log.message)) {
+    return keyMemory(log, "species", "第一个小循环接上了", "生产、分解和滤食不再只是分别存在，它们开始互相喂养这片潮池。");
+  }
+
+  if (/繁盛薄膜|生态失衡|过盛薄膜|经历失衡/.test(log.message)) {
+    return keyMemory(log, "tide", "繁盛带来压力", "潮池第一次处理生态失衡，繁盛不再只是奖励，也会带来取舍。");
+  }
+
+  if (/生态性格|稳定循环|突变爆发|共生网络|极端适应/.test(log.message)) {
+    return keyMemory(log, "era", "潮池留下生态性格", "这些选择被生命史归纳下来，这片潮池拥有了自己的生态循环。");
+  }
+
   if (log.type === "species") {
     const name = extractName(log.message);
     return keyMemory(log, "species", "新生命被记住", name ? `${name}第一次出现在潮池里，生命史多了一条新的分支。` : "潮池里出现了新的生命分支。");
@@ -191,6 +238,48 @@ function routineCopy(tone: MemoryTone, count = 1): Pick<MemoryEntry, "title" | "
     talent: { title: "源质印记融入潮池", description: "新的源质印记改变了之后的成长倾向。" },
   };
   return map[tone];
+}
+
+function roleLabel(role: string): string {
+  const map: Record<string, string> = {
+    producer: "生产者",
+    decomposer: "分解者",
+    filterer: "滤食者",
+    symbiont: "共生者",
+    extremophile: "极端适应者",
+    catalyst: "催化者",
+  };
+  return map[role] ?? role;
+}
+
+function eventLabel(eventId: string): string {
+  const map: Record<string, string> = {
+    bloom_pressure: "繁盛压力",
+    murky_low_oxygen: "浑浊缺氧",
+    decomposer_layer_spread: "分解层扩张",
+  };
+  return map[eventId] ?? eventId;
+}
+
+function resonanceLabel(resonanceId: string): string {
+  const map: Record<string, string> = {
+    decomposer_feeds_producer: "分解层回喂生产者",
+    filter_pores_clear_tide: "滤孔清理浑浊水体",
+    bloom_selection_pressure: "繁盛薄膜接受筛选",
+  };
+  return map[resonanceId] ?? resonanceId;
+}
+
+function planetProfileLabel(profile: string): string {
+  const map: Record<string, string> = {
+    stable_pool: "稳定循环",
+    high_mutation: "突变爆发",
+    symbiotic: "共生网络",
+    extreme: "极端适应",
+    cataclysmic: "灾变遗产",
+    balanced: "平衡潮池",
+  };
+  return map[profile] ?? profile;
 }
 
 function extractQuotedName(message: string): string {

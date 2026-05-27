@@ -320,6 +320,35 @@ export function App() {
   }, [save?.pendingEcologyEvent?.id, snoozedEcologyEventId, modalType, page]);
 
   useEffect(() => {
+    if (!save || modalType || page === "create-ecology") return;
+    if (save.chapterProgress?.chapter === "ecology_burst" && !seenUnlockHints.includes("chapter-ecology-burst")) {
+      markUnlockHintSeen("chapter-ecology-burst");
+      showModal("system-unlock", {
+        title: "生态爆发篇开始",
+        name: "第二章",
+        description: "生命不再只是出现，它们开始分工、互相喂养，也会带来新的失衡。",
+        impact: "这一章的目标是形成第一个小生态循环：生产者、分解者和滤食者会逐步显露自己的位置。",
+        advice: "先观察角色，再观察关系。生态不是一个物种赢下去，而是多个角色一起把潮池撑起来。",
+        icon: uiAssets.emblems.ecologyResonance,
+        actionLabel: "观察潮池",
+      });
+      return;
+    }
+    if (save.chapterProgress?.stage === "complete" && !seenUnlockHints.includes("chapter-ecology-complete")) {
+      markUnlockHintSeen("chapter-ecology-complete");
+      showModal("system-unlock", {
+        title: "生态爆发篇完成",
+        name: "生态性格",
+        description: "这片潮池已经不只是有生命，而是拥有了自己的生态循环。",
+        impact: "生命史会把关键角色组合、经历过的失衡，以及最终生态性格整理成一张总结记忆。",
+        advice: "回到生命史，可以看到这段生态如何从分工、循环、失衡走向长期性格。",
+        icon: uiAssets.emblems.ecologyResonance,
+        actionLabel: "查看总结",
+      });
+    }
+  }, [save?.id, save?.chapterProgress?.chapter, save?.chapterProgress?.stage, modalType, page, seenUnlockHints, markUnlockHintSeen, showModal]);
+
+  useEffect(() => {
     if (!save) return;
     const hints = unlockedHintsFor(save);
     const currentIds = new Set(hints.map((hint) => hint.id));

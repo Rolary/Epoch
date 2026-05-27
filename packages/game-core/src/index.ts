@@ -1,7 +1,10 @@
 import type {
+  ChapterProgress,
   EcologicalRole,
   EcologyEvent,
   EcologyEventOption,
+  EcologyResonance,
+  EcologyResonanceResult,
   EvolutionLog,
   EvolutionNode,
   FossilLegacy,
@@ -13,6 +16,7 @@ import type {
 } from "@eco-era/shared";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const RESONANCE_COOLDOWN_SECONDS = 60;
 
 export const evolutionNodes: EvolutionNode[] = [
   {
@@ -68,14 +72,14 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "metabolic_loop",
     name: "代谢回路",
     description: "简单循环让能量输入转化为更稳定的生命活动。",
-    cost: { energy: 120, stability: 36, mutation: 18 },
+    cost: { energy: 150, stability: 44, mutation: 26 },
     requires: ["primitive_vesicle"]
   },
   {
     id: "proto_cell",
     name: "原初细胞",
     description: "潮池中出现最早可称为生命单位的结构。",
-    cost: { organic: 160, biomass: 24, stability: 48 },
+    cost: { organic: 190, biomass: 40, stability: 58 },
     requires: ["metabolic_loop"],
     unlocksEra: "proto_cell"
   },
@@ -83,9 +87,44 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "photo_pigment",
     name: "感光色素",
     description: "部分谱系开始利用光照改变能量结构。",
-    cost: { energy: 240, mutation: 60, biomass: 70 },
+    cost: { energy: 300, mutation: 82, biomass: 95 },
     requires: ["proto_cell"],
     unlocksEra: "photosynthesis_eve"
+  },
+  {
+    id: "early_producer_film",
+    name: "早期生产薄膜",
+    description: "追逐光照的谱系在水面铺开，把光转成可被潮池继续使用的能量。",
+    cost: { energy: 250, biomass: 115, mutation: 48 },
+    requires: ["photo_pigment"]
+  },
+  {
+    id: "decomposition_layer",
+    name: "沉积分解层",
+    description: "旧薄膜和碎片沉入池底，新的谱系开始把残余物拆回可用材料。",
+    cost: { organic: 270, minerals: 110, biomass: 125 },
+    requires: ["early_producer_film"]
+  },
+  {
+    id: "tidal_filter_pores",
+    name: "潮筛滤孔",
+    description: "潮汐带来的颗粒被微小孔隙反复筛入，滤食角色开始稳定出现。",
+    cost: { organic: 245, biomass: 170, stability: 46 },
+    requires: ["decomposition_layer"]
+  },
+  {
+    id: "mutual_ecology_cycle",
+    name: "互养小循环",
+    description: "生产薄膜、分解层和滤食孔隙开始互相喂养，潮池第一次接上小生态循环。",
+    cost: { organic: 360, energy: 280, stability: 64 },
+    requires: ["tidal_filter_pores"]
+  },
+  {
+    id: "ecological_personality",
+    name: "生态性格",
+    description: "多次选择和物种组合被生命史归纳，这片潮池有了自己的生态性格。",
+    cost: { biomass: 340, stability: 36, mutation: 72 },
+    requires: ["mutual_ecology_cycle"]
   }
 ];
 
@@ -229,6 +268,147 @@ export const ecologyEvents: EcologyEvent[] = [
         logMessage: "矿架缝隙成了庇护处，潮池里的延续感更明显了。"
       }
     ]
+  },
+  {
+    id: "bloom_pressure",
+    title: "繁盛薄膜压住水面",
+    description: "追光的薄膜在水面迅速铺开，潮池变得丰厚，却也让下层生命更难呼吸。",
+    tendencyTag: "生态失衡",
+    options: [
+      {
+        id: "thin_bloom",
+        title: "削薄表层薄膜",
+        description: "保留生产者的光能优势，同时让下层水体重新流动。",
+        resourceEffect: { stability: 16, biomass: -12, energy: 18 },
+        environmentEffect: { light: 0.04, volatility: -0.06 },
+        addHistoryTags: ["ecology_imbalance_faced", "stable_cycle"],
+        logMessage: "潮池削薄了过盛薄膜，光仍能被接住，下层生命也重新获得空间。"
+      },
+      {
+        id: "feed_decomposers",
+        title: "交给分解层",
+        description: "让沉积层吃下过剩薄膜，换来更多材料，但水体会短暂浑浊。",
+        resourceEffect: { organic: 42, minerals: 18, stability: -8 },
+        environmentEffect: { tide: 0.08, volatility: 0.05 },
+        addHistoryTags: ["ecology_imbalance_faced", "decomposer_cycle"],
+        logMessage: "过盛薄膜沉入分解层，潮池把一次拥挤变成了新的养分循环。"
+      },
+      {
+        id: "let_bloom_select",
+        title: "让繁盛自行筛选",
+        description: "不急着干预，让耐受者和滤食者从压力里分化出来。",
+        resourceEffect: { biomass: 28, mutation: 18, stability: -14 },
+        environmentEffect: { volatility: 0.1 },
+        addHistoryTags: ["ecology_imbalance_faced", "selection_pressure", "branching"],
+        logMessage: "繁盛带来的压力没有立刻被抹平，滤食和耐受的影子因此更清晰。"
+      }
+    ]
+  },
+  {
+    id: "murky_low_oxygen",
+    title: "浑浊水体压低呼吸",
+    description: "繁盛后的碎屑悬在水中，浅层光照还在，下层却开始缺少可用空间。",
+    tendencyTag: "浑浊缺氧",
+    options: [
+      {
+        id: "open_filter_channels",
+        title: "打开滤食孔隙",
+        description: "让滤食者优先清理悬浮颗粒，水体会变清，但生物量增长会慢下来。",
+        resourceEffect: { stability: 18, biomass: -8 },
+        environmentEffect: { volatility: -0.08, tide: 0.04 },
+        addHistoryTags: ["ecology_imbalance_faced", "filterer_balance", "stable_cycle"],
+        logMessage: "滤食孔隙打开后，浑浊水体重新透出光，潮池记住了以过滤维持稳定的方式。"
+      },
+      {
+        id: "let_debris_feed",
+        title: "让碎屑沉入分解层",
+        description: "把浑浊交给分解者，换来材料回流，但短期稳定会继续承压。",
+        resourceEffect: { organic: 38, minerals: 16, stability: -10 },
+        environmentEffect: { volatility: 0.05 },
+        addHistoryTags: ["ecology_imbalance_faced", "decomposer_cycle"],
+        logMessage: "碎屑沉入分解层，潮池用一次浑浊换来了更深的材料回收。"
+      },
+      {
+        id: "favor_surface_life",
+        title: "偏向表层生命",
+        description: "保留上层受光薄膜的优势，牺牲下层稳定换取更快繁盛。",
+        resourceEffect: { energy: 34, biomass: 18, stability: -16 },
+        environmentEffect: { light: 0.08, volatility: 0.07 },
+        addHistoryTags: ["ecology_imbalance_faced", "bloom_resonance"],
+        logMessage: "表层生命继续追光，潮池变得更丰盛，也更容易在下层留下压力。"
+      }
+    ]
+  },
+  {
+    id: "decomposer_layer_spread",
+    title: "分解层向外扩张",
+    description: "池底分解者吃下大量旧薄膜，回收效率升高，却开始挤压新生薄膜的落脚处。",
+    tendencyTag: "分解扩张",
+    options: [
+      {
+        id: "cap_decomposition",
+        title: "限制分解层边界",
+        description: "把分解层压回池底，让生产薄膜和滤食孔隙重新取得空间。",
+        resourceEffect: { stability: 12, biomass: 8, organic: -10 },
+        environmentEffect: { volatility: -0.05 },
+        addHistoryTags: ["ecology_imbalance_faced", "stable_cycle"],
+        logMessage: "分解层被压回池底，潮池保住了循环边界，也放慢了材料回流。"
+      },
+      {
+        id: "accept_recycling_boom",
+        title: "接受回收爆发",
+        description: "让分解层继续扩张，获得大量可用材料，但部分薄膜会被挤出浅层。",
+        resourceEffect: { organic: 54, minerals: 24, biomass: -10, stability: -8 },
+        environmentEffect: { tide: 0.06, volatility: 0.04 },
+        addHistoryTags: ["ecology_imbalance_faced", "decomposer_cycle"],
+        logMessage: "分解层短暂扩张，旧生命被迅速拆回材料，潮池更偏向回收循环。"
+      },
+      {
+        id: "seed_symbiotic_edges",
+        title: "留下互养边缘",
+        description: "让生产薄膜和分解层在边缘交换材料，收益较慢，但可能留下共生种源。",
+        resourceEffect: { stability: 8, organic: 18, energy: 10 },
+        environmentEffect: { volatility: -0.02 },
+        addHistoryTags: ["ecology_imbalance_faced", "symbiotic_seed"],
+        logMessage: "薄膜与分解层在边缘交换材料，潮池第一次把冲突整理成互养关系。"
+      }
+    ]
+  }
+];
+
+export const ecologyResonances: EcologyResonance[] = [
+  {
+    id: "decomposer_feeds_producer",
+    title: "分解层回喂受光薄膜",
+    description: "观察沉积层把旧薄膜拆回材料，再让浅光生产膜接住这些养分。",
+    requiresRoles: ["producer", "decomposer"],
+    resourceEffect: { organic: 28, energy: 18, stability: 4 },
+    environmentEffect: { tide: 0.04 },
+    addHistoryTags: ["producer_decomposer_resonance", "decomposer_cycle"],
+    logMessage: "生态共鸣：分解层回喂了受光薄膜，生产和回收第一次像是在彼此回应。",
+    resultSummary: "有机质与能量回流，小循环更容易接上。"
+  },
+  {
+    id: "filter_pores_clear_tide",
+    title: "滤孔清理浑浊水体",
+    description: "让滤食孔隙接住潮水里的颗粒，给脆弱薄膜留出更清的水层。",
+    requiresRoles: ["producer", "filterer"],
+    resourceEffect: { stability: 14, biomass: 10, organic: -6 },
+    environmentEffect: { volatility: -0.06, tide: 0.03 },
+    addHistoryTags: ["filterer_balance", "stable_cycle"],
+    logMessage: "生态共鸣：滤食孔隙清理了浑浊水体，潮池短暂露出更稳定的呼吸节奏。",
+    resultSummary: "稳定性上升，潮池波动被压低。"
+  },
+  {
+    id: "bloom_selection_pressure",
+    title: "繁盛薄膜接受筛选",
+    description: "不直接削去过盛薄膜，而是让滤食者和耐受者从拥挤里分出道路。",
+    requiresRoles: ["producer", "filterer"],
+    resourceEffect: { biomass: 20, mutation: 14, stability: -8 },
+    environmentEffect: { volatility: 0.07 },
+    addHistoryTags: ["bloom_resonance", "selection_pressure", "branching"],
+    logMessage: "生态共鸣：繁盛薄膜承受了一次筛选，潮池牺牲稳定，换来更清晰的分化方向。",
+    resultSummary: "生物量和突变上升，但稳定性承压。"
   }
 ];
 
@@ -620,6 +800,15 @@ export function createInitialState(id: string, name = "始源潮池", initialTal
     pendingTalentChoices: [],
     consumedTalents: [],
     pendingEcologyEvent: null,
+    chapterProgress: {
+      chapter: "life_birth",
+      stage: "life_birth",
+      completedStages: [],
+      ecologyCycleFormed: false
+    },
+    pendingEcologyResonances: [],
+    resonanceHistory: [],
+    lastResonanceAt: null,
     historyTags: initialTalent ? historyTagsForTalent(initialTalent.id) : [],
     eventHistory: [],
     planetProfile: "balanced",
@@ -655,13 +844,14 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
 }
 
 export function advanceState(input: GameState, now = new Date()): GameState {
-  const elapsedSeconds = Math.min(60 * 60 * 12, Math.max(0, (now.getTime() - new Date(input.lastCalculatedAt).getTime()) / 1000));
+  const normalized = normalizeGameState(input);
+  const elapsedSeconds = Math.min(60 * 60 * 12, Math.max(0, (now.getTime() - new Date(normalized.lastCalculatedAt).getTime()) / 1000));
   if (elapsedSeconds < 1) {
-    return input;
+    return normalized;
   }
 
-  const delta = calculateResourceDelta(input, elapsedSeconds);
-  const next = cloneState(input);
+  const delta = calculateResourceDelta(normalized, elapsedSeconds);
+  const next = cloneState(normalized);
   for (const key of Object.keys(delta) as Array<keyof Resources>) {
     next.resources[key] = clamp(next.resources[key] + delta[key], 0, 999999);
   }
@@ -708,12 +898,13 @@ export function advanceState(input: GameState, now = new Date()): GameState {
   }
 
   maybeAssignEcologyEvent(next);
+  refreshChapterDerivedState(next, now);
 
   return next;
 }
 
 export function applyEnvironmentAction(input: GameState, action: string): GameState {
-  const next = cloneState(input);
+  const next = normalizeGameState(cloneState(input));
   const now = new Date().toISOString();
 
   if (action === "catalyze") {
@@ -759,6 +950,7 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
 
   next.planetProfile = calculatePlanetProfile(next);
   maybeAssignEcologyEvent(next);
+  refreshChapterDerivedState(next);
   next.updatedAt = now;
   return next;
 }
@@ -772,9 +964,10 @@ export function unlockEvolutionNode(input: GameState, nodeId: string): GameState
     throw new Error("演化条件尚未满足");
   }
 
-  const next = cloneState(input);
+  const next = normalizeGameState(cloneState(input));
   spend(next.resources, node.cost);
   next.unlockedNodes.push(nodeId);
+  applyNodeHistoryEffects(next, nodeId);
 
   // Trait: 复制遗产 — refund 40% of node cost
   const hasReplicateLegacy = (next.talents ?? []).some((t) => t.trait?.id === "replicate_legacy");
@@ -803,6 +996,7 @@ export function unlockEvolutionNode(input: GameState, nodeId: string): GameState
   }
   next.planetProfile = calculatePlanetProfile(next);
   maybeAssignEcologyEvent(next);
+  refreshChapterDerivedState(next);
   next.updatedAt = new Date().toISOString();
   return next;
 }
@@ -817,6 +1011,9 @@ export function availableEcologyEvents(state: GameState): EcologyEvent[] {
     if (event.id === "tidal_memory_surge") return state.resources.organic >= 18 || tags.has("tidal_rich") || talentIds.has("tidal_memory");
     if (event.id === "lightning_window") return state.resources.energy >= 18 || talentIds.has("storm_affinity") || talentIds.has("chain_lightning");
     if (event.id === "mineral_shelf_exposed") return state.resources.minerals >= 12 || tags.has("mineral_catalyst") || talentIds.has("crystal_nursery") || talentIds.has("deep_mineral");
+    if (event.id === "bloom_pressure") return state.unlockedNodes.includes("mutual_ecology_cycle") || hasEcologyCycleRoles(state);
+    if (event.id === "murky_low_oxygen") return state.unlockedNodes.includes("mutual_ecology_cycle") && (tags.has("filterer_seed") || tags.has("bloom_resonance"));
+    if (event.id === "decomposer_layer_spread") return state.unlockedNodes.includes("decomposition_layer") && tags.has("decomposer_seed");
     return true;
   });
 }
@@ -824,8 +1021,8 @@ export function availableEcologyEvents(state: GameState): EcologyEvent[] {
 export function rollEcologyEvent(state: GameState): EcologyEvent | null {
   if ((state.pendingTalentChoices ?? []).length > 0) return null;
   if (state.unlockedNodes.length === 0) return null;
-  if (state.logs.slice(0, 6).some((log) => log.message.includes("潮池事件出现"))) return null;
-  const eventChance = state.species.length > 0 ? 0.28 : 0.16;
+  if (state.logs.slice(0, 14).some((log) => log.message.includes("潮池事件出现"))) return null;
+  const eventChance = ecologyEventChanceFor(state);
   if (Math.random() > eventChance) return null;
   const events = availableEcologyEvents(state);
   if (events.length === 0) return null;
@@ -835,12 +1032,21 @@ export function rollEcologyEvent(state: GameState): EcologyEvent | null {
       (event.id === "hot_spring_pulse" && talentIds.has("warm_water")) ||
       (event.id === "tidal_memory_surge" && talentIds.has("tidal_memory")) ||
       (event.id === "lightning_window" && talentIds.has("storm_affinity")) ||
-      (event.id === "mineral_shelf_exposed" && talentIds.has("crystal_nursery"))
+      (event.id === "mineral_shelf_exposed" && talentIds.has("crystal_nursery")) ||
+      (event.id === "bloom_pressure" && state.unlockedNodes.includes("mutual_ecology_cycle")) ||
+      (event.id === "murky_low_oxygen" && state.historyTags.includes("filterer_balance")) ||
+      (event.id === "decomposer_layer_spread" && state.historyTags.includes("decomposer_cycle"))
         ? 2
         : 1;
     return Array.from({ length: weight }, () => event);
   });
   return weighted[Math.floor(Math.random() * weighted.length)] ?? null;
+}
+
+export function ecologyEventChanceFor(state: GameState): number {
+  if (state.species.length === 0) return 0.06;
+  if (state.chapterProgress?.chapter === "ecology_burst") return 0.12;
+  return 0.1;
 }
 
 export function applyEcologyEventChoice(input: GameState, eventId: string, optionId: string): GameState {
@@ -860,8 +1066,58 @@ export function applyEcologyEventChoice(input: GameState, eventId: string, optio
   const hasEcho = newTags.some((tag) => (input.historyTags ?? []).includes(tag));
   next.logs.unshift(createLog("event", hasEcho ? `${option.logMessage} 这类变化正在成为潮池的性格。` : option.logMessage));
   next.planetProfile = calculatePlanetProfile(next);
+  refreshChapterDerivedState(next);
   next.updatedAt = new Date().toISOString();
   return next;
+}
+
+export function availableEcologyResonances(state: GameState, now = new Date()): EcologyResonance[] {
+  const chapter = deriveChapterProgress(state);
+  if (chapter.chapter !== "ecology_burst") return [];
+  if (!["differentiate_roles", "form_cycle", "face_imbalance", "ecological_personality"].includes(chapter.stage)) return [];
+  if (isResonanceOnCooldown(state, now)) return [];
+  const roles = livingRoles(state);
+  if (roles.size < 2) return [];
+  return ecologyResonances.filter((resonance) =>
+    resonance.requiresRoles.every((role) => roles.has(role)),
+  );
+}
+
+export function applyEcologyResonance(input: GameState, resonanceId: string, now = new Date()): { state: GameState; resonanceResult: EcologyResonanceResult } {
+  const next = normalizeGameState(cloneState(input));
+  const resonance = availableEcologyResonances(next, now).find((item) => item.id === resonanceId);
+  if (!resonance) {
+    throw new Error(isResonanceOnCooldown(next, now) ? "生态共鸣仍在沉淀" : "生态共鸣条件尚未形成");
+  }
+
+  applyEventOption(next, {
+    id: resonance.id,
+    title: resonance.title,
+    description: resonance.description,
+    resourceEffect: resonance.resourceEffect,
+    environmentEffect: resonance.environmentEffect,
+    addHistoryTags: resonance.addHistoryTags,
+    logMessage: resonance.logMessage
+  });
+  next.historyTags = addUniqueTags(next.historyTags ?? [], resonance.addHistoryTags);
+  next.resonanceHistory = [...(next.resonanceHistory ?? []), resonance.id].slice(-12);
+  next.lastResonanceAt = now.toISOString();
+  next.logs.unshift(createLog("event", resonance.logMessage));
+  next.planetProfile = calculatePlanetProfile(next);
+  next.updatedAt = now.toISOString();
+  refreshChapterDerivedState(next, now);
+
+  return {
+    state: next,
+    resonanceResult: {
+      id: resonance.id,
+      title: resonance.title,
+      summary: resonance.resultSummary,
+      resourceEffect: resonance.resourceEffect,
+      environmentEffect: resonance.environmentEffect,
+      historyTags: resonance.addHistoryTags
+    }
+  };
 }
 
 export function selectTalent(input: GameState, talentId: string): GameState {
@@ -967,14 +1223,22 @@ export function rollTalentChoices(state?: GameState, count = 3): Talent[] {
 }
 
 export function normalizeGameState(state: GameState): GameState {
-  return {
+  const normalized = {
     ...state,
     talents: state.talents ?? [],
     pendingTalentChoices: state.pendingTalentChoices ?? [],
     consumedTalents: state.consumedTalents ?? [],
     pendingEcologyEvent: state.pendingEcologyEvent ?? null,
+    pendingEcologyResonances: state.pendingEcologyResonances ?? [],
+    resonanceHistory: state.resonanceHistory ?? [],
+    lastResonanceAt: state.lastResonanceAt ?? null,
     historyTags: state.historyTags ?? [],
     eventHistory: state.eventHistory ?? []
+  };
+  return {
+    ...normalized,
+    chapterProgress: state.chapterProgress ?? deriveChapterProgress(normalized),
+    pendingEcologyResonances: availableEcologyResonances(normalized)
   };
 }
 
@@ -984,6 +1248,12 @@ export function canUnlockEvolutionNode(state: GameState, nodeId: string): boolea
     return false;
   }
   if (!node.requires.every((required) => state.unlockedNodes.includes(required))) {
+    return false;
+  }
+  if (nodeId === "mutual_ecology_cycle" && !hasEcologyCycleRoles(state)) {
+    return false;
+  }
+  if (nodeId === "ecological_personality" && !(state.eventHistory ?? []).includes("bloom_pressure")) {
     return false;
   }
   if (node.branchGroupId) {
@@ -996,6 +1266,9 @@ export function canUnlockEvolutionNode(state: GameState, nodeId: string): boolea
 }
 
 export function calculatePlanetProfile(state: GameState): PlanetProfile {
+  const tags = new Set(state.historyTags ?? []);
+  if (tags.has("stable_cycle")) return "stable_pool";
+  if (tags.has("decomposer_cycle") || tags.has("symbiotic_seed")) return "symbiotic";
   if (state.environment.volatility > 1.2 || state.resources.mutation > 220) return "high_mutation";
   if (state.legacies.length >= 3) return "cataclysmic";
   if (state.resources.stability > 75 && state.environment.volatility < 0.6) return "stable_pool";
@@ -1074,6 +1347,82 @@ export function generateSpeciesTemplate(state: GameState): SpeciesRecord {
   };
 }
 
+function generateSpeciesForRole(state: GameState, role: EcologicalRole, reason: string): SpeciesRecord {
+  const base = generateSpeciesTemplate({ ...state, species: state.species });
+  const names: Record<EcologicalRole, string> = {
+    producer: "浅光生产膜",
+    decomposer: "沉积分解层",
+    filterer: "潮筛滤泡",
+    symbiont: "互养共膜群",
+    extremophile: "耐隙原胞",
+    catalyst: "晶面催化群"
+  };
+  const niches: Record<EcologicalRole, string> = {
+    producer: "受光水面",
+    decomposer: "池底沉积层",
+    filterer: "回潮孔隙",
+    symbiont: "薄膜交界处",
+    extremophile: "热盐边缘",
+    catalyst: "矿物晶面"
+  };
+  return {
+    ...base,
+    id: cryptoId("sp"),
+    name: names[role],
+    niche: niches[role],
+    status: "living",
+    ecologicalRole: role,
+    traits: traitsFor(role, state.planetProfile),
+    vulnerabilities: vulnerabilitiesFor(state),
+    historyTags: speciesHistoryTagsFor(state, role),
+    numericEffects: roleEffects(role),
+    shortDescription: `${names[role]}出现在${niches[role]}，${reason}`,
+    visualPrompt: `科学图鉴插画风格，${niches[role]}中的${names[role]}，早期潮池生态角色，微弱荧光`,
+    lineageSummary: state.species[0] ? `从 ${state.species[0].name} 之后的生态分化中被记录。` : "这是第二章生态分化中最早被记录的谱系之一。",
+    legacyHint: "若后续平衡事件让它退出生态，它的作用会沉淀为遗产。",
+    discoveredAt: new Date().toISOString()
+  };
+}
+
+function ensureRoleSpecies(state: GameState, role: EcologicalRole, reason: string) {
+  const exists = state.species.some(
+    (item) => item.ecologicalRole === role && item.status !== "extinct" && item.status !== "fossilized",
+  );
+  if (exists) return;
+  const species = generateSpeciesForRole(state, role, reason);
+  state.species.unshift(species);
+  state.logs.unshift(createLog("species", `发现新谱系：${species.name}。${species.shortDescription}`));
+}
+
+function applyNodeHistoryEffects(state: GameState, nodeId: string) {
+  const effects: Record<string, () => void> = {
+    early_producer_film: () => {
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["light_chasing", "producer_seed"]);
+      state.environment.light = clamp(state.environment.light + 0.08, 0.4, 3);
+      ensureRoleSpecies(state, "producer", "它们把光照变成潮池可以继续使用的能量。");
+    },
+    decomposition_layer: () => {
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["decomposer_seed"]);
+      state.environment.tide = clamp(state.environment.tide + 0.05, 0.4, 3);
+      ensureRoleSpecies(state, "decomposer", "它们把旧薄膜和碎片拆回新的材料。");
+    },
+    tidal_filter_pores: () => {
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["filterer_seed", "edge_feeding"]);
+      state.resources.stability = clamp(state.resources.stability + 6, 0, 100);
+      ensureRoleSpecies(state, "filterer", "它们反复筛入潮汐颗粒，让水体更容易维持秩序。");
+    },
+    mutual_ecology_cycle: () => {
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["ecology_cycle"]);
+      state.logs.unshift(createLog("event", "第一个小生态循环接上了：生产薄膜、分解层和滤食孔隙开始互相喂养。"));
+    },
+    ecological_personality: () => {
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["ecological_personality"]);
+      state.logs.unshift(createLog("era", `生态性格留下：${planetProfileLabel(calculatePlanetProfile(state))}。这片潮池已经有了自己的生态循环。`));
+    }
+  };
+  effects[nodeId]?.();
+}
+
 export function createLog(type: EvolutionLog["type"], message: string): EvolutionLog {
   return {
     id: cryptoId("log"),
@@ -1090,6 +1439,14 @@ function addLog(state: GameState, type: EvolutionLog["type"], message: string) {
 
 function maybeAssignEcologyEvent(state: GameState) {
   if (state.pendingEcologyEvent) return;
+  if (state.unlockedNodes.includes("mutual_ecology_cycle") && !(state.eventHistory ?? []).includes("bloom_pressure")) {
+    const pressure = ecologyEvents.find((event) => event.id === "bloom_pressure");
+    if (pressure) {
+      state.pendingEcologyEvent = pressure;
+      addLog(state, "system", `潮池事件出现：${pressure.title}`);
+      return;
+    }
+  }
   const event = rollEcologyEvent(state);
   if (!event) return;
   state.pendingEcologyEvent = event;
@@ -1258,6 +1615,18 @@ function resourceLabel(key: keyof Resources) {
   return labels[key];
 }
 
+function planetProfileLabel(profile: PlanetProfile) {
+  const labels: Record<PlanetProfile, string> = {
+    balanced: "平衡潮池",
+    high_mutation: "突变爆发",
+    stable_pool: "稳定循环",
+    cataclysmic: "灾变沉积",
+    symbiotic: "共生网络",
+    extreme: "极端适应"
+  };
+  return labels[profile];
+}
+
 function traitsFor(role: EcologicalRole, profile: PlanetProfile) {
   const base: Record<EcologicalRole, string[]> = {
     producer: ["薄膜结构", "弱光捕获", "群体漂浮"],
@@ -1380,14 +1749,32 @@ function applyEcologyComboEffects(delta: Resources, state: GameState): Resources
   return next;
 }
 
-function createFirstComboLog(state: GameState): EvolutionLog | null {
-  const logged = state.logs.some((log) => log.message.includes("生态组合"));
-  if (logged) return null;
-  const roles = new Set(
+function livingRoles(state: GameState): Set<EcologicalRole> {
+  return new Set(
     state.species
       .filter((item) => item.status === "living" || item.status === "flourishing")
       .map((item) => item.ecologicalRole),
   );
+}
+
+function hasEcologyCycleRoles(state: GameState): boolean {
+  const roles = livingRoles(state);
+  return roles.has("producer") && roles.has("decomposer") && roles.has("filterer");
+}
+
+function isResonanceOnCooldown(state: GameState, now = new Date()) {
+  if (!state.lastResonanceAt) return false;
+  const elapsedSeconds = (now.getTime() - new Date(state.lastResonanceAt).getTime()) / 1000;
+  return elapsedSeconds >= 0 && elapsedSeconds < RESONANCE_COOLDOWN_SECONDS;
+}
+
+function createFirstComboLog(state: GameState): EvolutionLog | null {
+  const logged = state.logs.some((log) => log.message.includes("生态组合"));
+  if (logged || state.unlockedNodes.includes("mutual_ecology_cycle")) return null;
+  const roles = livingRoles(state);
+  if (hasEcologyCycleRoles(state)) {
+    return createLog("event", "生态组合显现：生产薄膜、分解层和滤食孔隙连成小循环，潮池开始互相喂养。");
+  }
   if (roles.has("producer") && roles.has("decomposer")) {
     return createLog("event", "生态组合显现：分解层正在喂养新的生产薄膜，潮池开始有自己的循环。");
   }
@@ -1398,6 +1785,53 @@ function createFirstComboLog(state: GameState): EvolutionLog | null {
     return createLog("event", "生态组合显现：耐受结构贴上催化晶面，变化开始被更大胆地保留。");
   }
   return null;
+}
+
+function deriveChapterProgress(state: GameState): ChapterProgress {
+  const unlocked = new Set(state.unlockedNodes ?? []);
+  if (!unlocked.has("photo_pigment")) {
+    return {
+      chapter: "life_birth",
+      stage: "life_birth",
+      completedStages: [],
+      ecologyCycleFormed: false
+    };
+  }
+
+  const completedStages: ChapterProgress["completedStages"] = ["pursue_light"];
+  let stage: ChapterProgress["stage"] = "differentiate_roles";
+  const roles = livingRoles(state);
+  const hasThreeRoles = roles.has("producer") && roles.has("decomposer") && roles.has("filterer");
+
+  if (hasThreeRoles || unlocked.has("tidal_filter_pores")) {
+    completedStages.push("differentiate_roles");
+    stage = "form_cycle";
+  }
+  if (unlocked.has("mutual_ecology_cycle") || hasEcologyCycleRoles(state)) {
+    completedStages.push("form_cycle");
+    stage = "face_imbalance";
+  }
+  if ((state.eventHistory ?? []).includes("bloom_pressure") || (state.historyTags ?? []).includes("ecology_imbalance_faced")) {
+    completedStages.push("face_imbalance");
+    stage = "ecological_personality";
+  }
+  if (unlocked.has("ecological_personality") || (state.historyTags ?? []).includes("ecological_personality")) {
+    completedStages.push("ecological_personality");
+    stage = "complete";
+  }
+
+  return {
+    chapter: "ecology_burst",
+    stage,
+    completedStages,
+    ecologyCycleFormed: completedStages.includes("form_cycle"),
+    ecologyPersonality: stage === "complete" ? calculatePlanetProfile(state) : undefined
+  };
+}
+
+function refreshChapterDerivedState(state: GameState, now = new Date()) {
+  state.chapterProgress = deriveChapterProgress(state);
+  state.pendingEcologyResonances = availableEcologyResonances(state, now);
 }
 
 function applyTalentEffects(delta: Resources, talents: Talent[]): Resources {
@@ -1429,6 +1863,11 @@ function mainlineEchoForNode(nodeId: string): string {
     metabolic_loop: "简单循环接上能量，潮池第一次像是在为未来保存火种。",
     proto_cell: "第一种生命被记录下来。文明还很遥远，但历史已经开始。",
     photo_pigment: "生命开始追逐光，下一段生态爆发正在靠近。",
+    early_producer_film: "追光的生命铺开薄膜，潮池第一次拥有了生产者的影子。",
+    decomposition_layer: "旧薄膜没有消失，它们沉入池底，喂养了分解者的工作。",
+    tidal_filter_pores: "潮汐孔隙筛入颗粒，第三类生态角色开始稳定出现。",
+    mutual_ecology_cycle: "第一个小循环接上了，潮池已经不只是有生命。",
+    ecological_personality: "这片潮池留下了自己的生态性格，第二章生态爆发完成了。",
   };
   return map[nodeId] ?? "";
 }

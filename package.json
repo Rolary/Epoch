@@ -18,6 +18,7 @@
     "build": "tsc -b && vite build apps/web",
     "build:gzip": "pnpm run build && node scripts/gzip-dist.mjs apps/web/dist",
     "typecheck": "tsc -b",
+    "smoke:chapter2": "node scripts/chapter2-smoke.mjs",
     "test": "vitest run"
   },
   "workspaces": [
