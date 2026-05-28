@@ -60,6 +60,7 @@ corepack pnpm install
 corepack pnpm run dev
 corepack pnpm run typecheck
 corepack pnpm run build
+corepack pnpm run preview:web:host
 ```
 
 本地地址：
