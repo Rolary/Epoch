@@ -17,6 +17,7 @@
     "assets:restore-originals": "powershell -ExecutionPolicy Bypass -File scripts/compress-ui-assets.ps1 -RestoreOriginals",
     "build": "tsc -b && vite build apps/web",
     "build:gzip": "pnpm run build && node scripts/gzip-dist.mjs apps/web/dist",
+    "check:encoding": "node scripts/check-text-encoding.mjs",
     "typecheck": "tsc -b",
     "smoke:chapter2": "node scripts/chapter2-smoke.mjs",
     "test": "vitest run"
