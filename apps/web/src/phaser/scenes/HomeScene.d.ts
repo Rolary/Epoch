@@ -30,7 +30,7 @@ export declare class HomeScene extends Phaser.Scene {
     private absorbCount;
     private elementSpawnTimer;
     private nextSpawnDelay;
-    static readonly MAX_ELEMENTS = 4;
+    static readonly MAX_ELEMENTS = 2;
     static readonly POOL_ABSORB_RADIUS = 112;
     static readonly ELEMENT_POOL_AVOID_RADIUS = 150;
     onAbsorb?: (type: ElementType, outcome: Outcome) => void;

@@ -1,4 +1,5 @@
-import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
+import { canUnlockEvolutionNode, evolutionNodes, previewEvolutionNodeProduction } from "@eco-era/game-core";
+import { formatChineseNumber } from "@eco-era/shared";
 import type { ResourceKey } from "@eco-era/shared";
 import { useEffect, useState } from "react";
 import { uiAssets } from "../../assets/uiAssets.js";
@@ -22,7 +23,7 @@ const LIFE_BIRTH_STAGES = ["加入养料", "留下痕迹", "学会延续", "发�
 const ECOLOGY_BURST_STAGES = ["追逐光照", "分化角色", "形成循环", "面对失衡", "留下性格"] as const;
 const LIFE_HISTORY_CHAPTERS = [
   "生命诞生",
-  "生态爆发",
+  "水中回响",
   "海陆分化",
   "复杂生命",
   "意识萌芽",
@@ -67,6 +68,7 @@ export function CurrentObjective() {
   const nextNode = evolutionNodes.find((node) => isReachableNextNode(node, unlocked));
 
   const objective = getObjective(save, nextNode);
+  const preview = nextNode ? previewEvolutionNodeProduction(save, nextNode.id) : null;
   const percent = Math.min(100, Math.round((objective.progress / Math.max(1, objective.target)) * 100));
   const chapterIndex = save.chapterProgress?.chapter === "ecology_burst" ? 1 : 0;
   const stageLabels = chapterIndex === 1 ? ECOLOGY_BURST_STAGES : LIFE_BIRTH_STAGES;
@@ -110,7 +112,7 @@ export function CurrentObjective() {
       ) : (
         <>
           <div className="objective-mainline">
-            <span className="objective-kicker">{chapterIndex === 1 ? "主线：形成第一个小生态循环" : "主线：养出第一只生命"}</span>
+            <span className="objective-kicker">{chapterIndex === 1 ? "主线：让潮池接上第一阵往复" : "主线：养出第一只生命"}</span>
             <span className="objective-mainline-actions">
               <button
                 className="objective-toggle"
@@ -146,12 +148,18 @@ export function CurrentObjective() {
             <div className="objective-fill" style={{ width: `${percent}%` }} />
           </div>
           <div className="objective-progress-label">
-            {objective.progressLabel} {Math.floor(objective.progress)}/{objective.target}
+            {objective.progressLabel} {formatChineseNumber(objective.progress)}/{formatChineseNumber(objective.target)}
           </div>
+          {preview && preview.ratio > 1.03 && (
+            <div className="objective-next-jump">
+              <span>下一次跃迁</span>
+              <strong>产能约 x{preview.ratio.toFixed(preview.ratio >= 10 ? 0 : 1)}</strong>
+            </div>
+          )}
 
           {detailsOpen && (
             <div className="objective-details">
-              <div className="storyline-steps" aria-label="主线阶段">
+              <div className="storyline-steps" aria-label="潮池水势">
                 {stageLabels.map((stage, index) => (
                   <span
                     key={stage}
@@ -188,7 +196,7 @@ export function CurrentObjective() {
                         <span className="capsule-content">
                           <img className="capsule-icon" src={res.asset} alt="" aria-hidden="true" />
                           <span className="capsule-nums">
-                            {current}/{needed}
+                            {formatChineseNumber(current)}/{formatChineseNumber(needed)}
                           </span>
                         </span>
                       </div>
@@ -247,7 +255,7 @@ function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>
   } else {
     title = "让生命追逐光";
     action = "继续投入能量";
-    observation = "一些生命开始靠近光，新的生态爆发正在到来。";
+    observation = "一些生命开始靠近光，水面正在露出新的层次。";
     term = "感光色素";
     progressLabel = "光照准备";
     progress = save.resources.energy;
@@ -263,15 +271,15 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     pursue_light: {
       title: "让生命追逐光",
       action: "继续积累能量和生物量，点亮受光薄膜",
-      observation: "已有生命开始靠近光照，第二章的生态爆发正在打开。",
+      observation: "已有生命开始靠近光照，水面正露出新的层次。",
       term: "追逐光照",
       progressLabel: "光照准备",
       target: 3,
       progress: 1,
     },
     differentiate_roles: {
-      title: "让生命分化角色",
-      action: "在演化里确认生产者、分解者和滤食者的生态位置",
+      title: "让不同水痕显出来",
+      action: "在浅层、池底和潮孔里记录新的生命工作",
       observation: "潮池不再只有一种生命，分工正在变得可见。",
       term: "生态角色",
       progressLabel: "已识别角色",
@@ -280,8 +288,8 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     },
     form_cycle: {
       title: "接上第一个小循环",
-      action: "让不同角色开始互相喂养，而不是各自存在",
-      observation: "生产、分解和滤食已经靠近，潮池等待第一组循环反馈。",
+      action: "让几处水痕开始互相接续",
+      observation: "光、沉积和滤孔已经靠近，潮池等着它们接成一阵往复。",
       term: "互养循环",
       progressLabel: "循环条件",
       target: 3,
@@ -289,47 +297,51 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     },
     face_imbalance: {
       title: "面对繁盛后的失衡",
-      action: "回应潮池事件，让繁盛付出一个代价",
-      observation: "生态不是永远稳定，过度繁盛会压住另一部分生命。",
-      term: "生态平衡",
+      action: "等潮池处理过盛的水面",
+      observation: "水面长得太满时，清水、空隙和呼吸都会被挤压。",
+      term: "水势平衡",
       progressLabel: "失衡处理",
       target: 1,
       progress: (save.eventHistory ?? []).includes("bloom_pressure") ? 1 : 0,
     },
     ecological_personality: {
-      title: "留下生态性格",
-      action: "把这段循环记录为潮池自己的性格",
-      observation: "选择和物种组合正在被生命史归纳成长期倾向。",
-      term: "生态性格",
-      progressLabel: "性格归纳",
+      title: "留下潮池的样子",
+      action: "把这段水势写进潮池记忆",
+      observation: "反复出现的水势，正在沉成这片潮池的样子。",
+      term: "潮池性格",
+      progressLabel: "记忆沉淀",
       target: 1,
       progress: save.unlockedNodes.includes("ecological_personality") ? 1 : 0,
     },
     complete: {
-      title: "第一个小生态循环已经形成",
-      action: "这片潮池已经拥有自己的生态循环",
-      observation: "生命不再只是出现，而是开始互相影响、互相延续。",
-      term: "生态爆发",
-      progressLabel: "第二章",
+      title: "第一阵往复已经接上",
+      action: "这片潮池已经记住自己的样子",
+      observation: "生命不再只是出现，而是开始彼此接续，让这片水有了自己的节奏。",
+      term: "潮池记忆",
+      progressLabel: "潮池记忆",
       target: 1,
       progress: 1,
     },
   };
   const base = stageCopy[stage] ?? stageCopy.differentiate_roles;
   const costEntries = nextNode ? Object.entries(nextNode.cost) as Array<[string, number]> : [];
-  if (!nextNode) return { ...base, costEntries };
+  if (!nextNode) {
+    return {
+      ...base,
+      observation: save.chapterProgress?.currentMoodLabel ?? base.observation,
+      action: save.chapterProgress?.nextHintLabel ?? base.action,
+      costEntries,
+    };
+  }
 
-  const totalRequired = costEntries.reduce((sum, [, value]) => sum + value, 0);
-  const totalHave = costEntries.reduce(
-    (sum, [key, value]) => sum + Math.min(save.resources[key as ResourceKey] ?? 0, value),
-    0,
-  );
   return {
     ...base,
-    ...objectiveCopyForNode(nextNode.id, nextNode.name, nextNode.description),
-    action: canUnlockEvolutionNode(save, nextNode.id) ? actionForEcologyNode(nextNode.id) : base.action,
-    progress: Math.max(base.progress, totalHave),
-    target: Math.max(base.target, totalRequired),
+    observation: save.chapterProgress?.currentMoodLabel ?? base.observation,
+    action: canUnlockEvolutionNode(save, nextNode.id)
+      ? actionForEcologyNode(nextNode.id)
+      : (save.chapterProgress?.nextHintLabel ?? base.action),
+    progress: base.progress,
+    target: base.target,
     costEntries,
   };
 }
@@ -367,7 +379,7 @@ function actionForEcologyNode(nodeId: string) {
     decomposition_layer: "记录分解层",
     tidal_filter_pores: "记录滤食孔隙",
     mutual_ecology_cycle: "接上这个小循环",
-    ecological_personality: "留下生态性格",
+    ecological_personality: "留下潮池的样子",
   };
   return map[nodeId] ?? "记录这个生态变化";
 }
@@ -407,7 +419,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     return {
       title: "让生命追逐光",
       action: "追逐第一缕光",
-      observation: "一些生命开始靠近光，新的生态爆发正在到来。",
+      observation: "一些生命开始靠近光，水面正在露出新的层次。",
       term: "感光色素",
       progressLabel: "光照准备",
     };
@@ -447,7 +459,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     return {
       title: "形成第一个小循环",
       action: "接上这个小循环",
-      observation: "生产、分解和滤食开始互相喂养，潮池接上了循环。",
+      observation: "光、沉积和滤孔开始互相接续，潮池接上了循环。",
       term: "互养小循环",
       progressLabel: "循环条件",
     };
@@ -455,11 +467,11 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
 
   if (nodeId === "ecological_personality") {
     return {
-      title: "留下生态性格",
-      action: "留下生态性格",
-      observation: "生命史开始归纳这片潮池反复展现的生态倾向。",
-      term: "生态性格",
-      progressLabel: "性格归纳",
+      title: "留下潮池的样子",
+      action: "把这段水势写进记忆",
+      observation: "那些反复出现的水势，正在沉成这片潮池的样子。",
+      term: "潮池性格",
+      progressLabel: "记忆沉淀",
     };
   }
 
@@ -468,7 +480,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     action: "继续推动潮池变化",
     observation: fallbackDescription,
     term: fallbackName,
-    progressLabel: "阶段进度",
+    progressLabel: "水势进度",
   };
 }
 

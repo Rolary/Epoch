@@ -1,3 +1,4 @@
+import { formatChineseNumber } from "@eco-era/shared";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 
@@ -33,7 +34,7 @@ export function TopBar() {
           <div key={key} className="resource-item" data-tooltip={label}>
             <img className="resource-icon" src={asset} alt="" aria-hidden="true" />
             <span className="resource-value" style={{ color }}>
-              {Math.floor(resources[key])}
+              {formatChineseNumber(resources[key])}
             </span>
           </div>
         ))}

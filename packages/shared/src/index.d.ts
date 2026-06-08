@@ -8,6 +8,19 @@ export interface ChapterProgress {
     completedStages: string[];
     ecologyCycleFormed: boolean;
     ecologyPersonality?: PlanetProfile;
+    currentMoodLabel?: string;
+    nextHintLabel?: string;
+}
+export interface EcologyBurstWitness {
+    lightWitnessed: boolean;
+    rolesWitnessed: EcologicalRole[];
+    firstResonanceWitnessed: boolean;
+    cycleWitnessed: boolean;
+    imbalanceWitnessed: boolean;
+    personalityWitnessed: boolean;
+}
+export interface ChapterWitness {
+    ecologyBurst: EcologyBurstWitness;
 }
 export type SpeciesStatus = "living" | "flourishing" | "endangered" | "extinct" | "fossilized";
 export type EcologicalRole = "producer" | "decomposer" | "symbiont" | "extremophile" | "filterer" | "catalyst";
@@ -92,6 +105,16 @@ export interface EcologyResonanceResult {
     environmentEffect?: Partial<EnvironmentState>;
     historyTags: string[];
 }
+export interface CodexObservation {
+    id: string;
+    title: string;
+    description: string;
+    relatedSpeciesId?: string;
+    relatedRole?: EcologicalRole;
+    numericEffects?: Partial<Record<ResourceKey, number>>;
+    isNew: boolean;
+    createdAt: string;
+}
 export interface SpeciesRecord {
     id: string;
     parentSpeciesId?: string;
@@ -146,6 +169,10 @@ export interface GameState {
     pendingEcologyResonances?: EcologyResonance[];
     resonanceHistory?: string[];
     lastResonanceAt?: string | null;
+    unclaimedResources: Resources;
+    lastHarvestedAt: string | null;
+    codexObservations?: CodexObservation[];
+    chapterWitness?: ChapterWitness;
     historyTags: string[];
     eventHistory: string[];
     planetProfile: PlanetProfile;
@@ -157,6 +184,7 @@ export interface LeaderboardEntry {
     rank: number;
     ecologyName: string;
     score: number;
+    scoreBreakdown: LeaderboardScoreBreakdown;
     currentEra: EraId;
     planetProfile: PlanetProfile;
     unlockedNodes: number;
@@ -166,11 +194,20 @@ export interface LeaderboardEntry {
     updatedAt: string;
     isMine?: boolean;
 }
+export interface LeaderboardScoreBreakdown {
+    era: number;
+    evolution: number;
+    species: number;
+    legacy: number;
+    talents: number;
+    resources: number;
+}
 export interface LeaderboardResponse {
     entries: LeaderboardEntry[];
     mine?: LeaderboardEntry;
     generatedAt: string;
 }
+export declare function formatChineseNumber(value: number): string;
 export interface GuestAuthResponse {
     guestKey: string;
 }

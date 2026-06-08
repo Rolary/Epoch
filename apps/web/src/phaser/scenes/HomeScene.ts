@@ -68,7 +68,7 @@ export class HomeScene extends Phaser.Scene {
   private absorbCount = 0;
   private elementSpawnTimer = 0;
   private nextSpawnDelay = 5000;
-  static readonly MAX_ELEMENTS = 4;
+  static readonly MAX_ELEMENTS = 2;
   static readonly POOL_ABSORB_RADIUS = 112;
   static readonly ELEMENT_POOL_AVOID_RADIUS = 150;
 
@@ -119,7 +119,7 @@ export class HomeScene extends Phaser.Scene {
     );
 
     this.elementSpawnTimer = 0;
-    this.nextSpawnDelay = 4500;
+    this.nextSpawnDelay = 6500;
     this.time.delayedCall(250, () => {
       if (this.dragElements.length === 0) this.spawnElement();
     });
@@ -161,7 +161,7 @@ export class HomeScene extends Phaser.Scene {
     this.elementSpawnTimer += delta;
     if (this.elementSpawnTimer > this.nextSpawnDelay && this.dragElements.length < HomeScene.MAX_ELEMENTS) {
       this.elementSpawnTimer = 0;
-      this.nextSpawnDelay = 4000 + Math.random() * 6000;
+      this.nextSpawnDelay = 12000 + Math.random() * 10000;
       this.spawnElement();
     }
   }

@@ -26,10 +26,10 @@ export function SpeciesDiscovery() {
   const isEcologyRole = save?.chapterProgress?.chapter === "ecology_burst" && species.length > 1;
   const copy = isEcologyRole
     ? {
-        title: "新的生态角色出现了",
-        theme: `${roleLabel(sp.ecologicalRole)}在潮池里站稳了位置，生态开始从“有生命”变成“有分工”。`,
-        science: "它不是孤立的新物种，而是小循环里的一种作用。图鉴会记录它和其他角色的关系。",
-        action: "查看生态角色",
+        title: "新的生命工作出现了",
+        theme: `${roleLabel(sp.ecologicalRole)}在潮池里站稳了位置，水面、池底和潮孔开始各自有事可做。`,
+        science: "它不是孤零零出现的生命。它会在这片水里留下自己的工作，也会牵动旁边的生命痕迹。",
+        action: "看看这道痕迹",
       }
     : {
         title: "第一种生命出现了",

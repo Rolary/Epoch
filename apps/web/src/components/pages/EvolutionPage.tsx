@@ -1,5 +1,6 @@
-import { canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
-import type { EvolutionNode } from "@eco-era/shared";
+import { canUnlockEvolutionNode, evolutionNodes, previewEvolutionNodeProduction } from "@eco-era/game-core";
+import { formatChineseNumber } from "@eco-era/shared";
+import type { EvolutionNode, Resources } from "@eco-era/shared";
 import { useMemo, useState } from "react";
 import { tickSave, unlockNode } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
@@ -49,6 +50,7 @@ export function EvolutionPage() {
   const setSave = useGameStore((s) => s.setSave);
   const setPage = useUIStore((s) => s.setPage);
   const hideModal = useUIStore((s) => s.hideModal);
+  const showModal = useUIStore((s) => s.showModal);
   const chapterBlocks = useMemo(() => buildChapterBlocks(evolutionNodes), []);
   const [expandedBranchIds, setExpandedBranchIds] = useState<string[]>([]);
   const [collapsedChapters, setCollapsedChapters] = useState<Partial<Record<ChapterId, boolean>>>({});
@@ -99,10 +101,22 @@ export function EvolutionPage() {
     }
   };
 
+  const confirmBranchUnlock = (node: EvolutionNode) => {
+    showModal("decision-confirm", {
+      title: "要留下这道痕迹吗？",
+      description: node.description,
+      gain: `${node.name} 会在后来的生命里反复浮现。`,
+      cost: "同一处水势里的其他可能，会先沉到旁路里。",
+      confirmLabel: "让它留下",
+      cancelLabel: "先放一放",
+      onConfirm: () => handleUnlock(node.id),
+    });
+  };
+
   return (
     <div className="page evolution-page">
       <h2 className="page-title">生命痕迹</h2>
-      <p className="page-hint">演化节点按章节收束。完成的章节会折成摘要，当前章节保持展开。</p>
+      <p className="page-hint">潮池已经浮出来的痕迹会停在这里，等你决定哪些要被留下。</p>
       <div className="evolution-path chaptered">
         {visibleChapters.map((chapter) => {
           const { total, unlocked } = countChapterProgress(chapter, currentSave.unlockedNodes);
@@ -158,12 +172,12 @@ export function EvolutionPage() {
           {idx > 0 && <div className={`node-connector branch-entry ${groupUnlocked || groupAvailable ? "active" : ""}`} />}
           <div className="branch-fork-cap">
             <div className="branch-fork-copy">
-              <span className="branch-fork-label">分支选择</span>
+              <span className="branch-fork-label">只能留下一道</span>
               <span className="branch-fork-title">
-                {selectedBranch ? `已选择：${selectedBranch.name}` : "复制开始分岔"}
+                {selectedBranch ? `已留下：${selectedBranch.name}` : "复制开始分岔"}
               </span>
               <span className="branch-fork-desc">
-                {selectedBranch ? "其他复制倾向已沉入旁路，主线继续向第一种生命成形推进。" : "只能留下一种主倾向，后续生命会沿着它分化。"}
+                {selectedBranch ? "其他可能暂时沉到旁路里，潮池继续沿着这道痕迹往前。" : "这里会先留下一种水势，后来的生命会顺着它多长一段。"}
               </span>
             </div>
             {selectedBranch && (
@@ -202,6 +216,7 @@ export function EvolutionPage() {
     const canUnlock = canUnlockEvolutionNode(currentSave, node.id);
     const branchBlocked = isBranchBlocked(node, currentSave.unlockedNodes);
     const copy = nodeCopyFor(node.id, node.name, node.description);
+    const preview = previewEvolutionNodeProduction(currentSave, node.id);
     let stateClass = "locked";
     if (unlocked) stateClass = "unlocked";
     else if (canUnlock) stateClass = "available";
@@ -212,7 +227,7 @@ export function EvolutionPage() {
         key={node.id}
         className={`evolution-node ${stateClass} ${branchNode ? "branch-node" : ""}`}
         disabled={!canUnlock}
-        onClick={() => handleUnlock(node.id)}
+        onClick={() => (node.branchGroupId ? confirmBranchUnlock(node) : handleUnlock(node.id))}
       >
         <div className={`node-circle ${stateClass}`}>
           <img className="node-icon-img" src={iconFor(node.id)} alt="" aria-hidden="true" />
@@ -223,20 +238,34 @@ export function EvolutionPage() {
           <span className="term-badge node-term">{node.name}</span>
           {node.branchHint && <span className="node-branch-hint">{node.branchHint}</span>}
           {!unlocked && (
+            <span className="node-preview">
+              解锁后产能约 x{preview.ratio.toFixed(preview.ratio >= 10 ? 0 : 1)} · {preview.copy}
+            </span>
+          )}
+          {!unlocked && (
+            <span className="node-preview-detail">
+              当前 {formatChineseNumber(resourceTotal(preview.before))}/小时 → 预计 {formatChineseNumber(resourceTotal(preview.after))}/小时
+            </span>
+          )}
+          {!unlocked && (
             <span className="node-cost">
               {Object.entries(node.cost)
-                .map(([k, v]) => `${labelFor(k)} ${v}`)
+                .map(([k, v]) => `${labelFor(k)} ${formatChineseNumber(v)}`)
                 .join(" / ")}
             </span>
           )}
           {canUnlock && <span className="node-action">{actionFor(node.id)}</span>}
           {unlocked && <span className="node-action confirmed">已留下痕迹</span>}
-          {branchBlocked && <span className="node-action blocked">分支已锁定</span>}
-          {!unlocked && !canUnlock && !branchBlocked && <span className="node-action waiting">继续积累材料</span>}
+          {branchBlocked && <span className="node-action blocked">已沉到旁路</span>}
+          {!unlocked && !canUnlock && !branchBlocked && <span className="node-action waiting">{lockReasonFor(currentSave, node)}</span>}
         </div>
       </button>
     );
   }
+}
+
+function resourceTotal(resources: Partial<Resources>) {
+  return Object.values(resources).reduce((sum, value) => sum + Math.max(0, value), 0);
 }
 
 type PathBlock =
@@ -319,7 +348,7 @@ function actionFor(nodeId: string): string {
     decomposition_layer: "记录分解层",
     tidal_filter_pores: "记录滤食孔隙",
     mutual_ecology_cycle: "接上小循环",
-    ecological_personality: "留下生态性格",
+    ecological_personality: "留下潮池的样子",
   };
   return map[nodeId] ?? "记录这个变化";
 }
@@ -408,12 +437,22 @@ function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: 
     },
     mutual_ecology_cycle: {
       title: "形成第一个小循环",
-      description: "生产、分解和滤食互相喂养，潮池第一次形成可延续生态。",
+      description: "光、沉积和滤孔彼此接续，潮池第一次形成可延续的往复。",
     },
     ecological_personality: {
-      title: "留下生态性格",
-      description: "生命史归纳这片潮池的长期倾向，第二章完成。",
+      title: "留下潮池的样子",
+      description: "这段反复出现的水势沉进记忆，潮池有了自己的样子。",
     },
   };
   return map[nodeId] ?? { title: fallbackName, description: fallbackDescription };
+}
+
+function lockReasonFor(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, node: EvolutionNode) {
+  if (node.id === "ecological_personality" && !save.chapterWitness?.ecologyBurst.imbalanceWitnessed) {
+    return "先等潮池处理一次过盛的水面";
+  }
+  if (save.chapterProgress?.chapter === "ecology_burst" && save.chapterProgress.nextHintLabel) {
+    return save.chapterProgress.nextHintLabel;
+  }
+  return "继续积累材料";
 }

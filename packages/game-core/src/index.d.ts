@@ -1,4 +1,4 @@
-import type { EcologyEvent, EcologyResonance, EcologyResonanceResult, EvolutionLog, EvolutionNode, GameState, PlanetProfile, Resources, SpeciesRecord, Talent } from "@eco-era/shared";
+import type { EcologyEvent, EcologyResonance, EcologyResonanceResult, EvolutionLog, EvolutionNode, GameState, LeaderboardScoreBreakdown, PlanetProfile, Resources, SpeciesRecord, Talent } from "@eco-era/shared";
 export declare const evolutionNodes: EvolutionNode[];
 export declare const ecologyEvents: EcologyEvent[];
 export declare const ecologyResonances: EcologyResonance[];
@@ -24,6 +24,14 @@ export declare function normalizeGameState(state: GameState): GameState;
 export declare function canUnlockEvolutionNode(state: GameState, nodeId: string): boolean;
 export declare function calculatePlanetProfile(state: GameState): PlanetProfile;
 export declare function calculateEcologyScore(input: GameState): number;
+export declare function calculateEcologyScoreBreakdown(input: GameState): LeaderboardScoreBreakdown;
+export declare function productionMultiplierFor(state: GameState): Resources;
+export declare function previewEvolutionNodeProduction(input: GameState, nodeId: string): {
+    before: Resources;
+    after: Resources;
+    ratio: number;
+    copy: string;
+};
 export declare function generateSpeciesTemplate(state: GameState): SpeciesRecord;
 export declare function createLog(type: EvolutionLog["type"], message: string): EvolutionLog;
 //# sourceMappingURL=index.d.ts.map

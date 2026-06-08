@@ -19,6 +19,7 @@ export type ModalType =
   | "talent-awakening"
   | "offline-return"
   | "ecology-event"
+  | "decision-confirm"
   | "system-unlock"
   | null;
 

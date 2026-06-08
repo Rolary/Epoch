@@ -94,15 +94,16 @@ function ChapterTwoSummary({ save }: { save: NonNullable<ReturnType<typeof useGa
       <div className="chapter-summary-head">
         <img src={uiAssets.emblems.ecologyResonance} alt="" aria-hidden="true" />
         <div>
-          <span className="chapter-summary-kicker">第二章总结</span>
-          <h3>生态爆发篇完成</h3>
+          <span className="chapter-summary-kicker">潮池记忆</span>
+          <h3>第一阵往复已经接上</h3>
         </div>
       </div>
-      <p>这片潮池已经形成自己的生态性格：{planetProfileLabel(save.planetProfile)}。</p>
+      <p>这片潮池已经留下自己的样子：{planetProfileLabel(save.planetProfile)}。</p>
       <div className="chapter-summary-grid">
-        <span><strong>关键角色</strong>{roles.join(" / ") || "尚未记录"}</span>
-        <span><strong>角色组合</strong>{resonances.at(-1) ?? "生产、分解、滤食接成小循环"}</span>
-        <span><strong>经历失衡</strong>{imbalances.join(" / ") || "繁盛压力"}</span>
+        <span><strong>撑住水面的生命</strong>{roles.join(" / ") || "尚未记录"}</span>
+        <span><strong>接上过的水痕</strong>{resonances.slice(-2).join(" / ") || "生产、分解、滤食接成小循环"}</span>
+        <span><strong>承受过的过盛</strong>{imbalances.join(" / ") || "繁盛压力"}</span>
+        <span><strong>留下的样子</strong>{planetProfileLabel(save.planetProfile)}</span>
       </div>
     </section>
   );
@@ -145,20 +146,20 @@ function buildMemoryEntries(logs: EvolutionLog[]): MemoryEntry[] {
 }
 
 function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
-  if (/生态共鸣/.test(log.message)) {
-    return keyMemory(log, "species", "生态共鸣被观察到", "两个生态角色之间出现了可读懂的互动方向，这段关系会影响潮池后来的性格。");
+  if (/生态共鸣|水中回响/.test(log.message)) {
+    return keyMemory(log, "species", "水中回响被看见", "两处生命痕迹开始彼此回应，后来的潮水也会被它轻轻改动。");
   }
 
   if (/第一个小生态循环|互养小循环|生态组合显现/.test(log.message)) {
-    return keyMemory(log, "species", "第一个小循环接上了", "生产、分解和滤食不再只是分别存在，它们开始互相喂养这片潮池。");
+    return keyMemory(log, "species", "第一个小循环接上了", "光、沉积和滤孔不再只是分别存在，它们开始互相接续这片潮池。");
   }
 
-  if (/繁盛薄膜|生态失衡|过盛薄膜|经历失衡/.test(log.message)) {
-    return keyMemory(log, "tide", "繁盛带来压力", "潮池第一次处理生态失衡，繁盛不再只是奖励，也会带来取舍。");
+  if (/繁盛薄膜|生态失衡|过盛薄膜|经历失衡|水面太满|过盛/.test(log.message)) {
+    return keyMemory(log, "tide", "水面太满了", "潮池第一次承受自己的繁盛：有些地方继续生长，有些地方必须让出呼吸。");
   }
 
-  if (/生态性格|稳定循环|突变爆发|共生网络|极端适应/.test(log.message)) {
-    return keyMemory(log, "era", "潮池留下生态性格", "这些选择被生命史归纳下来，这片潮池拥有了自己的生态循环。");
+  if (/生态性格|潮池留下自己的样子|稳定循环|突变爆发|共生网络|极端适应/.test(log.message)) {
+    return keyMemory(log, "era", "潮池留下自己的样子", "那些反复出现的水势沉进记忆里，这片水开始像自己。");
   }
 
   if (log.type === "species") {
@@ -167,7 +168,7 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   }
 
   if (log.type === "era") {
-    return keyMemory(log, "era", "潮池进入新的阶段", "一次关键变化改变了这片潮池之后的生命方向。");
+    return keyMemory(log, "era", "水势换了方向", "一次关键变化落进潮池，后来的生命会顺着它多走一段。");
   }
 
   if (log.type === "legacy") {
@@ -181,7 +182,7 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   }
 
   if (log.type === "system" && /演化节点|解锁|结构跃迁/.test(log.message)) {
-    return keyMemory(log, "era", "关键结构被记录", "潮池确认了一次重要变化，生命史向前推进了一步。");
+    return keyMemory(log, "era", "新的痕迹被留下", "潮池留住了一次重要变化，后来的生命会从这里接着长。");
   }
 
   return null;
@@ -234,7 +235,7 @@ function routineCopy(tone: MemoryTone, count = 1): Pick<MemoryEntry, "title" | "
     },
     species: { title: "新生命被记住", description: "潮池里出现了新的生命分支。" },
     legacy: { title: "旧生命沉入遗产", description: "一段生命沉淀成后续生态的遗产。" },
-    era: { title: "潮池进入新的阶段", description: "一次关键变化改变了这片潮池之后的生命方向。" },
+    era: { title: "水势换了方向", description: "一次关键变化落进潮池，后来的生命会顺着它多走一段。" },
     talent: { title: "源质印记融入潮池", description: "新的源质印记改变了之后的成长倾向。" },
   };
   return map[tone];

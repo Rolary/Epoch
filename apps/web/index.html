@@ -8,10 +8,36 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D0D1A; }
+      .boot-splash {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-content: center;
+        gap: 12px;
+        color: #d8f4ee;
+        font: 500 14px/1.4 system-ui, sans-serif;
+        letter-spacing: 0.08em;
+        text-align: center;
+        background: radial-gradient(circle at 50% 55%, #153c46 0, #0d1d29 38%, #0d0d1a 76%);
+      }
+      .boot-splash::before {
+        content: "";
+        width: 42px;
+        height: 42px;
+        margin: auto;
+        border: 2px solid rgba(137, 225, 212, 0.22);
+        border-top-color: #89e1d4;
+        border-radius: 50%;
+        animation: boot-tide 1.1s linear infinite;
+      }
+      @keyframes boot-tide { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-splash::before { animation: none; }
+      }
     </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="boot-splash" role="status">潮池正在苏醒</div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

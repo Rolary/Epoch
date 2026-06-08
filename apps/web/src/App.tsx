@@ -1,13 +1,14 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import * as Phaser from "phaser";
-import { createPhaserGame } from "./phaser/config.js";
+import type { Game as PhaserGame } from "phaser";
 import { useGameStore } from "./stores/gameStore.js";
 import type { ElementType, Outcome } from "./stores/gameStore.js";
 import { useUIStore } from "./stores/uiStore.js";
 import type { Page } from "./stores/uiStore.js";
 import { ensureGuest, getSave, tickSave, getSaveId, applyAction } from "./api.js";
 import { calculateResourceDelta, canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
+import { formatChineseNumber } from "@eco-era/shared";
+import type { Resources } from "@eco-era/shared";
 import { TopBar } from "./components/hud/TopBar.js";
 import { BottomBar } from "./components/hud/BottomBar.js";
 import { CurrentObjective } from "./components/hud/CurrentObjective.js";
@@ -29,6 +30,7 @@ const TalentAwakening = lazy(() => import("./components/modals/TalentAwakening.j
 const OfflineReturn = lazy(() => import("./components/modals/OfflineReturn.js").then((m) => ({ default: m.OfflineReturn })));
 const SystemUnlock = lazy(() => import("./components/modals/SystemUnlock.js").then((m) => ({ default: m.SystemUnlock })));
 const EcologyEventModal = lazy(() => import("./components/modals/EcologyEventModal.js").then((m) => ({ default: m.EcologyEventModal })));
+const DecisionConfirm = lazy(() => import("./components/modals/DecisionConfirm.js").then((m) => ({ default: m.DecisionConfirm })));
 const StrategySheet = lazy(() => import("./components/sheets/StrategySheet.js").then((m) => ({ default: m.StrategySheet })));
 
 const ELEMENT_ACTION: Record<ElementType, string> = {
@@ -135,9 +137,115 @@ function InterventionBurst({ cue, onDone }: { cue: InterventionCue; onDone: () =
   );
 }
 
+function resourceTotal(resources: Partial<Resources> | undefined) {
+  if (!resources) return 0;
+  return Object.values(resources).reduce((sum, value) => sum + Math.max(0, value), 0);
+}
+
+function minimumHarvestTotal(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
+  return Math.max(1, resourceTotal(calculateResourceDelta(save, 2 * 60)));
+}
+
+function minutesSince(iso: string | null | undefined) {
+  if (!iso) return 0;
+  const elapsed = (Date.now() - new Date(iso).getTime()) / 60000;
+  return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
+}
+
+function returnModalKey(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
+  return `eco-era:${save.id}:return-modal:${save.lastCalculatedAt}:${Math.floor(resourceTotal(save.unclaimedResources))}`;
+}
+
+function shouldShowReturnModal(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
+  if (resourceTotal(save.unclaimedResources) < 15) return false;
+  const key = returnModalKey(save);
+  return localStorage.getItem(key) !== "1";
+}
+
+function markReturnModalSeen(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
+  localStorage.setItem(returnModalKey(save), "1");
+}
+
+function TidepoolCollectButton({
+  onCollect,
+}: {
+  onCollect: (text: string, deltas: Array<[string, number]>) => void;
+}) {
+  const save = useGameStore((s) => s.save);
+  const setSave = useGameStore((s) => s.setSave);
+  const [collecting, setCollecting] = useState(false);
+
+  if (!save) return null;
+
+  const unclaimed = save.unclaimedResources ?? { organic: 0, energy: 0, minerals: 0, stability: 0, mutation: 0, biomass: 0 };
+  const total = resourceTotal(unclaimed);
+  const minimumTotal = minimumHarvestTotal(save);
+  const tooSmall = total < minimumTotal;
+  const disabled = collecting;
+
+  const collect = async () => {
+    if (disabled) return;
+    if (tooSmall) {
+      onCollect(`潮面还未涨满，等养分聚到 ${formatChineseNumber(minimumTotal)} 左右再收`, []);
+      return;
+    }
+    setCollecting(true);
+    const before = { ...save.resources };
+    try {
+      const updated = await applyAction(save.id, "harvest_tide");
+      setSave(updated);
+      const deltas = Object.entries(updated.resources)
+        .map(([key, value]) => [key, Math.floor(value - (before[key as keyof typeof before] ?? 0))] as [string, number])
+        .filter(([, value]) => value > 0);
+      onCollect("潮汐养分已收集", deltas);
+      window.dispatchEvent(new CustomEvent("eco-intervention", {
+        detail: {
+          action: "harvest_tide",
+          name: "潮汐收获",
+          asset: uiAssets.emblems.reward,
+          deltas,
+        },
+      }));
+    } catch {
+      onCollect("潮池还没有新的养分浮上来", []);
+    } finally {
+      setCollecting(false);
+    }
+  };
+
+  const visibleDeltas = Object.entries(unclaimed)
+    .filter(([key, value]) => key !== "stability" && value >= 1)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  return (
+    <button
+      type="button"
+      className={`tidepool-collect-btn ${tooSmall ? "cooldown" : "ready"}`}
+      onClick={collect}
+      disabled={disabled}
+      aria-label="收集潮汐养分"
+    >
+      <span className="collect-icon-wrap">
+        <img className="collect-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
+      </span>
+      <span className="collect-copy">
+        <span className="collect-title">{collecting ? "收集中" : tooSmall ? "潮面未满" : "收集潮汐养分"}</span>
+        <span className="collect-subtitle">
+          {tooSmall
+            ? `养分约 ${formatChineseNumber(minimumTotal)} 时会浮上水面`
+            : visibleDeltas.length > 0
+              ? visibleDeltas.map(([key, value]) => `${RESOURCE_LABELS[key] ?? key}+${formatChineseNumber(value)}`).join(" / ")
+              : "离开一会儿，水面会浮上更多养分"}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export function App() {
   const phaserRef = useRef<HTMLDivElement>(null);
-  const gameRef = useRef<Phaser.Game | null>(null);
+  const gameRef = useRef<PhaserGame | null>(null);
   const processingAbsorbIdRef = useRef<number | null>(null);
   const previousUnlockHintsRef = useRef<Set<string> | null>(null);
   const activeSaveScopeRef = useRef<string | null>(null);
@@ -164,6 +272,7 @@ export function App() {
   const [interventionCue, setInterventionCue] = useState<InterventionCue | null>(null);
   const [unlockHintQueue, setUnlockHintQueue] = useState<UnlockHint[]>([]);
   const [activeUnlockHintId, setActiveUnlockHintId] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
     const scope = save?.id ?? null;
@@ -176,11 +285,21 @@ export function App() {
 
   // Initialize Phaser
   useEffect(() => {
-    if (phaserRef.current && !gameRef.current) {
+    if (!sessionReady) return;
+    let cancelled = false;
+    let idleHandle: number | null = null;
+    let fallbackHandle: number | null = null;
+
+    const initializePhaser = async () => {
+      if (!phaserRef.current || gameRef.current) return;
+      const { createPhaserGame } = await import("./phaser/config.js");
+      if (cancelled || !phaserRef.current) return;
+
       const game = createPhaserGame(phaserRef.current);
       gameRef.current = game;
-      // Scene may not be immediately available — wait for next frame
+      // Scene may not be immediately available; wait for next frame.
       const tryWire = () => {
+        if (cancelled) return;
         const scene = game.scene.getScene("HomeScene") as {
           onAbsorb?: (type: ElementType, outcome: Outcome) => void;
         } | null;
@@ -193,20 +312,38 @@ export function App() {
         }
       };
       requestAnimationFrame(tryWire);
+    };
+
+    const start = () => {
+      if (!cancelled) void initializePhaser();
+    };
+
+    if ("requestIdleCallback" in window) {
+      idleHandle = window.requestIdleCallback(start, { timeout: 800 });
+    } else {
+      fallbackHandle = globalThis.setTimeout(start, 120);
     }
+
     return () => {
+      cancelled = true;
+      if (idleHandle !== null) window.cancelIdleCallback(idleHandle);
+      if (fallbackHandle !== null) globalThis.clearTimeout(fallbackHandle);
       if (gameRef.current) {
         gameRef.current.destroy(true);
         gameRef.current = null;
       }
     };
-  }, []);
+  }, [sessionReady]);
 
   // Restore session
   useEffect(() => {
     const restore = async () => {
       const existingId = getSaveId();
-      if (!existingId) { setPage("create-ecology"); return; }
+      if (!existingId) {
+        setPage("create-ecology");
+        setSessionReady(true);
+        return;
+      }
       try {
         await ensureGuest();
         const s = await getSave(existingId);
@@ -215,10 +352,23 @@ export function App() {
         hydrateScopedUIState();
         setGuestReady(true);
         setPage("home");
-      } catch { setPage("create-ecology"); }
+        if (shouldShowReturnModal(s)) {
+          markReturnModalSeen(s);
+          showModal("offline-return", {
+            minutes: minutesSince(s.lastHarvestedAt ?? s.lastCalculatedAt),
+            gains: s.unclaimedResources,
+            eventTitle: s.pendingEcologyEvent?.title,
+            observationTitle: s.codexObservations?.find((item) => item.isNew)?.title,
+          });
+        }
+      } catch {
+        setPage("create-ecology");
+      } finally {
+        setSessionReady(true);
+      }
     };
     restore();
-  }, [hydrateScopedUIState]);
+  }, [hydrateScopedUIState, showModal]);
 
   // Local prediction tick
   useEffect(() => {
@@ -231,9 +381,9 @@ export function App() {
       const delta = calculateResourceDelta(state.save, Math.min(elapsed, 5));
       const next = { ...state.save };
       for (const key of Object.keys(delta) as Array<keyof typeof delta>) {
-        next.resources[key] = Math.min(999999, next.resources[key] + delta[key]);
+        next.unclaimedResources[key] = Math.min(1e18, (next.unclaimedResources[key] ?? 0) + delta[key]);
       }
-      next.resources.stability = Math.max(0, Math.min(100, next.resources.stability));
+      next.unclaimedResources.stability = Math.max(0, Math.min(100, next.unclaimedResources.stability));
       useGameStore.getState().setSave(next);
       useGameStore.getState().updateLastTick();
     }, 1000);
@@ -260,7 +410,7 @@ export function App() {
     return () => clearInterval(interval);
   }, [saveId, page]);
 
-  // Process absorb queue — map elements → API actions
+  // Process absorb queue: map elements to API actions
   useEffect(() => {
     if (absorbQueue.length === 0 || !saveId) return;
     const next = absorbQueue[0];
@@ -279,7 +429,7 @@ export function App() {
         // Show feedback toast
         const label = next.type === "crystal" ? "矿物质" : next.type === "spark" ? "能量" : next.type === "droplet" ? "有机质" : "突变";
         if (next.outcome === "positive") {
-          setToasts((prev) => [...prev, { id: next.id, text: `水里变得不一样了 · ${label}+`, color: "#66BB6A" }]);
+          setToasts((prev) => [...prev, { id: next.id, text: `水纹泛起新的反应 · ${label}+`, color: "#66BB6A" }]);
         } else if (next.outcome === "negative") {
           setToasts((prev) => [...prev, { id: next.id, text: "反应短暂失衡，潮池仍在调整", color: "#EF5350" }]);
         } else {
@@ -324,29 +474,90 @@ export function App() {
     if (save.chapterProgress?.chapter === "ecology_burst" && !seenUnlockHints.includes("chapter-ecology-burst")) {
       markUnlockHintSeen("chapter-ecology-burst");
       showModal("system-unlock", {
-        title: "生态爆发篇开始",
-        name: "第二章",
-        description: "生命不再只是出现，它们开始分工、互相喂养，也会带来新的失衡。",
-        impact: "这一章的目标是形成第一个小生态循环：生产者、分解者和滤食者会逐步显露自己的位置。",
-        advice: "先观察角色，再观察关系。生态不是一个物种赢下去，而是多个角色一起把潮池撑起来。",
+        title: "水面有了新的层次",
+        name: "追光之后",
+        description: "第一批生命没有停在原处。它们靠近光，也开始在浅层和池底留下不同的痕迹。",
+        impact: "有的把光留住，有的把旧薄膜拆回材料，有的在潮水里筛住细小颗粒。",
+        advice: "先看水里哪里变亮、哪里沉下、哪里开始清澈。潮池会自己说出下一步。",
         icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "观察潮池",
+        actionLabel: "回到水边",
       });
       return;
     }
     if (save.chapterProgress?.stage === "complete" && !seenUnlockHints.includes("chapter-ecology-complete")) {
       markUnlockHintSeen("chapter-ecology-complete");
       showModal("system-unlock", {
-        title: "生态爆发篇完成",
-        name: "生态性格",
-        description: "这片潮池已经不只是有生命，而是拥有了自己的生态循环。",
-        impact: "生命史会把关键角色组合、经历过的失衡，以及最终生态性格整理成一张总结记忆。",
-        advice: "回到生命史，可以看到这段生态如何从分工、循环、失衡走向长期性格。",
+        title: "潮池记住了自己的样子",
+        name: "潮池性格",
+        description: "这片水不只是养出了生命，也留下了一种反复出现的节奏。",
+        impact: "哪些生命撑住了水面，哪些变化带来压力，都会被整理成一段潮池记忆。",
+        advice: "回到潮池记忆，可以看到这片水怎样从追光走到自成循环。",
         icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "查看总结",
+        actionLabel: "翻开记忆",
       });
     }
   }, [save?.id, save?.chapterProgress?.chapter, save?.chapterProgress?.stage, modalType, page, seenUnlockHints, markUnlockHintSeen, showModal]);
+
+  useEffect(() => {
+    if (!save || modalType || page === "create-ecology") return;
+    const witness = save.chapterWitness?.ecologyBurst;
+    if (!witness || save.chapterProgress?.chapter !== "ecology_burst") return;
+
+    if (witness.lightWitnessed && !seenUnlockHints.includes("ecology-witness-light")) {
+      markUnlockHintSeen("ecology-witness-light");
+      showModal("system-unlock", {
+        title: "薄膜朝着光铺开",
+        name: "追光的浅层",
+        description: "水面上浮起一层很薄的光。那些生命开始把白昼留在自己身上。",
+        impact: "潮池不再只是等待养分，它开始把外界的光变成自己的余温。",
+        advice: "池底很快也会有动静。旧薄膜沉下去时，新的工作会在那里开始。",
+        icon: uiAssets.species.producer,
+        actionLabel: "看向池底",
+      });
+      return;
+    }
+
+    if (witness.firstResonanceWitnessed && !seenUnlockHints.includes("ecology-witness-resonance")) {
+      markUnlockHintSeen("ecology-witness-resonance");
+      showModal("system-unlock", {
+        title: "两处水痕接上了",
+        name: "第一次回应",
+        description: "沉下去的旧薄膜没有消失。它们被拆回材料，又被浅层的光接住。",
+        impact: "潮池像是第一次学会把昨日的残余送回今天。",
+        advice: "以后再有这样的牵动，你只要看它让水更清、更盛，还是更会回收。",
+        icon: uiAssets.emblems.ecologyResonance,
+        actionLabel: "让它留下",
+      });
+      return;
+    }
+
+    if (witness.cycleWitnessed && !seenUnlockHints.includes("ecology-witness-cycle")) {
+      markUnlockHintSeen("ecology-witness-cycle");
+      showModal("system-unlock", {
+        title: "水里开始互相喂养",
+        name: "小循环",
+        description: "光、沉积和滤孔终于接成一阵缓慢的往复。潮池不再只靠外来的养分。",
+        impact: "越能延续的水，也越容易长得过满。",
+        advice: "接下来看看它怎样处理自己的繁盛。",
+        icon: uiAssets.emblems.ecologyResonance,
+        actionLabel: "等水势变化",
+      });
+      return;
+    }
+
+    if (witness.imbalanceWitnessed && !seenUnlockHints.includes("ecology-witness-imbalance")) {
+      markUnlockHintSeen("ecology-witness-imbalance");
+      showModal("system-unlock", {
+        title: "水面太满了",
+        name: "繁盛的压力",
+        description: "薄膜长得太快，清水、空隙和呼吸都开始被挤压。",
+        impact: "潮池留下的不只是增长，还有它怎样处理过盛。",
+        advice: "等这阵浑浊沉下去，再把这段水势写进记忆里。",
+        icon: uiAssets.emblems.system,
+        actionLabel: "等它沉下去",
+      });
+    }
+  }, [save, modalType, page, seenUnlockHints, markUnlockHintSeen, showModal]);
 
   useEffect(() => {
     if (!save) return;
@@ -434,6 +645,15 @@ export function App() {
         <div className="hud-layer">
           <TopBar />
           <CurrentObjective />
+          <TidepoolCollectButton
+            onCollect={(text, deltas) => {
+              const detail = deltas
+                .slice(0, 3)
+                .map(([key, value]) => `${RESOURCE_LABELS[key] ?? key}+${value}`)
+                .join(" / ");
+              setToasts((prev) => [...prev, { id: Date.now(), text: detail ? `${text} · ${detail}` : text, color: "#F5D078" }]);
+            }}
+          />
           <TidepoolStrategyButton />
         </div>
       )}
@@ -476,13 +696,14 @@ export function App() {
         {modalType === "talent-awakening" && <TalentAwakening />}
         {modalType === "offline-return" && <OfflineReturn />}
         {modalType === "ecology-event" && <EcologyEventModal />}
+        {modalType === "decision-confirm" && <DecisionConfirm />}
         {modalType === "system-unlock" && <SystemUnlock />}
 
         {/* Sheets */}
         {sheetType === "strategy" && <StrategySheet />}
       </Suspense>
 
-      {/* Guide — only on home page */}
+      {/* Guide: only on home page */}
       {page === "home" && <GuideOverlay />}
 
       {unlockGuideTarget && <UnlockGuideOverlay target={unlockGuideTarget} />}
@@ -500,9 +721,9 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
       id: "evolution",
       title: "生命痕迹可以查看了",
       name: "演化",
-      description: "潮池里出现了可以确认的结构痕迹。",
-      impact: "点亮痕迹会推进主线，也会改变后续生命出现的条件。",
-      advice: "不是每一道痕迹都通向强大，但每一次确认都会让未来少一点偶然。",
+      description: "潮池里有一道新的痕迹浮上来了。",
+      impact: "点亮它以后，后来的生命会顺着这道水纹多走一段。",
+      advice: "不用急着选最强的路。每一道被留下的痕迹，都会让这片水少一点偶然。",
       icon: uiAssets.resources.mutation,
       actionLabel: "前往查看",
       targetPage: "evolution",
@@ -538,8 +759,8 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
       id: "fossils",
       title: "遗产开放了",
       name: "遗产",
-      description: "退出当下生态的生命不会消失，它们会沉淀成后续潮池的影响。",
-      impact: "遗产会把灭绝、退场和旧谱系变成长期加成或代价。",
+      description: "退出当前生态的生命不会消失，它们会沉淀成后续潮池的影响。",
+      impact: "有些退场不会消失，只会沉到更深处，成为后来生命脚下的地层。",
       advice: "失去不总是终点，有些消失会成为后来生命脚下的地层。",
       icon: uiAssets.cards.tide,
       actionLabel: "前往查看",
@@ -564,7 +785,7 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
 
 function UnlockGuideOverlay({ target }: { target: string }) {
   const copy: Record<string, { title: string; desc: string }> = {
-    evolution: { title: "新的痕迹正在发亮", desc: "跟随亮起的入口，亲自确认这道变化。" },
+    evolution: { title: "新的痕迹正在发亮", desc: "跟随亮起的入口，看看这道变化要不要留下。" },
     codex: { title: "新的生命留下了名字", desc: "跟随亮起的入口，看看它如何被记录。" },
     fossils: { title: "旧谱系正在沉淀", desc: "跟随亮起的入口，看看失去留下了什么。" },
     logs: { title: "潮池开始记住自己", desc: "跟随亮起的入口，回看这些变化如何相连。" },

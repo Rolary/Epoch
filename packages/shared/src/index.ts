@@ -18,6 +18,21 @@ export interface ChapterProgress {
   completedStages: string[];
   ecologyCycleFormed: boolean;
   ecologyPersonality?: PlanetProfile;
+  currentMoodLabel?: string;
+  nextHintLabel?: string;
+}
+
+export interface EcologyBurstWitness {
+  lightWitnessed: boolean;
+  rolesWitnessed: EcologicalRole[];
+  firstResonanceWitnessed: boolean;
+  cycleWitnessed: boolean;
+  imbalanceWitnessed: boolean;
+  personalityWitnessed: boolean;
+}
+
+export interface ChapterWitness {
+  ecologyBurst: EcologyBurstWitness;
 }
 
 export type SpeciesStatus = "living" | "flourishing" | "endangered" | "extinct" | "fossilized";
@@ -139,6 +154,17 @@ export interface EcologyResonanceResult {
   historyTags: string[];
 }
 
+export interface CodexObservation {
+  id: string;
+  title: string;
+  description: string;
+  relatedSpeciesId?: string;
+  relatedRole?: EcologicalRole;
+  numericEffects?: Partial<Record<ResourceKey, number>>;
+  isNew: boolean;
+  createdAt: string;
+}
+
 export interface SpeciesRecord {
   id: string;
   parentSpeciesId?: string;
@@ -196,6 +222,10 @@ export interface GameState {
   pendingEcologyResonances?: EcologyResonance[];
   resonanceHistory?: string[];
   lastResonanceAt?: string | null;
+  unclaimedResources: Resources;
+  lastHarvestedAt: string | null;
+  codexObservations?: CodexObservation[];
+  chapterWitness?: ChapterWitness;
   historyTags: string[];
   eventHistory: string[];
   planetProfile: PlanetProfile;
@@ -208,6 +238,7 @@ export interface LeaderboardEntry {
   rank: number;
   ecologyName: string;
   score: number;
+  scoreBreakdown: LeaderboardScoreBreakdown;
   currentEra: EraId;
   planetProfile: PlanetProfile;
   unlockedNodes: number;
@@ -218,10 +249,36 @@ export interface LeaderboardEntry {
   isMine?: boolean;
 }
 
+export interface LeaderboardScoreBreakdown {
+  era: number;
+  evolution: number;
+  species: number;
+  legacy: number;
+  talents: number;
+  resources: number;
+}
+
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
   mine?: LeaderboardEntry;
   generatedAt: string;
+}
+
+export function formatChineseNumber(value: number): string {
+  if (!Number.isFinite(value)) return "0";
+  const sign = value < 0 ? "-" : "";
+  const abs = Math.abs(value);
+  const units = [
+    { value: 10 ** 16, label: "京" },
+    { value: 10 ** 12, label: "兆" },
+    { value: 10 ** 8, label: "亿" },
+    { value: 10 ** 4, label: "万" },
+  ];
+  const unit = units.find((item) => abs >= item.value);
+  if (!unit) return `${sign}${Math.floor(abs)}`;
+  const scaled = abs / unit.value;
+  const decimals = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2;
+  return `${sign}${Number(scaled.toFixed(decimals))}${unit.label}`;
 }
 
 export interface GuestAuthResponse {

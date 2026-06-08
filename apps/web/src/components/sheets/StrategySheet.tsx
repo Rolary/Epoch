@@ -42,6 +42,10 @@ const ACTION_LABELS = new Map(ACTIONS.map((a) => [a.id, a]));
 const COOLDOWN_SECONDS = 30;
 const RESONANCE_COOLDOWN_SECONDS = 60;
 type StrategyChapter = "life_birth" | "ecology_burst";
+const LOCKED_RESONANCE_PREVIEWS = [
+  { id: "producer_decomposer", title: "生产者 + 分解者", desc: "有机质回流 +35%，能量回流 +25%", roles: ["producer", "decomposer"] },
+  { id: "full_cycle", title: "生产者 + 分解者 + 滤食者", desc: "接成小生态循环后，全部基础产出约 x2", roles: ["producer", "decomposer", "filterer"] },
+];
 
 export function StrategySheet() {
   return (
@@ -93,7 +97,7 @@ function StrategySheetContent() {
   const selectedChapter = chapterTwoUnlocked ? activeChapter : "life_birth";
   const isBusy = Boolean(submittingId);
   const panelHint = selectedChapter === "ecology_burst"
-    ? "观察物种之间的短期互动，留下长期生命史痕迹。"
+    ? (save?.chapterProgress?.currentMoodLabel ?? "水里有些痕迹正在互相牵动。")
     : "轻推潮池环境，换取短期收益，也会留下长期压力。";
 
   const handleAction = async (action: string) => {
@@ -126,29 +130,42 @@ function StrategySheetContent() {
 
   const handleResonance = async (resonanceId: string) => {
     if (!save || onCooldown || submittingId) return;
-    setSubmittingId(resonanceId);
-    try {
-      const { save: updated, resonanceResult } = await applyEcologyResonance(save.id, resonanceId);
-      setSave(updated);
-      setStrategyCooldown(COOLDOWN_SECONDS);
-      closeSheet();
-      const deltas = Object.entries(resonanceResult.resourceEffect ?? {})
-        .map(([key, value]) => [key, Math.floor(value ?? 0)] as const)
-        .filter(([, value]) => value !== 0);
-      window.dispatchEvent(new CustomEvent("eco-intervention", {
-        detail: {
-          action: resonanceId,
-          name: resonanceResult.title,
-          asset: resonanceIconFor(resonanceId).main,
-          deltas,
-        },
-      }));
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "生态共鸣暂时没有形成";
-      showModal("system-unlock", { name: msg });
-    } finally {
-      setSubmittingId(null);
-    }
+    const currentSave = save;
+    const resonance = resonances.find((item) => item.id === resonanceId);
+    if (!resonance) return;
+    showModal("decision-confirm", {
+      title: "要顺着这阵回响走吗？",
+      description: resonance.description,
+      gain: resonanceDirectionCopy(resonance.id),
+      cost: resonanceTradeoffCopy(resonance.id),
+      confirmLabel: "顺着它走",
+      cancelLabel: "先放一放",
+      onConfirm: async () => {
+        setSubmittingId(resonanceId);
+        try {
+          const { save: updated, resonanceResult } = await applyEcologyResonance(currentSave.id, resonanceId);
+          setSave(updated);
+          setStrategyCooldown(COOLDOWN_SECONDS);
+          closeSheet();
+          const deltas = Object.entries(resonanceResult.resourceEffect ?? {})
+            .map(([key, value]) => [key, Math.floor(value ?? 0)] as const)
+            .filter(([, value]) => value !== 0);
+          window.dispatchEvent(new CustomEvent("eco-intervention", {
+            detail: {
+              action: resonanceId,
+              name: resonanceResult.title,
+              asset: resonanceIconFor(resonanceId).main,
+              deltas,
+            },
+          }));
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "这阵回响暂时没有成形";
+          showModal("system-unlock", { name: msg });
+        } finally {
+          setSubmittingId(null);
+        }
+      },
+    });
   };
 
   const chapterTabs = useMemo(() => [
@@ -188,9 +205,9 @@ function StrategySheetContent() {
         <div className="strategy-panel chapter-panel ecology-panel">
           <section className="resonance-section">
             <div className="resonance-head">
-              <span className="resonance-kicker">生态共鸣</span>
+              <span className="resonance-kicker">水中回响</span>
               <span className="resonance-note">
-                {resonances.length > 0 ? "选择一段正在形成的关系" : resonanceEmptyTitle(roleStatuses, resonanceRemaining, save?.chapterProgress?.stage)}
+                {resonances.length > 0 ? "哪一阵水势更清楚" : resonanceEmptyTitle(roleStatuses, resonanceRemaining, save?.chapterProgress?.stage)}
               </span>
             </div>
             <div className="ecology-role-strip" aria-label="生态角色">
@@ -216,6 +233,13 @@ function StrategySheetContent() {
                   {resonanceEmptyCopy(roleStatuses, resonanceRemaining, save?.chapterProgress?.stage)}
                 </div>
               )}
+              {LOCKED_RESONANCE_PREVIEWS.map((preview) => (
+                <LockedResonancePreview
+                  key={preview.id}
+                  preview={preview}
+                  activeRoles={new Set(roleStatuses.filter((role) => role.active).map((role) => role.id))}
+                />
+              ))}
             </div>
           </section>
         </div>
@@ -228,7 +252,7 @@ function StrategySheetContent() {
             onAction={handleAction}
           />
           {!chapterTwoUnlocked && (
-            <p className="strategy-next-hint">点亮感光色素后，会出现第二章的生态共鸣观察。</p>
+            <p className="strategy-next-hint">点亮感光色素后，水里会露出新的牵动。</p>
           )}
         </div>
       )}
@@ -270,6 +294,40 @@ function ActionGrid({
       ))}
     </div>
   );
+}
+
+function LockedResonancePreview({
+  preview,
+  activeRoles,
+}: {
+  preview: { title: string; desc: string; roles: string[] };
+  activeRoles: Set<string>;
+}) {
+  const ready = preview.roles.every((role) => activeRoles.has(role));
+  const missing = preview.roles.filter((role) => !activeRoles.has(role)).map(rolePreviewLabel);
+  return (
+    <div className={`resonance-card resonance-preview ${ready ? "ready" : "locked"}`}>
+      <span className="resonance-icon-wrap">
+        <img className="resonance-icon" src={uiAssets.emblems.ecologyResonance} alt="" aria-hidden="true" />
+      </span>
+      <span className="resonance-copy">
+        <span className="resonance-title-row">
+          <span className="resonance-title">{preview.title}</span>
+          <span className="resonance-state">{ready ? "可形成" : `缺 ${missing.join("、")}`}</span>
+        </span>
+        <span className="resonance-desc">{preview.desc}</span>
+      </span>
+    </div>
+  );
+}
+
+function rolePreviewLabel(role: string) {
+  const labels: Record<string, string> = {
+    producer: "生产者",
+    decomposer: "分解者",
+    filterer: "滤食者",
+  };
+  return labels[role] ?? role;
 }
 
 function ResonanceCard({
@@ -336,19 +394,19 @@ function ecologyRoleStatuses(species: Array<{ ecologicalRole: string; status: st
 }
 
 function resonanceEmptyTitle(roles: ReturnType<typeof ecologyRoleStatuses>, remaining: number, stage: string | undefined) {
-  if (stage === "complete") return "生态性格已归纳";
+  if (stage === "complete") return "潮池已经记住了自己";
   if (remaining > 0) return `共鸣冷却 ${remaining}s`;
   const activeCount = roles.filter((role) => role.active).length;
-  return activeCount >= 2 ? "暂无新的可观察关系" : "需要两类生态角色";
+  return activeCount >= 2 ? "水面暂时没有新的牵动" : "还少一处清楚的生命痕迹";
 }
 
 function resonanceEmptyCopy(roles: ReturnType<typeof ecologyRoleStatuses>, remaining: number, stage: string | undefined) {
-  if (stage === "complete") return "第二章已经把这片潮池的生态性格写入生命史。之后的关系变化会进入下一章系统。";
-  if (remaining > 0) return `生态共鸣已经开启，潮池还在消化上一次观察。${remaining}s 后再看新的互动方向。`;
+  if (stage === "complete") return "这片潮池的性格已经写进记忆。后面的水势会在更远的生命史里继续展开。";
+  if (remaining > 0) return `潮池还在消化上一次变化。${remaining}s 后，水面会露出新的牵动。`;
   const active = roles.filter((role) => role.active).map((role) => role.label);
   if (active.length === 0) return "先在演化页记录早期生产薄膜，让第一类生态角色出现。";
-  if (active.length === 1) return `当前只有${active[0]}。继续推进第二章节点，记录另一类角色后才会出现可选择的共鸣。`;
-  return "当前角色组合没有新的共鸣选项。继续推进主线或经历平衡事件，会显露新的互动方向。";
+  if (active.length === 1) return `现在只有${active[0]}的痕迹比较清楚。等另一处生命稳定下来，水里会出现新的牵动。`;
+  return "眼下水势还没有新的回应。继续照看潮池，或等一次失衡把隐藏的方向推出来。";
 }
 
 function calcResonanceRemaining(lastResonanceAt: string | null | undefined) {
@@ -356,4 +414,22 @@ function calcResonanceRemaining(lastResonanceAt: string | null | undefined) {
   const elapsed = (Date.now() - new Date(lastResonanceAt).getTime()) / 1000;
   if (!Number.isFinite(elapsed) || elapsed < 0) return RESONANCE_COOLDOWN_SECONDS;
   return Math.max(0, Math.ceil(RESONANCE_COOLDOWN_SECONDS - elapsed));
+}
+
+function resonanceDirectionCopy(resonanceId: string) {
+  const map: Record<string, string> = {
+    decomposer_feeds_producer: "旧薄膜拆回来的养分，会被送回受光的浅层。",
+    filter_pores_clear_tide: "滤孔会接住浑浊颗粒，让水层重新透出呼吸。",
+    bloom_selection_pressure: "拥挤的薄膜会继续分开道路，留下更旺盛的分化。",
+  };
+  return map[resonanceId] ?? "这阵水势会留下自己的痕迹。";
+}
+
+function resonanceTradeoffCopy(resonanceId: string) {
+  const map: Record<string, string> = {
+    decomposer_feeds_producer: "池底的回流会变得更重要。",
+    filter_pores_clear_tide: "短时的繁盛会慢一点，水体会更稳。",
+    bloom_selection_pressure: "水面会更挤，稳定会先承压。",
+  };
+  return map[resonanceId] ?? "这次变化会被潮池记住。";
 }

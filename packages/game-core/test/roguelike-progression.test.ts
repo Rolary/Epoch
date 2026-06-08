@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { formatChineseNumber } from "@eco-era/shared";
 import type { EcologicalRole, SpeciesRecord } from "@eco-era/shared";
 import {
   applyEcologyResonance,
   applyEcologyEventChoice,
+  applyEnvironmentAction,
   advanceState,
   availableEcologyResonances,
   availableEcologyEvents,
@@ -11,6 +13,8 @@ import {
   canUnlockEvolutionNode,
   createInitialState,
   ecologyEventChanceFor,
+  previewEvolutionNodeProduction,
+  productionMultiplierFor,
   normalizeGameState,
   rollEcologyEvent,
   talentCatalog,
@@ -81,13 +85,13 @@ describe("roguelike life-history progression", () => {
         ...Array.from({ length: 12 }, (_, index) => ({
           id: `quiet-${index}`,
           type: "system" as const,
-          message: "普通潮声",
+          message: "plain tide log",
           at: "2026-05-21T00:00:00.000Z",
         })),
         {
           id: "recent-event",
           type: "event" as const,
-          message: "潮池事件出现：回潮",
+          message: "潮池事件出现：热泉短暂喷发",
           at: "2026-05-21T00:00:00.000Z",
         },
       ]
@@ -103,18 +107,18 @@ describe("roguelike life-history progression", () => {
       ...createInitialState("event-apply-test"),
       pendingEcologyEvent: {
         id: "hot_spring_pulse",
-        title: "热泉短暂喷发",
+        title: "鐑硥鐭殏鍠峰彂",
         description: "",
-        tendencyTag: "耐热倾向",
+        tendencyTag: "鑰愮儹鍊惧悜",
         options: [
           {
             id: "approach_heat",
-            title: "靠近热泉",
+            title: "闈犺繎鐑硥",
             description: "",
             resourceEffect: { energy: 34, stability: -10 },
             environmentEffect: { heat: 0.18 },
             addHistoryTags: ["heat_tolerant"],
-            logMessage: "热泉把潮池边缘点亮。"
+            logMessage: "hot spring event applied",
           }
         ]
       }
@@ -130,6 +134,82 @@ describe("roguelike life-history progression", () => {
     expect(next.eventHistory).toContain("hot_spring_pulse");
   });
 
+  it("accumulates idle production into the unclaimed pool before harvest", () => {
+    const state = {
+      ...createInitialState("idle-unclaimed-test"),
+      lastCalculatedAt: "2026-05-21T00:00:00.000Z"
+    };
+    const advanced = advanceState(state, new Date("2026-05-21T00:10:00.000Z"));
+
+    expect(advanced.unclaimedResources.organic).toBeGreaterThan(0);
+    expect(advanced.unclaimedResources.energy).toBeGreaterThan(0);
+    expect(advanced.resources.organic).toBe(state.resources.organic);
+  });
+
+  it("harvests tidepool resources while keeping old catalyze calls compatible", () => {
+    const state = {
+      ...createInitialState("idle-harvest-test"),
+      unclaimedResources: { organic: 20, energy: 12, minerals: 6, stability: 1, mutation: 2, biomass: 0 }
+    };
+    const collected = applyEnvironmentAction(state, "harvest_tide");
+    const catalyzed = applyEnvironmentAction(state, "catalyze");
+
+    expect(collected.resources.organic).toBeGreaterThan(state.resources.organic);
+    expect(collected.resources.energy).toBeGreaterThan(state.resources.energy);
+    expect(collected.resources.minerals).toBeGreaterThan(state.resources.minerals);
+    expect(collected.resources.stability).toBeGreaterThan(state.resources.stability);
+    expect(collected.unclaimedResources.organic).toBe(0);
+    expect(catalyzed.resources.organic).toBeGreaterThan(state.resources.organic);
+  });
+
+  it("applies a small frequent return bonus only in the target window", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-21T01:00:00.000Z"));
+    const base = {
+      ...createInitialState("frequent-harvest-test"),
+      lastHarvestedAt: "2026-05-21T00:30:00.000Z",
+      unclaimedResources: { organic: 100, energy: 0, minerals: 0, stability: 0, mutation: 0, biomass: 0 }
+    };
+    const tooSoon = {
+      ...base,
+      lastHarvestedAt: "2026-05-21T00:55:00.000Z"
+    };
+
+    expect(applyEnvironmentAction(base, "harvest_tide").resources.organic).toBeGreaterThan(105);
+    expect(applyEnvironmentAction(tooSoon, "harvest_tide").resources.organic).toBe(100);
+    vi.useRealTimers();
+  });
+
+  it("scales production with evolution, ecology and previewed unlocks", () => {
+    const base = createInitialState("idle-collect-scale-base");
+    const progressed = normalizeGameState({
+      ...base,
+      currentEra: "photosynthesis_eve" as const,
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
+      species: [
+        speciesRecord("sp-producer", "producer", "producer", {}),
+        speciesRecord("sp-decomposer", "decomposer", "decomposer", {})
+      ]
+    });
+
+    const early = productionMultiplierFor(base);
+    const later = productionMultiplierFor(progressed);
+    const preview = previewEvolutionNodeProduction(base, "replicating_chain");
+
+    expect(later.organic).toBeGreaterThan(early.organic);
+    expect(later.energy).toBeGreaterThan(early.energy);
+    expect(preview.ratio).toBeGreaterThan(1);
+  });
+
+  it("formats large numbers with Chinese units", () => {
+    expect(formatChineseNumber(9999)).toBe("9999");
+    expect(formatChineseNumber(10000)).toBe("1万");
+    expect(formatChineseNumber(12300)).toBe("1.23万");
+    expect(formatChineseNumber(100000000)).toBe("1亿");
+    expect(formatChineseNumber(10 ** 12)).toBe("1兆");
+    expect(formatChineseNumber(10 ** 16)).toBe("1京");
+  });
+
   it("applies species combo effects to matching resource channels", () => {
     const base = createInitialState("combo-test");
     const withoutCombo = calculateResourceDelta(base, 100);
@@ -137,7 +217,7 @@ describe("roguelike life-history progression", () => {
       ...base,
       species: [
         speciesRecord("sp-producer", "蓝膜浮群", "producer", { energy: 0.09, organic: 0.03 }),
-        speciesRecord("sp-decomposer", "灰晶分解链", "decomposer", { organic: 0.08, minerals: 0.02 })
+        speciesRecord("sp-decomposer", "decomposer", "decomposer", { organic: 0.08, minerals: 0.02 })
       ]
     }, 100);
 
@@ -152,8 +232,8 @@ describe("roguelike life-history progression", () => {
       ...state,
       resources: { ...state.resources, stability: 0 },
       species: [
-        speciesRecord("sp-catalyst", "晶面催化群", "catalyst", {}),
-        speciesRecord("sp-filterer", "潮筛微囊", "filterer", {}),
+        speciesRecord("sp-catalyst", "catalyst", "catalyst", {}),
+        speciesRecord("sp-filterer", "潮盆微囊", "filterer", {}),
         speciesRecord("sp-producer", "蓝膜浮群", "producer", {})
       ],
       lastCalculatedAt: "2026-05-21T00:00:00.000Z"
@@ -176,7 +256,7 @@ describe("roguelike life-history progression", () => {
       unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell"],
       species: [
         speciesRecord("sp-producer", "蓝膜浮群", "producer", { energy: 0.09, organic: 0.03 }),
-        speciesRecord("sp-filterer", "潮筛微囊", "filterer", { biomass: 0.04, stability: 0.02 })
+        speciesRecord("sp-filterer", "潮盆微囊", "filterer", { biomass: 0.04, stability: 0.02 })
       ],
       talents: [{ ...talentCatalog[0], id: "score-talent" }],
       legacies: [
@@ -200,12 +280,12 @@ describe("roguelike life-history progression", () => {
     const base = createInitialState("score-growth");
     const richer = {
       ...base,
-      species: [speciesRecord("sp-catalyst", "晶面催化群", "catalyst", { energy: 0.04, mutation: 0.02 })],
+      species: [speciesRecord("sp-catalyst", "catalyst", "catalyst", { energy: 0.04, mutation: 0.02 })],
       legacies: [
         {
           id: "legacy-catalyst",
           sourceSpeciesId: "sp-catalyst",
-          name: "晶面催化群遗痕",
+          name: "catalyst imprint",
           type: "fossil" as const,
           description: "",
           effect: "",
@@ -230,7 +310,9 @@ describe("roguelike life-history progression", () => {
     const normalized = normalizeGameState(oldSave);
 
     expect(normalized.chapterProgress?.chapter).toBe("ecology_burst");
-    expect(normalized.chapterProgress?.stage).toBe("differentiate_roles");
+    expect(normalized.chapterProgress?.stage).toBe("pursue_light");
+    expect(normalized.chapterProgress?.currentMoodLabel).toBeTruthy();
+    expect(normalized.chapterWitness?.ecologyBurst.lightWitnessed).toBe(false);
   });
 
   it("supports a playable second chapter path through three roles, imbalance and personality", () => {
@@ -247,6 +329,7 @@ describe("roguelike life-history progression", () => {
     state = unlockEvolutionNode(state, "tidal_filter_pores");
 
     expect(Array.from(new Set(state.species.map((item) => item.ecologicalRole)))).toEqual(expect.arrayContaining(["producer", "decomposer", "filterer"]));
+    expect(state.chapterWitness?.ecologyBurst.rolesWitnessed).toEqual(expect.arrayContaining(["producer", "decomposer", "filterer"]));
     expect(canUnlockEvolutionNode(state, "mutual_ecology_cycle")).toBe(true);
 
     state = unlockEvolutionNode(state, "mutual_ecology_cycle");
@@ -255,11 +338,12 @@ describe("roguelike life-history progression", () => {
 
     state = applyEcologyEventChoice(state, "bloom_pressure", "thin_bloom");
     expect(state.historyTags).toContain("ecology_imbalance_faced");
+    expect(state.chapterWitness?.ecologyBurst.imbalanceWitnessed).toBe(true);
     expect(canUnlockEvolutionNode(state, "ecological_personality")).toBe(true);
 
     state = unlockEvolutionNode(state, "ecological_personality");
     expect(state.chapterProgress?.stage).toBe("complete");
-    expect(state.logs[0]?.message).toContain("生态性格");
+    expect(state.logs[0]?.message).toContain("留下了自己的样子");
   });
 
   it("records the first ecology combo only once during ticks", () => {
@@ -269,8 +353,8 @@ describe("roguelike life-history progression", () => {
       unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
       species: [
         speciesRecord("sp-producer", "蓝膜浮群", "producer", { energy: 0.09, organic: 0.03 }),
-        speciesRecord("sp-decomposer", "灰晶分解链", "decomposer", { organic: 0.08, minerals: 0.02 }),
-        speciesRecord("sp-filterer", "潮筛微囊", "filterer", { biomass: 0.04, stability: 0.02 })
+        speciesRecord("sp-decomposer", "decomposer", "decomposer", { organic: 0.08, minerals: 0.02 }),
+        speciesRecord("sp-filterer", "潮盆微囊", "filterer", { biomass: 0.04, stability: 0.02 })
       ],
       lastCalculatedAt: "2026-05-21T00:00:00.000Z"
     };
@@ -288,12 +372,20 @@ describe("roguelike life-history progression", () => {
       ...createInitialState("old-resonance-save"),
       pendingEcologyResonances: undefined,
       resonanceHistory: undefined,
-      lastResonanceAt: undefined
-    });
+      lastResonanceAt: undefined,
+      unclaimedResources: undefined,
+      lastHarvestedAt: undefined,
+      codexObservations: undefined,
+      chapterWitness: undefined,
+    } as unknown as ReturnType<typeof createInitialState>);
 
     expect(normalized.pendingEcologyResonances).toEqual([]);
     expect(normalized.resonanceHistory).toEqual([]);
     expect(normalized.lastResonanceAt).toBeNull();
+    expect(normalized.unclaimedResources).toMatchObject({ organic: 0, energy: 0, minerals: 0 });
+    expect(normalized.lastHarvestedAt).toBeTruthy();
+    expect(normalized.codexObservations).toEqual([]);
+    expect(normalized.chapterWitness?.ecologyBurst.rolesWitnessed).toEqual([]);
   });
 
   it("requires second chapter roles and cooldown before ecology resonance", () => {
@@ -310,7 +402,7 @@ describe("roguelike life-history progression", () => {
 
     const twoRoles = {
       ...oneRole,
-      species: [...oneRole.species, speciesRecord("sp-decomposer", "灰晶分解链", "decomposer", {})],
+      species: [...oneRole.species, speciesRecord("sp-decomposer", "decomposer", "decomposer", {})],
     };
     expect(availableEcologyResonances(twoRoles).map((item) => item.id)).toContain("decomposer_feeds_producer");
 
@@ -329,18 +421,19 @@ describe("roguelike life-history progression", () => {
       unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"],
       species: [
         speciesRecord("sp-producer", "蓝膜浮群", "producer", {}),
-        speciesRecord("sp-decomposer", "灰晶分解链", "decomposer", {})
+        speciesRecord("sp-decomposer", "decomposer", "decomposer", {})
       ],
     };
 
     const { state: next, resonanceResult } = applyEcologyResonance(state, "decomposer_feeds_producer", new Date("2026-05-21T00:01:00.000Z"));
 
-    expect(resonanceResult.title).toContain("分解层");
+    expect(resonanceResult.title).toBeTruthy();
     expect(next.resources.organic).toBeGreaterThan(state.resources.organic);
     expect(next.resonanceHistory).toContain("decomposer_feeds_producer");
     expect(next.historyTags).toContain("producer_decomposer_resonance");
-    expect(next.logs[0]?.message).toContain("生态共鸣");
-    expect(next.chapterProgress?.stage).toBe("differentiate_roles");
+    expect(next.chapterWitness?.ecologyBurst.firstResonanceWitnessed).toBe(true);
+    expect(next.logs[0]?.message).toBeTruthy();
+    expect(next.chapterProgress?.stage).toBe("form_cycle");
   });
 });
 

@@ -18,14 +18,25 @@ export function EcologyEventModal() {
   }
 
   const choose = async (optionId: string) => {
-    try {
-      const next = await chooseEcologyEvent(save.id, event.id, optionId);
-      snoozeEcologyEvent(null);
-      setSave(next);
-      hideModal();
-    } catch {
-      hideModal();
-    }
+    const option = event.options.find((item) => item.id === optionId);
+    if (!option) return;
+    useUIStore.getState().showModal("decision-confirm", {
+      title: "要让这阵水势落下去吗？",
+      description: option.description,
+      gain: option.title,
+      cost: effectCopy(option.resourceEffect, option.environmentEffect) || "这一次会在潮池里留下痕迹。",
+      confirmLabel: "顺着它走",
+      cancelLabel: "先放一放",
+      onConfirm: async () => {
+        try {
+          const next = await chooseEcologyEvent(save.id, event.id, optionId);
+          snoozeEcologyEvent(null);
+          setSave(next);
+        } catch {
+          hideModal();
+        }
+      },
+    });
   };
 
   const snooze = () => {

@@ -1,4 +1,5 @@
 import type { LeaderboardEntry, LeaderboardResponse } from "@eco-era/shared";
+import { formatChineseNumber } from "@eco-era/shared";
 import { useEffect, useState } from "react";
 import { getLeaderboard } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
@@ -94,7 +95,7 @@ export function LeaderboardPage() {
             <img className="leaderboard-hero-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
             <div className="leaderboard-hero-copy">
               <span className="leaderboard-kicker">全服总榜</span>
-              <span className="leaderboard-scoreline">{entries[0]?.score ?? 0}</span>
+              <span className="leaderboard-scoreline">{formatChineseNumber(entries[0]?.score ?? 0)}</span>
               <span className="leaderboard-subcopy">最高生态评分</span>
             </div>
           </section>
@@ -128,8 +129,9 @@ function LeaderboardPodiumCard({ entry }: { entry: LeaderboardEntry }) {
       <div className="leaderboard-entry-main">
         <h3 className="leaderboard-name">{entry.ecologyName}</h3>
         <span className="leaderboard-meta">{entryLabel(entry)}</span>
+        <ScoreBreakdown entry={entry} />
       </div>
-      <span className="leaderboard-score">{entry.score}</span>
+      <span className="leaderboard-score">{formatChineseNumber(entry.score)}</span>
       {entry.isMine && <span className="leaderboard-mine">你</span>}
     </article>
   );
@@ -154,9 +156,33 @@ function LeaderboardRow({ entry, compact = false }: { entry: LeaderboardEntry; c
           {entry.isMine && <span className="leaderboard-mine">你</span>}
         </div>
         <span className="leaderboard-meta">{entryLabel(entry)}</span>
+        <ScoreBreakdown entry={entry} compact={compact} />
       </div>
-      <span className="leaderboard-row-score">{entry.score}</span>
+      <span className="leaderboard-row-score">{formatChineseNumber(entry.score)}</span>
     </article>
+  );
+}
+
+function ScoreBreakdown({ entry, compact = false }: { entry: LeaderboardEntry; compact?: boolean }) {
+  const items = [
+    ["纪元", entry.scoreBreakdown.era],
+    ["演化", entry.scoreBreakdown.evolution],
+    ["物种", entry.scoreBreakdown.species],
+    ["资源", entry.scoreBreakdown.resources],
+    ["遗产", entry.scoreBreakdown.legacy],
+    ["印记", entry.scoreBreakdown.talents],
+  ] as const;
+  const visibleItems = compact ? items.slice(0, 4) : items;
+
+  return (
+    <div className="leaderboard-breakdown" aria-label="评分来源">
+      {visibleItems.map(([label, value]) => (
+        <span className="leaderboard-breakdown-chip" key={label}>
+          <span>{label}</span>
+          <strong>{formatChineseNumber(value)}</strong>
+        </span>
+      ))}
+    </div>
   );
 }
 

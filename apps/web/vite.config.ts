@@ -21,7 +21,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: "127.0.0.1",
+    host: true,
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8787",
@@ -33,6 +34,12 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
-    allowedHosts: ["rolar.cn"],
+    allowedHosts: true,
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8787",
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+    },
   },
 });
