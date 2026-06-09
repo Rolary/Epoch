@@ -1,4 +1,6 @@
+import { OFFLINE_ACCUMULATION_HOURS } from "@eco-era/game-core";
 import { formatChineseNumber } from "@eco-era/shared";
+import type { PoolEffect } from "@eco-era/shared";
 import { GameModal } from "./GameModal.js";
 import { useUIStore } from "../../stores/uiStore.js";
 import { uiAssets } from "../../assets/uiAssets.js";
@@ -7,8 +9,9 @@ export function OfflineReturn() {
   const modalData = useUIStore((s) => s.modalData);
   const hideModal = useUIStore((s) => s.hideModal);
   const minutes = (modalData.minutes as number) ?? 0;
+  const isFull = Boolean(modalData.isFull);
   const gains = (modalData.gains as Record<string, number>) ?? {};
-  const eventTitle = modalData.eventTitle as string | undefined;
+  const poolEffect = modalData.poolEffect as PoolEffect | undefined;
   const observationTitle = modalData.observationTitle as string | undefined;
 
   return (
@@ -17,12 +20,21 @@ export function OfflineReturn() {
         <div className="asset-emblem">
           <img src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
         </div>
-        <p className="offline-time">你离开了 {formatMinutes(minutes)}</p>
-        <p className="offline-subtitle">潮池在你离开时仍在缓慢积累，这些养分正等待收取。</p>
-        {(eventTitle || observationTitle) && (
+        <p className="offline-time">{isFull ? "潮池的养分已经盛满" : `你离开了 ${formatMinutes(minutes)}`}</p>
+        <p className="offline-subtitle">
+          {isFull
+            ? `潮池积累了 ${OFFLINE_ACCUMULATION_HOURS} 小时养分，之后便安静地等待你回来。`
+            : "潮池在你离开时仍在缓慢积累，这些养分正等待收取。"}
+        </p>
+        {(poolEffect || observationTitle) && (
           <div className="offline-surprise">
-            <span className="offline-surprise-kicker">你不在时发生了</span>
-            <span>{eventTitle ?? observationTitle}</span>
+            <span className="offline-surprise-kicker">{poolEffect ? poolEffect.title : "潮池留下了新痕迹"}</span>
+            <span>{poolEffect?.description ?? `你离开后，${observationTitle}被潮池记进了图鉴。`}</span>
+            {poolEffect && (
+              <span className={`offline-effect-label ${poolEffect.tone}`}>
+                {poolEffect.effectLabel} · 还会持续 {formatEffectDuration(poolEffect)}
+              </span>
+            )}
           </div>
         )}
         <div className="offline-gains">
@@ -41,6 +53,11 @@ export function OfflineReturn() {
       </div>
     </GameModal>
   );
+}
+
+function formatEffectDuration(effect: PoolEffect) {
+  const minutes = Math.max(1, Math.ceil((new Date(effect.expiresAt).getTime() - Date.now()) / 60000));
+  return `${minutes} 分钟`;
 }
 
 function formatMinutes(mins: number): string {

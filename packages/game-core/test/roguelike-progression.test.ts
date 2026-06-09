@@ -13,11 +13,13 @@ import {
   canUnlockEvolutionNode,
   createInitialState,
   ecologyEventChanceFor,
+  OFFLINE_ACCUMULATION_HOURS,
   previewEvolutionNodeProduction,
   productionMultiplierFor,
   normalizeGameState,
   rollEcologyEvent,
   talentCatalog,
+  unclaimedResourceCapacity,
   unlockEvolutionNode
 } from "../src/index.js";
 
@@ -144,6 +146,63 @@ describe("roguelike life-history progression", () => {
     expect(advanced.unclaimedResources.organic).toBeGreaterThan(0);
     expect(advanced.unclaimedResources.energy).toBeGreaterThan(0);
     expect(advanced.resources.organic).toBe(state.resources.organic);
+  });
+
+  it("stops unclaimed resources at the five-hour tidepool capacity", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = {
+      ...createInitialState("offline-cap-test"),
+      unlockedNodes: ["organic_richness"],
+      lastCalculatedAt: "2099-05-21T00:00:00.000Z"
+    };
+    const capacity = unclaimedResourceCapacity(state);
+    const first = advanceState(state, new Date("2099-05-21T20:00:00.000Z"));
+    const second = advanceState(first, new Date("2099-05-22T04:00:00.000Z"));
+
+    expect(OFFLINE_ACCUMULATION_HOURS).toBe(5);
+    expect(first.unclaimedResources.organic).toBeCloseTo(capacity.organic, 6);
+    expect(second.unclaimedResources.organic).toBeCloseTo(capacity.organic, 6);
+    expect(second.unclaimedResources.energy).toBeCloseTo(capacity.energy, 6);
+    vi.restoreAllMocks();
+  });
+
+  it("turns a meaningful offline interval into a timed tidepool effect", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const state = {
+      ...createInitialState("offline-effect-test"),
+      unlockedNodes: ["organic_richness"],
+      lastCalculatedAt: "2099-05-21T00:00:00.000Z"
+    };
+    const advanced = advanceState(state, new Date("2099-05-21T00:12:00.000Z"));
+
+    expect(advanced.activePoolEffect?.id).toBe("clear_tide_afterglow");
+    expect(advanced.activePoolEffect?.description.endsWith("。")).toBe(true);
+    expect(advanced.activePoolEffect?.resourceMultipliers.energy).toBeGreaterThan(1);
+    expect(new Date(advanced.activePoolEffect?.expiresAt ?? 0).getTime()).toBeGreaterThan(new Date("2099-05-21T00:12:00.000Z").getTime());
+    vi.restoreAllMocks();
+  });
+
+  it("applies active tidepool effects to production and drops expired effects", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2099-05-21T00:00:00.000Z"));
+    const base = createInitialState("active-effect-production");
+    const withEffect = {
+      ...base,
+      activePoolEffect: {
+        id: "test-current",
+        title: "测试水势",
+        description: "潮池正在测试一段水势。",
+        effectLabel: "能量 +20%",
+        tone: "buff" as const,
+        resourceMultipliers: { energy: 1.2 },
+        startedAt: "2099-05-21T00:00:00.000Z",
+        expiresAt: "2099-05-21T00:30:00.000Z",
+      },
+    };
+
+    expect(calculateResourceDelta(withEffect, 100).energy).toBeCloseTo(calculateResourceDelta(base, 100).energy * 1.2, 6);
+    expect(normalizeGameState({ ...withEffect, activePoolEffect: { ...withEffect.activePoolEffect, expiresAt: "2099-05-20T23:59:00.000Z" } }).activePoolEffect).toBeNull();
+    vi.useRealTimers();
   });
 
   it("harvests tidepool resources while keeping old catalyze calls compatible", () => {

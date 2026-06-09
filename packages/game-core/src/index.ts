@@ -11,6 +11,7 @@ import type {
   GameState,
   LeaderboardScoreBreakdown,
   PlanetProfile,
+  PoolEffect,
   ResourceKey,
   Resources,
   SpeciesRecord,
@@ -22,6 +23,59 @@ const RESOURCE_CAP = 1e18;
 const RESONANCE_COOLDOWN_SECONDS = 60;
 const FREQUENT_HARVEST_MIN_SECONDS = 10 * 60;
 const FREQUENT_HARVEST_MAX_SECONDS = 90 * 60;
+const OFFLINE_EFFECT_MIN_SECONDS = 10 * 60;
+export const OFFLINE_ACCUMULATION_HOURS = 5;
+const OFFLINE_ACCUMULATION_SECONDS = OFFLINE_ACCUMULATION_HOURS * 60 * 60;
+
+type PoolEffectTemplate = Omit<PoolEffect, "startedAt" | "expiresAt"> & { durationMinutes: number };
+
+const poolEffectTemplates: PoolEffectTemplate[] = [
+  {
+    id: "clear_tide_afterglow",
+    title: "清潮余波",
+    description: "一阵清潮在你离开时洗过池底，水体变得更透亮，接下来一段时间里能量与有机质会更容易积累。",
+    effectLabel: "能量 +18% · 有机质 +12%",
+    tone: "buff",
+    resourceMultipliers: { energy: 1.18, organic: 1.12 },
+    durationMinutes: 30,
+  },
+  {
+    id: "mineral_warm_current",
+    title: "矿暖回流",
+    description: "退潮露出的矿晶把余热留在浅水里，接下来一段时间里矿物质与有机质会更快汇入潮池。",
+    effectLabel: "矿物质 +20% · 有机质 +10%",
+    tone: "buff",
+    resourceMultipliers: { minerals: 1.2, organic: 1.1 },
+    durationMinutes: 25,
+  },
+  {
+    id: "turbid_bloom",
+    title: "浑浊繁盛",
+    description: "薄膜在你离开时迅速铺满水面，生物量仍会加快增长，但遮住水面的浑浊会暂时拖慢能量积累。",
+    effectLabel: "生物量 +24% · 能量 -18%",
+    tone: "mixed",
+    resourceMultipliers: { biomass: 1.24, energy: 0.82 },
+    durationMinutes: 25,
+  },
+  {
+    id: "restless_shallows",
+    title: "浅水震荡",
+    description: "反复回潮在你离开时搅动了脆弱结构，突变机会随之增多，但有机质的沉积会暂时放缓。",
+    effectLabel: "突变点 +22% · 有机质 -12%",
+    tone: "mixed",
+    resourceMultipliers: { mutation: 1.22, organic: 0.88 },
+    durationMinutes: 20,
+  },
+  {
+    id: "oxygen_hush",
+    title: "缺氧闷潮",
+    description: "过密的薄膜在你离开时压住了水面交换，潮池需要一小段时间重新舒展，能量与生物量积累会暂时变慢。",
+    effectLabel: "能量 -15% · 生物量 -10%",
+    tone: "debuff",
+    resourceMultipliers: { energy: 0.85, biomass: 0.9 },
+    durationMinutes: 15,
+  },
+];
 
 export const evolutionNodes: EvolutionNode[] = [
   {
@@ -805,6 +859,7 @@ export function createInitialState(id: string, name = "始源潮池", initialTal
     pendingTalentChoices: [],
     consumedTalents: [],
     pendingEcologyEvent: null,
+    activePoolEffect: null,
     chapterProgress: {
       chapter: "life_birth",
       stage: "life_birth",
@@ -853,26 +908,49 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
     mutation: elapsedSeconds * (0.025 * env.volatility + 0.006 * env.light + state.species.length * 0.001) * multiplier.mutation * legacyMultiplierFor(state, "mutation") * resonanceBonus,
     biomass: elapsedSeconds * (state.unlockedNodes.includes("proto_cell") ? 0.07 + state.species.length * 0.008 : 0.005) * multiplier.biomass * legacyMultiplierFor(state, "biomass") * resonanceBonus
   };
-  return applyEcologyComboEffects(applyHistoryTagEffects(applyTalentEffects(delta, state.talents ?? []), state), state);
+  return applyActivePoolEffect(
+    applyEcologyComboEffects(applyHistoryTagEffects(applyTalentEffects(delta, state.talents ?? []), state), state),
+    state,
+  );
+}
+
+export function unclaimedResourceCapacity(state: GameState): Resources {
+  const baseline = calculateResourceDelta({ ...state, activePoolEffect: null }, OFFLINE_ACCUMULATION_SECONDS);
+  return {
+    organic: Math.max(0, baseline.organic),
+    energy: Math.max(0, baseline.energy),
+    minerals: Math.max(0, baseline.minerals),
+    stability: 100,
+    mutation: Math.max(0, baseline.mutation),
+    biomass: Math.max(0, baseline.biomass),
+  };
 }
 
 export function advanceState(input: GameState, now = new Date()): GameState {
   const normalized = normalizeGameState(input);
-  const elapsedSeconds = Math.min(60 * 60 * 12, Math.max(0, (now.getTime() - new Date(normalized.lastCalculatedAt).getTime()) / 1000));
+  const elapsedSeconds = Math.min(OFFLINE_ACCUMULATION_SECONDS, Math.max(0, (now.getTime() - new Date(normalized.lastCalculatedAt).getTime()) / 1000));
   if (elapsedSeconds < 1) {
     return normalized;
   }
 
   const delta = calculateResourceDelta(normalized, elapsedSeconds);
+  const capacity = unclaimedResourceCapacity(normalized);
   const next = cloneState(normalized);
   for (const key of Object.keys(delta) as Array<keyof Resources>) {
-    next.unclaimedResources[key] = clamp((next.unclaimedResources[key] ?? 0) + delta[key], 0, key === "stability" ? 100 : RESOURCE_CAP);
+    next.unclaimedResources[key] = clamp((next.unclaimedResources[key] ?? 0) + delta[key], 0, capacity[key]);
   }
 
   next.unclaimedResources.stability = clamp(next.unclaimedResources.stability, 0, 100);
   next.planetProfile = calculatePlanetProfile(next);
   next.lastCalculatedAt = now.toISOString();
   next.updatedAt = now.toISOString();
+  if (next.activePoolEffect && new Date(next.activePoolEffect.expiresAt).getTime() <= now.getTime()) {
+    next.activePoolEffect = null;
+  }
+  if (!next.activePoolEffect && elapsedSeconds >= OFFLINE_EFFECT_MIN_SECONDS && next.unlockedNodes.length > 0) {
+    next.activePoolEffect = rollOfflinePoolEffect(now);
+    addLog(next, "event", `${next.activePoolEffect.description}${next.activePoolEffect.effectLabel}。`);
+  }
 
   // Trait: 膜泡庇护 — when stability < 25, consume 8 energy to restore 12 stability
   const hasMembraneShelter = (next.talents ?? []).some((t) => t.trait?.id === "membrane_shelter");
@@ -930,13 +1008,6 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
       ? `潮汐余温仍在，收获提高${Math.round(bonus * 100)}%。`
       : "潮池把这一段积累推回水面，发光养分被收集起来。");
     maybeCreateCodexObservation(next);
-    if (!next.pendingEcologyEvent && Math.random() < offlineEventChance(next, harvested)) {
-      const event = rollEcologyEvent({ ...next, logs: [] });
-      if (event) {
-        next.pendingEcologyEvent = event;
-        addLog(next, "system", `你不在时发生了潮池事件：${event.title}`);
-      }
-    }
   }
 
   if (action === "catalyze") {
@@ -1265,6 +1336,7 @@ export function normalizeGameState(state: GameState): GameState {
     pendingTalentChoices: state.pendingTalentChoices ?? [],
     consumedTalents: state.consumedTalents ?? [],
     pendingEcologyEvent: state.pendingEcologyEvent ?? null,
+    activePoolEffect: normalizePoolEffect(state.activePoolEffect),
     pendingEcologyResonances: state.pendingEcologyResonances ?? [],
     resonanceHistory: state.resonanceHistory ?? [],
     lastResonanceAt: state.lastResonanceAt ?? null,
@@ -1921,6 +1993,33 @@ function applyEcologyComboEffects(delta: Resources, state: GameState): Resources
   return next;
 }
 
+function applyActivePoolEffect(delta: Resources, state: GameState): Resources {
+  const effect = state.activePoolEffect;
+  if (!effect || new Date(effect.expiresAt).getTime() <= Date.now()) return delta;
+  const next = { ...delta };
+  for (const [key, multiplier] of Object.entries(effect.resourceMultipliers) as Array<[ResourceKey, number]>) {
+    next[key] *= multiplier;
+  }
+  return next;
+}
+
+function normalizePoolEffect(effect: GameState["activePoolEffect"]): PoolEffect | null {
+  if (!effect) return null;
+  const expiresAt = new Date(effect.expiresAt).getTime();
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
+  return effect;
+}
+
+function rollOfflinePoolEffect(now: Date): PoolEffect {
+  const template = poolEffectTemplates[Math.floor(Math.random() * poolEffectTemplates.length)] ?? poolEffectTemplates[0];
+  const { durationMinutes, ...effect } = template;
+  return {
+    ...effect,
+    startedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + durationMinutes * 60 * 1000).toISOString(),
+  };
+}
+
 function emptyResources(): Resources {
   return { organic: 0, energy: 0, minerals: 0, stability: 0, mutation: 0, biomass: 0 };
 }
@@ -1953,13 +2052,6 @@ function frequentHarvestBonus(state: GameState) {
   if (elapsedSeconds < FREQUENT_HARVEST_MIN_SECONDS || elapsedSeconds > FREQUENT_HARVEST_MAX_SECONDS) return 0;
   const progress = (elapsedSeconds - FREQUENT_HARVEST_MIN_SECONDS) / (FREQUENT_HARVEST_MAX_SECONDS - FREQUENT_HARVEST_MIN_SECONDS);
   return 0.05 + Math.min(0.05, progress * 0.05);
-}
-
-function offlineEventChance(state: GameState, harvested: Resources) {
-  const hasMeaningfulHarvest = resourceTotal(harvested) >= 12;
-  if (!hasMeaningfulHarvest || state.unlockedNodes.length === 0) return 0;
-  const observationBias = (state.codexObservations?.length ?? 0) < 3 ? 0.03 : 0;
-  return Math.min(0.28, 0.08 + state.unlockedNodes.length * 0.012 + observationBias);
 }
 
 function maybeCreateCodexObservation(state: GameState) {

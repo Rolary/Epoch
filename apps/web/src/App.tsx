@@ -6,12 +6,19 @@ import type { ElementType, Outcome } from "./stores/gameStore.js";
 import { useUIStore } from "./stores/uiStore.js";
 import type { Page } from "./stores/uiStore.js";
 import { ensureGuest, getSave, tickSave, getSaveId, applyAction } from "./api.js";
-import { calculateResourceDelta, canUnlockEvolutionNode, evolutionNodes } from "@eco-era/game-core";
+import {
+  calculateResourceDelta,
+  canUnlockEvolutionNode,
+  evolutionNodes,
+  OFFLINE_ACCUMULATION_HOURS,
+  unclaimedResourceCapacity,
+} from "@eco-era/game-core";
 import { formatChineseNumber } from "@eco-era/shared";
 import type { Resources } from "@eco-era/shared";
 import { TopBar } from "./components/hud/TopBar.js";
 import { BottomBar } from "./components/hud/BottomBar.js";
 import { CurrentObjective } from "./components/hud/CurrentObjective.js";
+import { PoolEffectStatus } from "./components/hud/PoolEffectStatus.js";
 import { GuideOverlay } from "./components/overlays/GuideOverlay.js";
 import { uiAssets } from "./assets/uiAssets.js";
 
@@ -152,6 +159,10 @@ function minutesSince(iso: string | null | undefined) {
   return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }
 
+function isOfflinePoolFull(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
+  return minutesSince(save.lastHarvestedAt) >= OFFLINE_ACCUMULATION_HOURS * 60;
+}
+
 function returnModalKey(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
   return `eco-era:${save.id}:return-modal:${save.lastCalculatedAt}:${Math.floor(resourceTotal(save.unclaimedResources))}`;
 }
@@ -181,6 +192,7 @@ function TidepoolCollectButton({
   const total = resourceTotal(unclaimed);
   const minimumTotal = minimumHarvestTotal(save);
   const tooSmall = total < minimumTotal;
+  const isFull = isOfflinePoolFull(save);
   const disabled = collecting;
 
   const collect = async () => {
@@ -230,9 +242,11 @@ function TidepoolCollectButton({
         <img className="collect-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
       </span>
       <span className="collect-copy">
-        <span className="collect-title">{collecting ? "收集中" : tooSmall ? "潮面未满" : "收集潮汐养分"}</span>
+        <span className="collect-title">{collecting ? "收集中" : isFull ? "潮池已满" : tooSmall ? "潮面未满" : "收集潮汐养分"}</span>
         <span className="collect-subtitle">
-          {tooSmall
+          {isFull
+            ? `已积满 ${OFFLINE_ACCUMULATION_HOURS} 小时养分，及时收取`
+            : tooSmall
             ? `养分约 ${formatChineseNumber(minimumTotal)} 时会浮上水面`
             : visibleDeltas.length > 0
               ? visibleDeltas.map(([key, value]) => `${RESOURCE_LABELS[key] ?? key}+${formatChineseNumber(value)}`).join(" / ")
@@ -356,8 +370,9 @@ export function App() {
           markReturnModalSeen(s);
           showModal("offline-return", {
             minutes: minutesSince(s.lastHarvestedAt ?? s.lastCalculatedAt),
+            isFull: isOfflinePoolFull(s),
             gains: s.unclaimedResources,
-            eventTitle: s.pendingEcologyEvent?.title,
+            poolEffect: s.activePoolEffect,
             observationTitle: s.codexObservations?.find((item) => item.isNew)?.title,
           });
         }
@@ -379,9 +394,10 @@ export function App() {
       const now = Date.now();
       const elapsed = (now - state.lastLocalTick) / 1000;
       const delta = calculateResourceDelta(state.save, Math.min(elapsed, 5));
+      const capacity = unclaimedResourceCapacity(state.save);
       const next = { ...state.save };
       for (const key of Object.keys(delta) as Array<keyof typeof delta>) {
-        next.unclaimedResources[key] = Math.min(1e18, (next.unclaimedResources[key] ?? 0) + delta[key]);
+        next.unclaimedResources[key] = Math.min(capacity[key], (next.unclaimedResources[key] ?? 0) + delta[key]);
       }
       next.unclaimedResources.stability = Math.max(0, Math.min(100, next.unclaimedResources.stability));
       useGameStore.getState().setSave(next);
@@ -644,6 +660,7 @@ export function App() {
       {isHome && (
         <div className="hud-layer">
           <TopBar />
+          <PoolEffectStatus />
           <CurrentObjective />
           <TidepoolCollectButton
             onCollect={(text, deltas) => {

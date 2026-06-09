@@ -86,6 +86,16 @@ export interface EcologyEvent {
     tendencyTag: string;
     options: EcologyEventOption[];
 }
+export interface PoolEffect {
+    id: string;
+    title: string;
+    description: string;
+    effectLabel: string;
+    tone: "buff" | "debuff" | "mixed";
+    resourceMultipliers: Partial<Record<ResourceKey, number>>;
+    startedAt: string;
+    expiresAt: string;
+}
 export interface EcologyResonance {
     id: string;
     title: string;
@@ -165,6 +175,7 @@ export interface GameState {
     pendingTalentChoices: Talent[];
     consumedTalents: string[];
     pendingEcologyEvent?: EcologyEvent | null;
+    activePoolEffect?: PoolEffect | null;
     chapterProgress?: ChapterProgress;
     pendingEcologyResonances?: EcologyResonance[];
     resonanceHistory?: string[];

@@ -35,12 +35,10 @@
 
 ## Chinese Text And Encoding Safety
 
-- This project contains player-facing Chinese copy. Preserve UTF-8 text exactly; broken mojibake such as `鐢`, `娼`, `鏀`, `鍥`, `閬`, `鈥`, or `姘撮` is a release-blocking bug, not cosmetic cleanup.
+- This project contains player-facing Chinese copy. Preserve UTF-8 text exactly.
 - Do not use PowerShell `Set-Content`, line-array rewrites, heredocs, or ad hoc scripts to rewrite `.ts`, `.tsx`, `.css`, `.md`, or JSON files that contain Chinese text. These commands have repeatedly corrupted otherwise valid copy.
 - Prefer `apply_patch` for manual edits. If a bulk mechanical change is truly necessary, use a formatter or script only after verifying it preserves UTF-8, then inspect the diff before continuing.
 - When touching player-facing copy, replace existing mojibake with clean Chinese in the same change. Do not preserve or copy garbled strings into new UI.
-- After any edit involving Chinese copy, run a targeted scan before finalizing, for example:
-  `rg "�|Ã|Â|â|€|™|œ|鈥|鈫|鐢|娼|鏀|绋|鏈|鍥|閬|浣|婕|鎺|妗|绐|姘撮" apps/web/src`
 - For visible UI work, verify the rendered text with Playwright or browser inspection when possible; typecheck/build passing is not enough to catch mojibake.
 
 ## UI Visual Assets

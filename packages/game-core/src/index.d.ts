@@ -1,10 +1,12 @@
 import type { EcologyEvent, EcologyResonance, EcologyResonanceResult, EvolutionLog, EvolutionNode, GameState, LeaderboardScoreBreakdown, PlanetProfile, Resources, SpeciesRecord, Talent } from "@eco-era/shared";
+export declare const OFFLINE_ACCUMULATION_HOURS = 8;
 export declare const evolutionNodes: EvolutionNode[];
 export declare const ecologyEvents: EcologyEvent[];
 export declare const ecologyResonances: EcologyResonance[];
 export declare const talentCatalog: Talent[];
 export declare function createInitialState(id: string, name?: string, initialTalentId?: string): GameState;
 export declare function calculateResourceDelta(state: GameState, elapsedSeconds: number): Resources;
+export declare function unclaimedResourceCapacity(state: GameState): Resources;
 export declare function advanceState(input: GameState, now?: Date): GameState;
 export declare function applyEnvironmentAction(input: GameState, action: string): GameState;
 export declare function unlockEvolutionNode(input: GameState, nodeId: string): GameState;
