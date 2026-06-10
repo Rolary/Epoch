@@ -15,7 +15,7 @@ const SPECIES_ROLE_ASSETS: Record<string, string> = {
 export function CodexPage() {
   const save = useGameStore((s) => s.save);
   const species = uniqueSpecies(useGameStore((s) => s.species()));
-  const observations = save?.codexObservations ?? [];
+  const observations = summarizeObservations(save?.codexObservations ?? []);
   const setPage = useUIStore((s) => s.setPage);
   const setSpeciesDetailId = useUIStore((s) => s.setSpeciesDetailId);
 
@@ -81,7 +81,9 @@ export function CodexDetailPage() {
   const detailId = useUIStore((s) => s.speciesDetailId);
   const setPage = useUIStore((s) => s.setPage);
   const sp = species.find((item) => item.id === detailId);
-  const observations = (save?.codexObservations ?? []).filter((item) => item.relatedSpeciesId === detailId);
+  const observations = summarizeObservations(
+    (save?.codexObservations ?? []).filter((item) => item.relatedSpeciesId === detailId),
+  );
 
   if (!sp) {
     setPage("codex");
@@ -110,24 +112,49 @@ export function CodexDetailPage() {
         {(sp.historyTags ?? []).length > 0 && <DetailBlock label="生命史倾向" value={(sp.historyTags ?? []).map(historyTagLabel).join("、")} />}
         <DetailBlock label="谱系" value={sp.lineageSummary} />
         {sp.legacyHint && <DetailBlock label="遗产可能" value={sp.legacyHint} />}
-        {observations.length > 0 && <DetailBlock label="新观察" value={observations.map((item) => item.title).join(" / ")} />}
+        {observations.length > 0 && (
+          <DetailBlock
+            label="新观察"
+            value={observations.map((item) => `${item.title}${item.repeatCount > 1 ? ` ×${item.repeatCount}` : ""}`).join(" / ")}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-function CodexObservationPanel({ observations }: { observations: CodexObservation[] }) {
+type SummarizedObservation = CodexObservation & { repeatCount: number };
+
+function CodexObservationPanel({ observations }: { observations: SummarizedObservation[] }) {
   return (
     <section className="codex-observation-panel">
       <span className="codex-observation-kicker">生态发现</span>
       {observations.slice(0, 3).map((item) => (
         <article key={item.id} className={`codex-observation ${item.isNew ? "new" : ""}`}>
-          <span className="codex-observation-title">{item.title}</span>
+          <span className="codex-observation-title">
+            {item.title}
+            {item.repeatCount > 1 && <small>重复观察 {item.repeatCount} 次</small>}
+          </span>
           <span className="codex-observation-desc">{item.description}</span>
         </article>
       ))}
     </section>
   );
+}
+
+function summarizeObservations(observations: CodexObservation[]): SummarizedObservation[] {
+  const groups = new Map<string, SummarizedObservation>();
+  for (const observation of observations) {
+    const key = `${observation.relatedSpeciesId}:${observation.relatedRole}:${observation.title}`;
+    const current = groups.get(key);
+    if (current) {
+      current.repeatCount += 1;
+      current.isNew = current.isNew || observation.isNew;
+      continue;
+    }
+    groups.set(key, { ...observation, repeatCount: 1 });
+  }
+  return Array.from(groups.values());
 }
 
 function DetailBlock({ label, value }: { label: string; value: string }) {

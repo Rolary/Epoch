@@ -1332,6 +1332,8 @@ export function rollTalentChoices(state?: GameState, count = 3): Talent[] {
 export function normalizeGameState(state: GameState): GameState {
   const normalized = {
     ...state,
+    species: [...(state.species ?? [])],
+    logs: [...(state.logs ?? [])],
     talents: state.talents ?? [],
     pendingTalentChoices: state.pendingTalentChoices ?? [],
     consumedTalents: state.consumedTalents ?? [],
@@ -1347,11 +1349,31 @@ export function normalizeGameState(state: GameState): GameState {
     historyTags: state.historyTags ?? [],
     eventHistory: state.eventHistory ?? []
   };
+  backfillUnlockedRoleSpecies(normalized);
   return {
     ...normalized,
     chapterProgress: deriveChapterProgress(normalized),
     pendingEcologyResonances: availableEcologyResonances(normalized)
   };
+}
+
+function backfillUnlockedRoleSpecies(state: GameState) {
+  const nodeRoles: Array<[string, EcologicalRole, string]> = [
+    ["early_producer_film", "producer", "它们把光照变成潮池可以继续使用的能量。"],
+    ["decomposition_layer", "decomposer", "它们把旧薄膜和碎片拆回新的材料。"],
+    ["tidal_filter_pores", "filterer", "它们反复筛入潮汐颗粒，让水体更容易维持秩序。"],
+  ];
+
+  for (const [nodeId, role, reason] of nodeRoles) {
+    if (!state.unlockedNodes.includes(nodeId)) continue;
+    if (state.species.some((item) => item.ecologicalRole === role)) continue;
+    const species = generateSpeciesForRole(state, role, reason);
+    state.species.unshift({
+      ...species,
+      id: `sp_migrated_${state.id}_${role}`,
+      discoveredAt: state.updatedAt ?? state.lastCalculatedAt,
+    });
+  }
 }
 
 function emptyEcologyBurstWitness() {
@@ -2104,11 +2126,15 @@ function productionPreviewCopy(nodeId: string) {
 }
 
 function livingRoles(state: GameState): Set<EcologicalRole> {
-  return new Set(
+  const roles = new Set(
     state.species
       .filter((item) => item.status === "living" || item.status === "flourishing")
       .map((item) => item.ecologicalRole),
   );
+  if (state.unlockedNodes.includes("early_producer_film")) roles.add("producer");
+  if (state.unlockedNodes.includes("decomposition_layer")) roles.add("decomposer");
+  if (state.unlockedNodes.includes("tidal_filter_pores")) roles.add("filterer");
+  return roles;
 }
 
 function hasEcologyCycleRoles(state: GameState): boolean {

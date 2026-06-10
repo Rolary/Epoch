@@ -18,7 +18,6 @@ import type { Resources } from "@eco-era/shared";
 import { TopBar } from "./components/hud/TopBar.js";
 import { BottomBar } from "./components/hud/BottomBar.js";
 import { CurrentObjective } from "./components/hud/CurrentObjective.js";
-import { PoolEffectStatus } from "./components/hud/PoolEffectStatus.js";
 import { GuideOverlay } from "./components/overlays/GuideOverlay.js";
 import { uiAssets } from "./assets/uiAssets.js";
 
@@ -153,6 +152,21 @@ function minimumHarvestTotal(save: NonNullable<ReturnType<typeof useGameStore.ge
   return Math.max(1, resourceTotal(calculateResourceDelta(save, 2 * 60)));
 }
 
+function estimatedHarvestWaitSeconds(
+  save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>,
+  currentTotal: number,
+  minimumTotal: number,
+) {
+  const perSecond = resourceTotal(calculateResourceDelta(save, 1));
+  if (perSecond <= 0) return 2 * 60;
+  return Math.max(1, Math.ceil((minimumTotal - currentTotal) / perSecond));
+}
+
+function formatApproximateWait(seconds: number) {
+  if (seconds < 60) return `约 ${Math.max(5, Math.ceil(seconds / 5) * 5)} 秒`;
+  return `约 ${Math.max(1, Math.round(seconds / 60))} 分钟`;
+}
+
 function minutesSince(iso: string | null | undefined) {
   if (!iso) return 0;
   const elapsed = (Date.now() - new Date(iso).getTime()) / 60000;
@@ -194,11 +208,12 @@ function TidepoolCollectButton({
   const tooSmall = total < minimumTotal;
   const isFull = isOfflinePoolFull(save);
   const disabled = collecting;
+  const waitCopy = formatApproximateWait(estimatedHarvestWaitSeconds(save, total, minimumTotal));
 
   const collect = async () => {
     if (disabled) return;
     if (tooSmall) {
-      onCollect(`潮面还未涨满，等养分聚到 ${formatChineseNumber(minimumTotal)} 左右再收`, []);
+      onCollect(`潮面还在积蓄，${waitCopy}后可以再次收获`, []);
       return;
     }
     setCollecting(true);
@@ -233,10 +248,10 @@ function TidepoolCollectButton({
   return (
     <button
       type="button"
-      className={`tidepool-collect-btn ${tooSmall ? "cooldown" : "ready"}`}
+      className={`tidepool-collect-btn ${tooSmall ? "cooldown collapsed" : "ready"}`}
       onClick={collect}
       disabled={disabled}
-      aria-label="收集潮汐养分"
+      aria-label={tooSmall ? `潮汐养分积蓄中，${waitCopy}后可以再次收获` : "收集潮汐养分"}
     >
       <span className="collect-icon-wrap">
         <img className="collect-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
@@ -247,7 +262,7 @@ function TidepoolCollectButton({
           {isFull
             ? `已积满 ${OFFLINE_ACCUMULATION_HOURS} 小时养分，及时收取`
             : tooSmall
-            ? `养分约 ${formatChineseNumber(minimumTotal)} 时会浮上水面`
+            ? `${waitCopy}后可以再次收获`
             : visibleDeltas.length > 0
               ? visibleDeltas.map(([key, value]) => `${RESOURCE_LABELS[key] ?? key}+${formatChineseNumber(value)}`).join(" / ")
               : "离开一会儿，水面会浮上更多养分"}
@@ -660,7 +675,6 @@ export function App() {
       {isHome && (
         <div className="hud-layer">
           <TopBar />
-          <PoolEffectStatus />
           <CurrentObjective />
           <TidepoolCollectButton
             onCollect={(text, deltas) => {

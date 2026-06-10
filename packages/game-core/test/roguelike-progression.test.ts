@@ -472,6 +472,54 @@ describe("roguelike life-history progression", () => {
     expect(availableEcologyResonances(cooled, new Date("2026-05-21T00:00:20.000Z"))).toHaveLength(0);
   });
 
+  it("recognizes ecology roles from unlocked nodes when an old save lacks role species records", () => {
+    const state = {
+      ...createInitialState("node-role-migration"),
+      currentEra: "photosynthesis_eve" as const,
+      unlockedNodes: [
+        "organic_richness",
+        "replicating_chain",
+        "primitive_vesicle",
+        "metabolic_loop",
+        "proto_cell",
+        "photo_pigment",
+        "early_producer_film",
+        "decomposition_layer",
+        "tidal_filter_pores",
+      ],
+      species: [],
+      chapterProgress: {
+        chapter: "ecology_burst" as const,
+        stage: "form_cycle" as const,
+        ecologyCycleFormed: false,
+        currentMoodLabel: "",
+        nextHintLabel: "",
+      },
+    };
+
+    const resonances = availableEcologyResonances(state);
+    expect(resonances.some((item) => item.id === "filter_pores_clear_tide")).toBe(true);
+
+    const normalized = normalizeGameState(state);
+    expect(normalized.species.map((item) => item.ecologicalRole)).toEqual(
+      expect.arrayContaining(["producer", "decomposer", "filterer"]),
+    );
+    expect(normalized.species.find((item) => item.ecologicalRole === "filterer")?.name).toBe("潮筛滤泡");
+  });
+
+  it("does not revive an extinct role while backfilling old node-based species records", () => {
+    const extinctFilterer = speciesRecord("sp-extinct-filterer", "旧潮筛滤泡", "filterer", {});
+    extinctFilterer.status = "extinct";
+    const normalized = normalizeGameState({
+      ...createInitialState("extinct-role-migration"),
+      unlockedNodes: ["organic_richness", "replicating_chain", "tidal_filter_pores"],
+      species: [extinctFilterer],
+    });
+
+    expect(normalized.species.filter((item) => item.ecologicalRole === "filterer")).toHaveLength(1);
+    expect(normalized.species[0].status).toBe("extinct");
+  });
+
   it("applies ecology resonance without completing the second chapter", () => {
     const state = {
       ...createInitialState("resonance-apply"),

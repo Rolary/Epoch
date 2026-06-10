@@ -92,7 +92,7 @@ function StrategySheetContent() {
   const onCooldown = remaining > 0;
   const chapterTwoUnlocked = save?.chapterProgress?.chapter === "ecology_burst" || save?.unlockedNodes.includes("photo_pigment");
   const resonances = save ? availableEcologyResonances(save) : [];
-  const roleStatuses = ecologyRoleStatuses(save?.species ?? []);
+  const roleStatuses = ecologyRoleStatuses(save);
   const resonanceRemaining = save ? calcResonanceRemaining(save.lastResonanceAt) : 0;
   const selectedChapter = chapterTwoUnlocked ? activeChapter : "life_birth";
   const isBusy = Boolean(submittingId);
@@ -170,7 +170,9 @@ function StrategySheetContent() {
 
   const chapterTabs = useMemo(() => [
     { id: "life_birth" as const, label: "生命诞生", disabled: false },
-    { id: "ecology_burst" as const, label: "生态爆发", disabled: !chapterTwoUnlocked },
+    ...(chapterTwoUnlocked
+      ? [{ id: "ecology_burst" as const, label: "生态爆发", disabled: false }]
+      : []),
   ], [chapterTwoUnlocked]);
 
   return (
@@ -313,7 +315,7 @@ function LockedResonancePreview({
       <span className="resonance-copy">
         <span className="resonance-title-row">
           <span className="resonance-title">{preview.title}</span>
-          <span className="resonance-state">{ready ? "可形成" : `缺 ${missing.join("、")}`}</span>
+          <span className="resonance-state">{ready ? "痕迹齐备" : `缺 ${missing.join("、")}`}</span>
         </span>
         <span className="resonance-desc">{preview.desc}</span>
       </span>
@@ -380,12 +382,15 @@ function resonanceIconFor(resonanceId: string): { main: string; badges: string[]
   };
 }
 
-function ecologyRoleStatuses(species: Array<{ ecologicalRole: string; status: string }>) {
+function ecologyRoleStatuses(save: ReturnType<typeof useGameStore.getState>["save"]) {
   const livingRoles = new Set(
-    species
+    (save?.species ?? [])
       .filter((item) => item.status === "living" || item.status === "flourishing")
       .map((item) => item.ecologicalRole),
   );
+  if (save?.unlockedNodes.includes("early_producer_film")) livingRoles.add("producer");
+  if (save?.unlockedNodes.includes("decomposition_layer")) livingRoles.add("decomposer");
+  if (save?.unlockedNodes.includes("tidal_filter_pores")) livingRoles.add("filterer");
   return [
     { id: "producer", label: "生产者", asset: uiAssets.species.producer, active: livingRoles.has("producer") },
     { id: "decomposer", label: "分解者", asset: uiAssets.species.decomposer, active: livingRoles.has("decomposer") },
