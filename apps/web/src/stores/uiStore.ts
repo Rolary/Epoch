@@ -25,6 +25,14 @@ export type ModalType =
 
 export type SheetType = "strategy" | "environment" | null;
 
+export interface NarrativePrompt {
+  id: string;
+  type: NonNullable<ModalType>;
+  data?: Record<string, unknown>;
+  priority: number;
+  seenHintId?: string;
+}
+
 export interface UIStore {
   page: Page;
   modalType: ModalType;
@@ -41,6 +49,8 @@ export interface UIStore {
   seenUnlockHints: string[];
   unlockGuideTarget: string | null;
   snoozedEcologyEventId: string | null;
+  narrativeQueue: NarrativePrompt[];
+  activeNarrative: NarrativePrompt | null;
 
   setPage: (page: Page) => void;
   showModal: (type: NonNullable<ModalType>, data?: Record<string, unknown>) => void;
@@ -57,6 +67,9 @@ export interface UIStore {
   setUnlockGuideTarget: (id: string | null) => void;
   hydrateScopedUIState: () => void;
   snoozeEcologyEvent: (id: string | null) => void;
+  enqueueNarrative: (prompt: NarrativePrompt) => void;
+  activateNextNarrative: () => void;
+  completeNarrative: (id: string) => void;
 }
 
 function getPlayerStorageScope(): string {
@@ -95,6 +108,8 @@ export const useUIStore = create<UIStore>((set, get) => ({
   seenUnlockHints: readScopedSeenUnlockHints(),
   unlockGuideTarget: null,
   snoozedEcologyEventId: null,
+  narrativeQueue: [],
+  activeNarrative: null,
 
   setPage: (page) => set({ page, modalType: null, sheetType: null }),
 
@@ -127,6 +142,36 @@ export const useUIStore = create<UIStore>((set, get) => ({
     }),
   setUnlockGuideTarget: (id) => set({ unlockGuideTarget: id }),
   snoozeEcologyEvent: (id) => set({ snoozedEcologyEventId: id }),
+  enqueueNarrative: (prompt) =>
+    set((state) => {
+      if (prompt.seenHintId && state.seenUnlockHints.includes(prompt.seenHintId)) return state;
+      if (state.activeNarrative?.id === prompt.id || state.narrativeQueue.some((item) => item.id === prompt.id)) return state;
+      return {
+        narrativeQueue: [...state.narrativeQueue, prompt].sort((a, b) => b.priority - a.priority),
+      };
+    }),
+  activateNextNarrative: () =>
+    set((state) => {
+      if (state.activeNarrative || state.narrativeQueue.length === 0) return state;
+      const [activeNarrative, ...narrativeQueue] = state.narrativeQueue;
+      return { activeNarrative, narrativeQueue };
+    }),
+  completeNarrative: (id) =>
+    set((state) => {
+      if (state.activeNarrative?.id !== id) return state;
+      let seenUnlockHints = state.seenUnlockHints;
+      const seenHintId = state.activeNarrative.seenHintId;
+      if (seenHintId && !seenUnlockHints.includes(seenHintId)) {
+        seenUnlockHints = [...seenUnlockHints, seenHintId];
+        localStorage.setItem(scopedStorageKey("seen-unlock-hints"), JSON.stringify(seenUnlockHints));
+      }
+      return {
+        activeNarrative: null,
+        modalType: null,
+        modalData: {},
+        seenUnlockHints,
+      };
+    }),
   hydrateScopedUIState: () =>
     set({
       guide: readScopedGuideState(),
@@ -138,5 +183,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       modalData: {},
       sheetType: null,
       sheetData: {},
+      narrativeQueue: [],
+      activeNarrative: null,
     }),
 }));

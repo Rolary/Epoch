@@ -69,15 +69,16 @@ Copy-TreePng -FromRoot $sourceRoot -ToRoot $originalRoot -OnlyMissing
 
 function Get-MaxLongEdge([string]$RelativePath) {
   $normalized = $RelativePath.Replace("\", "/")
-  if ($normalized -like "bg-*") { return 1280 }
+  if ($normalized -like "bg-*") { return 960 }
   if ($normalized -eq "pool-centerpiece.png") { return 720 }
-  if ($normalized -like "events/*") { return 720 }
-  if ($normalized -like "species/*") { return 720 }
+  if ($normalized -like "events/*") { return 600 }
+  if ($normalized -like "species/*") { return 512 }
   if ($normalized -like "card-*") { return 520 }
   if ($normalized -like "pickup-*") { return 220 }
-  if ($normalized -like "emblem-*") { return 220 }
+  if ($normalized -like "emblem-*") { return 180 }
   if ($normalized -like "evolution/*") { return 220 }
   if ($normalized -like "resource-*") { return 128 }
+  if ($normalized -like "talents/*") { return 220 }
   return 720
 }
 

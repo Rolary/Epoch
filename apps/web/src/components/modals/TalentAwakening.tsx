@@ -7,9 +7,11 @@ import { talentAssetFor } from "../talents/talentPresentation.js";
 import { GameModal } from "./GameModal.js";
 
 export function TalentAwakening() {
-  const hideModal = useUIStore((s) => s.hideModal);
   const save = useGameStore((s) => s.save);
   const setSave = useGameStore((s) => s.setSave);
+  const modalData = useUIStore((s) => s.modalData);
+  const completeNarrative = useUIStore((s) => s.completeNarrative);
+  const narrativeId = modalData.narrativeId as string | undefined;
   const [talents, setTalents] = useState(save?.pendingTalentChoices ?? []);
   const [rollCount, setRollCount] = useState(0);
   const MAX_ROLLS = 1;
@@ -19,7 +21,8 @@ export function TalentAwakening() {
     try {
       const updated = await selectTalentApi(save.id, talentId);
       setSave(updated);
-      hideModal();
+      if (narrativeId) completeNarrative(narrativeId);
+      else useUIStore.getState().hideModal();
     } catch {
       // ignore
     }
@@ -39,10 +42,13 @@ export function TalentAwakening() {
   if (talents.length === 0) return null;
 
   return (
-    <GameModal title="源质印记觉醒">
+    <GameModal
+      title="源质印记觉醒"
+      dismissible={false}
+    >
       <div className="awakening-content">
         <p className="awakening-hint">
-          生态跃迁唤醒了新的长期倾向。选择一种源质印记永久融入这颗星球。
+          生态跃迁唤醒了新的长期倾向。选择一种源质印记，让这次变化真正沉入潮池。
         </p>
         <div className="reroll-bar">
           <span className="reroll-hint">

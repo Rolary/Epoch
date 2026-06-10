@@ -288,6 +288,13 @@ function historyTagLabel(tag: string): string {
     replication_fidelity: "高保真复制",
     error_retention: "错误保留",
     fragment_budding: "断裂繁殖",
+    producer_cycle: "浅层生产",
+    decomposer_cycle: "池底回收",
+    filterer_balance: "清潮过滤",
+    producer_decomposer_resonance: "浅层与池底回应",
+    ecology_cycle: "生态循环",
+    ecology_imbalance_faced: "承受过盛",
+    ecological_personality: "潮池性格",
   };
   return map[tag] ?? tag;
 }
@@ -311,6 +318,13 @@ function historyTagCopy(tag: string): string {
     replication_fidelity: "复制更稳，但变化更谨慎。",
     error_retention: "突变更大胆，潮池更容易波动。",
     fragment_budding: "断裂也可能成为新的延续方式。",
+    producer_cycle: "受光薄膜开始把光留成潮池可以继续使用的能量。",
+    decomposer_cycle: "池底分解层把旧薄膜拆回材料，并送回新的生长。",
+    filterer_balance: "滤食孔隙筛去浑浊，让水体重新留出呼吸。",
+    producer_decomposer_resonance: "浅层生产与池底回收已经互相接续。",
+    ecology_cycle: "生产、分解和过滤接成了第一阵往复。",
+    ecology_imbalance_faced: "潮池经历过繁盛压力，并留下了自己的处理方式。",
+    ecological_personality: "反复出现的水势已经沉成这片潮池的性格。",
   };
   return map[tag] ?? "这类变化正在写入潮池性格。";
 }

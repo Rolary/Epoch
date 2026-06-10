@@ -80,11 +80,11 @@ export function LogPage() {
 }
 
 function ChapterTwoSummary({ save }: { save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]> }) {
-  const roles = Array.from(new Set(
-    save.species
+  const livingRoles = save.species
       .filter((item) => item.status === "living" || item.status === "flourishing")
-      .map((item) => roleLabel(item.ecologicalRole)),
-  ));
+      .map((item) => item.ecologicalRole);
+  const witnessedRoles = save.chapterWitness?.ecologyBurst.rolesWitnessed ?? [];
+  const roles = Array.from(new Set([...livingRoles, ...witnessedRoles])).map(roleLabel);
   const imbalances = (save.eventHistory ?? [])
     .filter((id) => ["bloom_pressure", "murky_low_oxygen", "decomposer_layer_spread"].includes(id))
     .map(eventLabel);
@@ -111,12 +111,20 @@ function ChapterTwoSummary({ save }: { save: NonNullable<ReturnType<typeof useGa
 
 function buildMemoryEntries(logs: EvolutionLog[]): MemoryEntry[] {
   const grouped = new Map<MemoryTone, MemoryEntry>();
+  const keyGrouped = new Map<string, MemoryEntry>();
   const entries: MemoryEntry[] = [];
 
   for (const log of logs.slice(0, 50)) {
     const keyMemory = createKeyMemory(log);
     if (keyMemory) {
-      entries.push(keyMemory);
+      const groupKey = `${keyMemory.tone}:${keyMemory.title}:${keyMemory.description}`;
+      const existing = keyGrouped.get(groupKey);
+      if (existing) {
+        existing.count += 1;
+        existing.firstAt = log.createdAt;
+      } else {
+        keyGrouped.set(groupKey, keyMemory);
+      }
       continue;
     }
 
@@ -141,7 +149,7 @@ function buildMemoryEntries(logs: EvolutionLog[]): MemoryEntry[] {
     }
   }
 
-  entries.push(...grouped.values());
+  entries.push(...keyGrouped.values(), ...grouped.values());
   return entries.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
 }
 

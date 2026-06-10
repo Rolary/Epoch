@@ -66,5 +66,19 @@ export declare const uiAssets: {
         readonly photoPigment: string;
     };
 };
+export declare const phaserAssets: {
+    readonly backgrounds: {
+        readonly homeTidepool: string;
+    };
+    readonly scene: {
+        readonly poolCenterpiece: string;
+    };
+    readonly pickups: {
+        readonly crystal: string;
+        readonly spark: string;
+        readonly droplet: string;
+        readonly pulse: string;
+    };
+};
 export type UIAssetKey = keyof typeof uiAssets;
 //# sourceMappingURL=uiAssets.d.ts.map

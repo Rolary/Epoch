@@ -10,6 +10,9 @@ export function EcologyEventModal() {
   const setSave = useGameStore((s) => s.setSave);
   const hideModal = useUIStore((s) => s.hideModal);
   const snoozeEcologyEvent = useUIStore((s) => s.snoozeEcologyEvent);
+  const completeNarrative = useUIStore((s) => s.completeNarrative);
+  const modalData = useUIStore((s) => s.modalData);
+  const narrativeId = modalData.narrativeId as string | undefined;
   const event = save?.pendingEcologyEvent as EcologyEvent | null | undefined;
 
   if (!save || !event) {
@@ -24,14 +27,18 @@ export function EcologyEventModal() {
       title: "要让这阵水势落下去吗？",
       description: option.description,
       gain: option.title,
-      cost: effectCopy(option.resourceEffect, option.environmentEffect) || "这一次会在潮池里留下痕迹。",
+      cost: tradeoffCopy(option.resourceEffect, option.environmentEffect),
       confirmLabel: "顺着它走",
       cancelLabel: "先放一放",
+      onCancel: () => {
+        useUIStore.getState().showModal("ecology-event", narrativeId ? { narrativeId } : {});
+      },
       onConfirm: async () => {
         try {
           const next = await chooseEcologyEvent(save.id, event.id, optionId);
           snoozeEcologyEvent(null);
           setSave(next);
+          if (narrativeId) completeNarrative(narrativeId);
         } catch {
           hideModal();
         }
@@ -41,11 +48,12 @@ export function EcologyEventModal() {
 
   const snooze = () => {
     snoozeEcologyEvent(event.id);
-    hideModal();
+    if (narrativeId) completeNarrative(narrativeId);
+    else hideModal();
   };
 
   return (
-    <GameModal title={event.title} onClose={() => snoozeEcologyEvent(event.id)}>
+    <GameModal title={event.title} onClose={snooze}>
       <div className="ecology-event-modal">
         <img className="event-visual" src={eventAssetFor(event)} alt="" aria-hidden="true" />
         <span className="event-choice-kicker">潮池时刻 · 选择一项回应</span>
@@ -56,7 +64,7 @@ export function EcologyEventModal() {
             <button key={option.id} className="event-option" onClick={() => choose(option.id)}>
               <span className="event-option-title">{option.title}</span>
               <span className="event-option-desc">{option.description}</span>
-              <span className="event-option-effect">{effectCopy(option.resourceEffect, option.environmentEffect)}</span>
+              <span className="event-option-effect">水势变化：{effectCopy(option.resourceEffect, option.environmentEffect)}</span>
             </button>
           ))}
         </div>
@@ -86,6 +94,19 @@ function effectCopy(
     .map(([key, value]) => `${envLabel(key)} ${value > 0 ? "+" : ""}${value}`)
     .join(" · ");
   return [resourceCopy, envCopy].filter(Boolean).join(" / ") || "潮池性格会被记录";
+}
+
+function tradeoffCopy(
+  resources: EcologyEvent["options"][number]["resourceEffect"],
+  environment: EcologyEvent["options"][number]["environmentEffect"],
+) {
+  const pressures = Object.entries(resources ?? {})
+    .filter(([, value]) => value < 0)
+    .map(([key]) => `${resourceLabel(key)}会暂时回落`);
+  if ((environment?.volatility ?? 0) > 0) pressures.push("水体会变得更不安定");
+  if ((environment?.light ?? 0) < 0) pressures.push("浅层能接住的光会减少");
+  if ((environment?.tide ?? 0) < 0) pressures.push("潮汐带回材料的速度会放慢");
+  return pressures.join("；") || "这次选择会改变后续水势，并被潮池记住。";
 }
 
 function resourceLabel(key: string) {

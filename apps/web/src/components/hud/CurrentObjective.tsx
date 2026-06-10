@@ -297,7 +297,9 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     },
     face_imbalance: {
       title: "面对繁盛后的失衡",
-      action: "等潮池处理过盛的水面",
+      action: save.pendingEcologyEvent
+        ? "打开水势选择，决定潮池怎样承受过盛"
+        : "继续照看潮池，让繁盛压力浮上水面",
       observation: "水面长得太满时，清水、空隙和呼吸都会被挤压。",
       term: "水势平衡",
       progressLabel: "失衡处理",
@@ -306,7 +308,7 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     },
     ecological_personality: {
       title: "留下潮池的样子",
-      action: "把这段水势写进潮池记忆",
+      action: "前往演化，留下潮池性格",
       observation: "反复出现的水势，正在沉成这片潮池的样子。",
       term: "潮池性格",
       progressLabel: "记忆沉淀",
@@ -315,7 +317,7 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     },
     complete: {
       title: "第一阵往复已经接上",
-      action: "这片潮池已经记住自己的样子",
+      action: "翻开潮池记忆，回看这段生态循环",
       observation: "生命不再只是出现，而是开始彼此接续，让这片水有了自己的节奏。",
       term: "潮池记忆",
       progressLabel: "潮池记忆",

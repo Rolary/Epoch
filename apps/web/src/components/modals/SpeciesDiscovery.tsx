@@ -17,10 +17,11 @@ export function SpeciesDiscovery() {
   const species = useGameStore((s) => s.species());
   const save = useGameStore((s) => s.save);
   const speciesId = modalData.speciesId as string | undefined;
-  const showTalentAfter = modalData.showTalentAfter === true;
   const sp = species.find((s) => s.id === speciesId) ?? species[0];
   const setPage = useUIStore((s) => s.setPage);
   const hideModal = useUIStore((s) => s.hideModal);
+  const completeNarrative = useUIStore((s) => s.completeNarrative);
+  const narrativeId = modalData.narrativeId as string | undefined;
 
   if (!sp) return null;
   const isEcologyRole = save?.chapterProgress?.chapter === "ecology_burst" && species.length > 1;
@@ -39,7 +40,12 @@ export function SpeciesDiscovery() {
       };
 
   return (
-    <GameModal title={copy.title}>
+    <GameModal
+      title={copy.title}
+      onClose={() => {
+        if (narrativeId) completeNarrative(narrativeId);
+      }}
+    >
       <div className="discovery-content">
         <div className="discovery-visual asset-emblem">
           <img src={speciesAssetFor(sp.ecologicalRole)} alt="" aria-hidden="true" />
@@ -55,13 +61,9 @@ export function SpeciesDiscovery() {
         <button
           className="btn-primary"
           onClick={() => {
-            hideModal();
+            if (narrativeId) completeNarrative(narrativeId);
+            else hideModal();
             setPage("codex");
-            if (showTalentAfter) {
-              window.setTimeout(() => {
-                useUIStore.getState().showModal("talent-awakening");
-              }, 250);
-            }
           }}
         >
           {copy.action}

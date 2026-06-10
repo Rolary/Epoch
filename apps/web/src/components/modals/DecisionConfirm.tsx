@@ -15,6 +15,7 @@ export function DecisionConfirm() {
   const confirmLabel = (modalData.confirmLabel as string) ?? "顺着它走";
   const cancelLabel = (modalData.cancelLabel as string) ?? "先放一放";
   const onConfirm = modalData.onConfirm as (() => void | Promise<void>) | undefined;
+  const onCancel = modalData.onCancel as (() => void) | undefined;
 
   const handleConfirm = async () => {
     if (!onConfirm || submitting) return;
@@ -45,7 +46,15 @@ export function DecisionConfirm() {
         )}
         <p className="decision-reminder">{reminder}</p>
         <div className="decision-actions">
-          <button className="btn-secondary" type="button" onClick={hideModal} disabled={submitting}>
+          <button
+            className="btn-secondary"
+            type="button"
+            onClick={() => {
+              if (onCancel) onCancel();
+              else hideModal();
+            }}
+            disabled={submitting}
+          >
             {cancelLabel}
           </button>
           <button className="btn-primary" type="button" onClick={handleConfirm} disabled={submitting}>

@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { uiAssets } from "../../assets/uiAssets.js";
+import { phaserAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 
 type ElementType = "crystal" | "spark" | "droplet" | "pulse";
@@ -80,12 +80,12 @@ export class HomeScene extends Phaser.Scene {
 
   preload(): void {
     this.createProceduralTextures();
-    this.load.image("bg-home-tidepool", uiAssets.backgrounds.homeTidepool);
-    this.load.image("pool-centerpiece", uiAssets.scene.poolCenterpiece);
-    this.load.image("pickup-crystal", uiAssets.pickups.crystal);
-    this.load.image("pickup-spark", uiAssets.pickups.spark);
-    this.load.image("pickup-droplet", uiAssets.pickups.droplet);
-    this.load.image("pickup-pulse", uiAssets.pickups.pulse);
+    this.load.image("bg-home-tidepool", phaserAssets.backgrounds.homeTidepool);
+    this.load.image("pool-centerpiece", phaserAssets.scene.poolCenterpiece);
+    this.load.image("pickup-crystal", phaserAssets.pickups.crystal);
+    this.load.image("pickup-spark", phaserAssets.pickups.spark);
+    this.load.image("pickup-droplet", phaserAssets.pickups.droplet);
+    this.load.image("pickup-pulse", phaserAssets.pickups.pulse);
   }
 
   create(): void {
@@ -1098,8 +1098,20 @@ export class HomeScene extends Phaser.Scene {
     const cy = this.cameras.main.height / 2 + 40;
     const stage = progress.stage;
     const hasImbalance = Boolean(save?.pendingEcologyEvent?.id && /bloom|murky|decomposer/.test(save.pendingEcologyEvent.id));
+    const livingRoles = new Set(
+      (save?.species ?? [])
+        .filter((item) => item.status === "living" || item.status === "flourishing")
+        .map((item) => item.ecologicalRole),
+    );
+    if (save?.unlockedNodes.includes("early_producer_film")) livingRoles.add("producer");
+    if (save?.unlockedNodes.includes("decomposition_layer")) livingRoles.add("decomposer");
+    if (save?.unlockedNodes.includes("tidal_filter_pores")) livingRoles.add("filterer");
+    const hasProducer = livingRoles.has("producer");
+    const hasDecomposer = livingRoles.has("decomposer");
+    const hasFilterer = livingRoles.has("filterer");
+    const cycleFormed = Boolean(save?.chapterWitness?.ecologyBurst.cycleWitnessed);
 
-    if (["pursue_light", "differentiate_roles", "form_cycle", "face_imbalance", "ecological_personality", "complete"].includes(stage)) {
+    if (stage === "pursue_light" || hasProducer) {
       this.ecologyStageGraphics.fillStyle(0xF5D078, 0.045 + Math.sin(t * 0.001) * 0.012);
       this.ecologyStageGraphics.fillEllipse(cx, cy - 34, 176, 38);
       for (let i = 0; i < 5; i++) {
@@ -1109,7 +1121,7 @@ export class HomeScene extends Phaser.Scene {
       }
     }
 
-    if (["form_cycle", "face_imbalance", "ecological_personality", "complete"].includes(stage)) {
+    if (hasDecomposer) {
       this.ecologyStageGraphics.fillStyle(0x8D6E63, 0.11);
       this.ecologyStageGraphics.fillEllipse(cx, cy + 74, 210, 30);
       this.ecologyStageGraphics.fillStyle(0x66BB6A, 0.08);
@@ -1120,7 +1132,7 @@ export class HomeScene extends Phaser.Scene {
       }
     }
 
-    if (["face_imbalance", "ecological_personality", "complete"].includes(stage)) {
+    if (hasFilterer) {
       this.ecologyStageGraphics.lineStyle(1, 0x4FC3F7, 0.1);
       for (let i = 0; i < 4; i++) {
         const r = 34 + i * 20 + Math.sin(t * 0.001 + i) * 3;
@@ -1128,12 +1140,12 @@ export class HomeScene extends Phaser.Scene {
       }
     }
 
-    if (hasImbalance || stage === "face_imbalance") {
+    if (hasImbalance || stage === "face_imbalance" || save?.chapterWitness?.ecologyBurst.imbalanceWitnessed) {
       this.ecologyStageGraphics.fillStyle(0x607D8B, 0.11 + Math.abs(Math.sin(t * 0.0008)) * 0.04);
       this.ecologyStageGraphics.fillEllipse(cx - 16, cy + 6, 224, 94);
     }
 
-    if (stage === "complete") {
+    if (cycleFormed || stage === "complete") {
       this.ecologyStageGraphics.lineStyle(2, 0x66BB6A, 0.18);
       this.ecologyStageGraphics.strokeCircle(cx, cy + 10, 122 + Math.sin(t * 0.001) * 4);
     }

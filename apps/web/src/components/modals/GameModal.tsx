@@ -5,11 +5,13 @@ export function GameModal({
   children,
   title,
   closing: closingProp = false,
+  dismissible = true,
   onClose,
 }: {
   children: ReactNode;
   title?: string;
   closing?: boolean;
+  dismissible?: boolean;
   onClose?: () => void;
 }) {
   const hideModal = useUIStore((s) => s.hideModal);
@@ -17,7 +19,7 @@ export function GameModal({
   const isClosing = closing || closingProp;
 
   const close = () => {
-    if (isClosing) return;
+    if (!dismissible || isClosing) return;
     setClosing(true);
     window.setTimeout(() => {
       onClose?.();
@@ -31,9 +33,11 @@ export function GameModal({
         {title && (
           <div className="modal-header">
             <span className="modal-title">{title}</span>
-            <button className="modal-close" onClick={close} aria-label="关闭">
-              ×
-            </button>
+            {dismissible && (
+              <button className="modal-close" onClick={close} aria-label="关闭">
+                ×
+              </button>
+            )}
           </div>
         )}
         <div className="modal-body">{children}</div>

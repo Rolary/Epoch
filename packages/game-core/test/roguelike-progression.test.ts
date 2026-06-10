@@ -382,9 +382,21 @@ describe("roguelike life-history progression", () => {
       unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop", "proto_cell", "photo_pigment"]
     };
 
+    expect(normalizeGameState(state).chapterProgress?.stage).toBe("pursue_light");
     expect(canUnlockEvolutionNode(state, "early_producer_film")).toBe(true);
     state = unlockEvolutionNode(state, "early_producer_film");
     state = unlockEvolutionNode(state, "decomposition_layer");
+    expect(state.chapterProgress?.stage).toBe("form_cycle");
+
+    state = applyEcologyResonance(state, "decomposer_feeds_producer", new Date("2026-05-21T00:01:00.000Z")).state;
+    expect(state.chapterWitness?.ecologyBurst.firstResonanceWitnessed).toBe(true);
+    expect(state.chapterProgress?.stage).toBe("form_cycle");
+
+    state = {
+      ...state,
+      lastResonanceAt: null,
+      resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
+    };
     state = unlockEvolutionNode(state, "tidal_filter_pores");
 
     expect(Array.from(new Set(state.species.map((item) => item.ecologicalRole)))).toEqual(expect.arrayContaining(["producer", "decomposer", "filterer"]));

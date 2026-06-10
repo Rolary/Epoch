@@ -68,11 +68,13 @@ server.get("/meta/talents", async () => ({ talents: talentCatalog }));
 server.get("/meta/talent-choices", async () => ({ choices: rollTalentChoices(undefined, 3) }));
 server.get("/meta/ui-assets", async () => ({ assets: await listUiAssetUrls() }));
 
+type SecondChapterDebugStage = "light" | "roles" | "resonance" | "cycle" | "imbalance" | "personality" | "complete";
+
 server.post("/debug/second-chapter-save", async (request, reply) => {
   if (isProduction) return reply.code(404).send({ message: "Not found" });
   const guestKey = requireGuestKey(request.headers["x-guest-key"]);
   if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
-  const body = (request.body ?? {}) as { stage?: "photo" | "roles" | "cycle" | "complete" };
+  const body = (request.body ?? {}) as { stage?: SecondChapterDebugStage };
   const save = buildSecondChapterDebugSave(createSaveId(), body.stage ?? "cycle");
   await putSave(guestKey, save);
   return { save };
@@ -360,8 +362,10 @@ function toLeaderboardEntry(save: GameState, score: number, rank: number, isMine
   };
 }
 
-function buildSecondChapterDebugSave(id: string, stage: "photo" | "roles" | "cycle" | "complete"): GameState {
+function buildSecondChapterDebugSave(id: string, stage: SecondChapterDebugStage): GameState {
   let save = createInitialState(id, "第二章验收潮池");
+  const roleStages: SecondChapterDebugStage[] = ["roles", "resonance", "cycle", "imbalance", "personality", "complete"];
+  const cycleStages: SecondChapterDebugStage[] = ["cycle", "imbalance", "personality", "complete"];
   const unlockOrder = [
     "organic_richness",
     "replicating_chain",
@@ -370,8 +374,8 @@ function buildSecondChapterDebugSave(id: string, stage: "photo" | "roles" | "cyc
     "metabolic_loop",
     "proto_cell",
     "photo_pigment",
-    ...(stage === "photo" ? [] : ["early_producer_film", "decomposition_layer", "tidal_filter_pores"]),
-    ...(stage === "cycle" || stage === "complete" ? ["mutual_ecology_cycle"] : []),
+    ...(roleStages.includes(stage) ? ["early_producer_film", "decomposition_layer"] : []),
+    ...(cycleStages.includes(stage) ? ["tidal_filter_pores", "mutual_ecology_cycle"] : []),
   ];
 
   for (const nodeId of unlockOrder) {
@@ -382,8 +386,19 @@ function buildSecondChapterDebugSave(id: string, stage: "photo" | "roles" | "cyc
     if (canUnlockEvolutionNode(save, nodeId)) save = unlockEvolutionNode(save, nodeId);
   }
 
-  if (stage === "complete" && save.pendingEcologyEvent?.id === "bloom_pressure") {
+  if (stage === "resonance") {
+    save = applyEcologyResonance(save, "decomposer_feeds_producer").state;
+  }
+
+  if (stage === "cycle") {
+    save.pendingEcologyEvent = null;
+  }
+
+  if ((stage === "personality" || stage === "complete") && save.pendingEcologyEvent?.id === "bloom_pressure") {
     save = applyEcologyEventChoice(save, "bloom_pressure", "thin_bloom");
+  }
+
+  if (stage === "complete") {
     save = {
       ...normalizeGameState(save),
       resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },

@@ -58,7 +58,7 @@ export function BottomBar() {
     <div className="bottom-bar">
       <div className="nav-icons">
         {NAV_ITEMS.filter((item) => isNavUnlocked(item.id)).map((item) => {
-          const isNew = item.id !== "home" && item.id !== "settings" && !seenUnlockHints.includes(item.id);
+          const isNew = item.id !== "home" && item.id !== "settings" && item.id !== "leaderboard" && !seenUnlockHints.includes(item.id);
           const isGuideTarget = unlockGuideTarget === item.id;
           return (
             <button

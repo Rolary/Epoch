@@ -4,7 +4,7 @@ import type { Game as PhaserGame } from "phaser";
 import { useGameStore } from "./stores/gameStore.js";
 import type { ElementType, Outcome } from "./stores/gameStore.js";
 import { useUIStore } from "./stores/uiStore.js";
-import type { Page } from "./stores/uiStore.js";
+import type { NarrativePrompt, Page } from "./stores/uiStore.js";
 import { ensureGuest, getSave, tickSave, getSaveId, applyAction } from "./api.js";
 import {
   calculateResourceDelta,
@@ -290,6 +290,10 @@ export function App() {
   const showModal = useUIStore((s) => s.showModal);
   const seenUnlockHints = useUIStore((s) => s.seenUnlockHints);
   const markUnlockHintSeen = useUIStore((s) => s.markUnlockHintSeen);
+  const enqueueNarrative = useUIStore((s) => s.enqueueNarrative);
+  const activateNextNarrative = useUIStore((s) => s.activateNextNarrative);
+  const activeNarrative = useUIStore((s) => s.activeNarrative);
+  const guide = useUIStore((s) => s.guide);
   const unlockGuideTarget = useUIStore((s) => s.unlockGuideTarget);
   const hydrateScopedUIState = useUIStore((s) => s.hydrateScopedUIState);
   const snoozedEcologyEventId = useUIStore((s) => s.snoozedEcologyEventId);
@@ -299,8 +303,6 @@ export function App() {
 
   const [toasts, setToasts] = useState<Array<{ id: number; text: string; color: string }>>([]);
   const [interventionCue, setInterventionCue] = useState<InterventionCue | null>(null);
-  const [unlockHintQueue, setUnlockHintQueue] = useState<UnlockHint[]>([]);
-  const [activeUnlockHintId, setActiveUnlockHintId] = useState<string | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
@@ -308,8 +310,6 @@ export function App() {
     if (activeSaveScopeRef.current === scope) return;
     activeSaveScopeRef.current = scope;
     previousUnlockHintsRef.current = null;
-    setUnlockHintQueue([]);
-    setActiveUnlockHintId(null);
   }, [save?.id]);
 
   // Initialize Phaser
@@ -431,15 +431,20 @@ export function App() {
         setSave(s);
         const newSpecies = s.species.slice(prevCount);
         if (newSpecies.length > 0) {
-          showModal("species-discovery", { speciesId: newSpecies[0].id });
+          enqueueNarrative(speciesNarrative(newSpecies[0].id));
         }
         if (s.pendingTalentChoices?.length > 0) {
-          showModal("talent-awakening");
+          enqueueNarrative({
+            id: `talent-awakening:${s.id}:${s.pendingTalentChoices.map((item) => item.id).join(",")}`,
+            type: "talent-awakening",
+            data: {},
+            priority: 68,
+          });
         }
       } catch { /* silent */ }
     }, 15000);
     return () => clearInterval(interval);
-  }, [saveId, page]);
+  }, [saveId, page, enqueueNarrative]);
 
   // Process absorb queue: map elements to API actions
   useEffect(() => {
@@ -469,12 +474,14 @@ export function App() {
 
         // Check species / talents
         if (newSpecies) {
-          showModal("species-discovery", {
-            speciesId: newSpecies.id,
-            showTalentAfter: s.pendingTalentChoices?.length > 0,
-          });
+          enqueueNarrative(speciesNarrative(newSpecies.id));
         } else if (s.pendingTalentChoices?.length > 0) {
-          showModal("talent-awakening");
+          enqueueNarrative({
+            id: `talent-awakening:${s.id}:${s.pendingTalentChoices.map((item) => item.id).join(",")}`,
+            type: "talent-awakening",
+            data: {},
+            priority: 68,
+          });
         }
       } catch {
         setToasts((prev) => [...prev, { id: next.id, text: "潮池暂时吸收不了这种变化", color: "#EF5350" }]);
@@ -482,7 +489,7 @@ export function App() {
       processingAbsorbIdRef.current = null;
       dequeueAbsorb(next.id);
     })();
-  }, [absorbQueue, saveId]);
+  }, [absorbQueue, saveId, enqueueNarrative]);
 
   // Clean up old toasts
   useEffect(() => {
@@ -495,100 +502,11 @@ export function App() {
   }, [toasts]);
 
   useEffect(() => {
-    if (!save?.pendingEcologyEvent || modalType || page !== "home") return;
-    if (save.pendingEcologyEvent.id === snoozedEcologyEventId) return;
-    showModal("ecology-event");
-  }, [save?.pendingEcologyEvent?.id, snoozedEcologyEventId, modalType, page]);
-
-  useEffect(() => {
-    if (!save || modalType || page === "create-ecology") return;
-    if (save.chapterProgress?.chapter === "ecology_burst" && !seenUnlockHints.includes("chapter-ecology-burst")) {
-      markUnlockHintSeen("chapter-ecology-burst");
-      showModal("system-unlock", {
-        title: "水面有了新的层次",
-        name: "追光之后",
-        description: "第一批生命没有停在原处。它们靠近光，也开始在浅层和池底留下不同的痕迹。",
-        impact: "有的把光留住，有的把旧薄膜拆回材料，有的在潮水里筛住细小颗粒。",
-        advice: "先看水里哪里变亮、哪里沉下、哪里开始清澈。潮池会自己说出下一步。",
-        icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "回到水边",
-      });
-      return;
+    if (!save || page === "create-ecology") return;
+    for (const prompt of chapterNarrativesFor(save, snoozedEcologyEventId)) {
+      enqueueNarrative(prompt);
     }
-    if (save.chapterProgress?.stage === "complete" && !seenUnlockHints.includes("chapter-ecology-complete")) {
-      markUnlockHintSeen("chapter-ecology-complete");
-      showModal("system-unlock", {
-        title: "潮池记住了自己的样子",
-        name: "潮池性格",
-        description: "这片水不只是养出了生命，也留下了一种反复出现的节奏。",
-        impact: "哪些生命撑住了水面，哪些变化带来压力，都会被整理成一段潮池记忆。",
-        advice: "回到潮池记忆，可以看到这片水怎样从追光走到自成循环。",
-        icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "翻开记忆",
-      });
-    }
-  }, [save?.id, save?.chapterProgress?.chapter, save?.chapterProgress?.stage, modalType, page, seenUnlockHints, markUnlockHintSeen, showModal]);
-
-  useEffect(() => {
-    if (!save || modalType || page === "create-ecology") return;
-    const witness = save.chapterWitness?.ecologyBurst;
-    if (!witness || save.chapterProgress?.chapter !== "ecology_burst") return;
-
-    if (witness.lightWitnessed && !seenUnlockHints.includes("ecology-witness-light")) {
-      markUnlockHintSeen("ecology-witness-light");
-      showModal("system-unlock", {
-        title: "薄膜朝着光铺开",
-        name: "追光的浅层",
-        description: "水面上浮起一层很薄的光。那些生命开始把白昼留在自己身上。",
-        impact: "潮池不再只是等待养分，它开始把外界的光变成自己的余温。",
-        advice: "池底很快也会有动静。旧薄膜沉下去时，新的工作会在那里开始。",
-        icon: uiAssets.species.producer,
-        actionLabel: "看向池底",
-      });
-      return;
-    }
-
-    if (witness.firstResonanceWitnessed && !seenUnlockHints.includes("ecology-witness-resonance")) {
-      markUnlockHintSeen("ecology-witness-resonance");
-      showModal("system-unlock", {
-        title: "两处水痕接上了",
-        name: "第一次回应",
-        description: "沉下去的旧薄膜没有消失。它们被拆回材料，又被浅层的光接住。",
-        impact: "潮池像是第一次学会把昨日的残余送回今天。",
-        advice: "以后再有这样的牵动，你只要看它让水更清、更盛，还是更会回收。",
-        icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "让它留下",
-      });
-      return;
-    }
-
-    if (witness.cycleWitnessed && !seenUnlockHints.includes("ecology-witness-cycle")) {
-      markUnlockHintSeen("ecology-witness-cycle");
-      showModal("system-unlock", {
-        title: "水里开始互相喂养",
-        name: "小循环",
-        description: "光、沉积和滤孔终于接成一阵缓慢的往复。潮池不再只靠外来的养分。",
-        impact: "越能延续的水，也越容易长得过满。",
-        advice: "接下来看看它怎样处理自己的繁盛。",
-        icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "等水势变化",
-      });
-      return;
-    }
-
-    if (witness.imbalanceWitnessed && !seenUnlockHints.includes("ecology-witness-imbalance")) {
-      markUnlockHintSeen("ecology-witness-imbalance");
-      showModal("system-unlock", {
-        title: "水面太满了",
-        name: "繁盛的压力",
-        description: "薄膜长得太快，清水、空隙和呼吸都开始被挤压。",
-        impact: "潮池留下的不只是增长，还有它怎样处理过盛。",
-        advice: "等这阵浑浊沉下去，再把这段水势写进记忆里。",
-        icon: uiAssets.emblems.system,
-        actionLabel: "等它沉下去",
-      });
-    }
-  }, [save, modalType, page, seenUnlockHints, markUnlockHintSeen, showModal]);
+  }, [save, page, snoozedEcologyEventId, enqueueNarrative]);
 
   useEffect(() => {
     if (!save) return;
@@ -604,42 +522,26 @@ export function App() {
     previousUnlockHintsRef.current = currentIds;
     const newlyUnlocked = hints.filter((hint) => !previousIds.has(hint.id) && !seenUnlockHints.includes(hint.id));
     if (newlyUnlocked.length === 0) return;
-    setUnlockHintQueue((queue) => {
-      const queued = new Set(queue.map((hint) => hint.id));
-      if (activeUnlockHintId) queued.add(activeUnlockHintId);
-      return [...queue, ...newlyUnlocked.filter((hint) => !queued.has(hint.id))];
-    });
-  }, [save, seenUnlockHints, markUnlockHintSeen, activeUnlockHintId]);
+    for (const hint of newlyUnlocked) {
+      enqueueNarrative({
+        id: `unlock:${hint.id}`,
+        type: "system-unlock",
+        data: { ...hint, hintId: hint.id },
+        priority: 30,
+        seenHintId: hint.id,
+      });
+    }
+  }, [save, seenUnlockHints, markUnlockHintSeen, enqueueNarrative]);
 
   useEffect(() => {
-    if (!activeUnlockHintId) return;
-    if (seenUnlockHints.includes(activeUnlockHintId)) setActiveUnlockHintId(null);
-  }, [activeUnlockHintId, seenUnlockHints]);
+    if (activeNarrative || unlockGuideTarget || modalType || sheetType || page === "create-ecology" || guide) return;
+    activateNextNarrative();
+  }, [activeNarrative, unlockGuideTarget, modalType, sheetType, page, guide, activateNextNarrative]);
 
   useEffect(() => {
-    if (
-      unlockHintQueue.length === 0 ||
-      activeUnlockHintId ||
-      unlockGuideTarget ||
-      modalType ||
-      sheetType ||
-      page === "create-ecology" ||
-      useUIStore.getState().guide
-    ) return;
-    const [next, ...rest] = unlockHintQueue;
-    setUnlockHintQueue(rest);
-    setActiveUnlockHintId(next.id);
-    showModal("system-unlock", {
-      hintId: next.id,
-      title: next.title,
-      name: next.name,
-      description: next.description,
-      impact: next.impact,
-      advice: next.advice,
-      icon: next.icon,
-      actionLabel: next.actionLabel,
-    });
-  }, [unlockHintQueue, activeUnlockHintId, unlockGuideTarget, modalType, sheetType, page, showModal]);
+    if (!activeNarrative || modalType || sheetType) return;
+    showModal(activeNarrative.type, { ...(activeNarrative.data ?? {}), narrativeId: activeNarrative.id });
+  }, [activeNarrative, modalType, sheetType, showModal]);
 
   useEffect(() => {
     const onIntervention = (event: Event) => {
@@ -812,6 +714,142 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
     });
   }
   return hints;
+}
+
+function speciesNarrative(speciesId: string): NarrativePrompt {
+  return {
+    id: `species-discovery:${speciesId}`,
+    type: "species-discovery",
+    data: { speciesId },
+    priority: 75,
+  };
+}
+
+function chapterNarrativesFor(
+  save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>,
+  snoozedEcologyEventId: string | null,
+): NarrativePrompt[] {
+  const prompts: NarrativePrompt[] = [];
+  const witness = save.chapterWitness?.ecologyBurst;
+
+  if (save.pendingEcologyEvent && save.pendingEcologyEvent.id !== snoozedEcologyEventId) {
+    prompts.push({
+      id: `ecology-event:${save.pendingEcologyEvent.id}`,
+      type: "ecology-event",
+      priority: 100,
+    });
+  }
+
+  if (save.chapterProgress?.chapter !== "ecology_burst" || !witness) return prompts;
+
+  prompts.push({
+    id: "chapter-ecology-burst",
+    type: "system-unlock",
+    priority: 90,
+    seenHintId: "chapter-ecology-burst",
+    data: {
+      title: "水面有了新的层次",
+      name: "追光之后",
+      description: "第一批生命没有停在原处。它们靠近光，也开始在浅层和池底留下不同的痕迹。",
+      impact: "有的把光留住，有的把旧薄膜拆回材料，有的在潮水里筛住细小颗粒。",
+      advice: "先看水里哪里变亮、哪里沉下、哪里开始清澈。潮池会自己说出下一步。",
+      icon: uiAssets.emblems.ecologyResonance,
+      actionLabel: "回到水边",
+    },
+  });
+
+  if (witness.lightWitnessed) {
+    prompts.push({
+      id: "ecology-witness-light",
+      type: "system-unlock",
+      priority: 80,
+      seenHintId: "ecology-witness-light",
+      data: {
+        title: "薄膜朝着光铺开",
+        name: "追光的浅层",
+        description: "水面上浮起一层很薄的光。那些生命开始把白昼留在自己身上。",
+        impact: "潮池不再只是等待养分，它开始把外界的光变成自己的余温。",
+        advice: "池底很快也会有动静。旧薄膜沉下去时，新的工作会在那里开始。",
+        icon: uiAssets.species.producer,
+        actionLabel: "看向池底",
+      },
+    });
+  }
+
+  if (witness.firstResonanceWitnessed) {
+    prompts.push({
+      id: "ecology-witness-resonance",
+      type: "system-unlock",
+      priority: 70,
+      seenHintId: "ecology-witness-resonance",
+      data: {
+        title: "两处水痕接上了",
+        name: "第一次回应",
+        description: "沉下去的旧薄膜没有消失。它们被拆回材料，又被浅层的光接住。",
+        impact: "潮池像是第一次学会把昨日的残余送回今天。",
+        advice: "以后再有这样的牵动，只需看它让水更清、更盛，还是更会回收。",
+        icon: uiAssets.emblems.ecologyResonance,
+        actionLabel: "让它留下",
+      },
+    });
+  }
+
+  if (witness.cycleWitnessed) {
+    prompts.push({
+      id: "ecology-witness-cycle",
+      type: "system-unlock",
+      priority: 60,
+      seenHintId: "ecology-witness-cycle",
+      data: {
+        title: "水里开始互相喂养",
+        name: "小循环",
+        description: "光、沉积和滤孔终于接成一阵缓慢的往复。潮池不再只靠外来的养分。",
+        impact: "越能延续的水，也越容易长得过满。",
+        advice: "接下来亲自选择潮池怎样承受自己的繁盛。",
+        icon: uiAssets.emblems.ecologyResonance,
+        actionLabel: "看水势变化",
+      },
+    });
+  }
+
+  if (witness.imbalanceWitnessed) {
+    prompts.push({
+      id: "ecology-witness-imbalance",
+      type: "system-unlock",
+      priority: 40,
+      seenHintId: "ecology-witness-imbalance",
+      data: {
+        title: "水面承受过繁盛",
+        name: "繁盛的压力",
+        description: "薄膜长得太快，清水、空隙和呼吸都曾被挤压。",
+        impact: "潮池留下的不只是增长，还有它怎样处理过盛。",
+        advice: "现在可以把这段选择写进潮池记忆，让它成为这片水的性格。",
+        icon: uiAssets.emblems.system,
+        actionLabel: "留下这段水势",
+      },
+    });
+  }
+
+  if (save.chapterProgress.stage === "complete") {
+    prompts.push({
+      id: "chapter-ecology-complete",
+      type: "system-unlock",
+      priority: 5,
+      seenHintId: "chapter-ecology-complete",
+      data: {
+        title: "第一阵往复已经接上",
+        name: "潮池性格",
+        description: "这片潮池不只是有生命，而是形成了自己的生态循环。",
+        impact: "生产、分解和过滤彼此接续；繁盛带来的压力，也被它用自己的方式承受下来。",
+        advice: "翻开潮池记忆，看看这片水怎样从追光走到自成循环。",
+        icon: uiAssets.emblems.ecologyResonance,
+        actionLabel: "翻开潮池记忆",
+        targetPage: "logs",
+      },
+    });
+  }
+
+  return prompts;
 }
 
 function UnlockGuideOverlay({ target }: { target: string }) {

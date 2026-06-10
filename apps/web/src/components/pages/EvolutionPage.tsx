@@ -51,6 +51,7 @@ export function EvolutionPage() {
   const setPage = useUIStore((s) => s.setPage);
   const hideModal = useUIStore((s) => s.hideModal);
   const showModal = useUIStore((s) => s.showModal);
+  const enqueueNarrative = useUIStore((s) => s.enqueueNarrative);
   const chapterBlocks = useMemo(() => buildChapterBlocks(evolutionNodes), []);
   const [expandedBranchIds, setExpandedBranchIds] = useState<string[]>([]);
   const [collapsedChapters, setCollapsedChapters] = useState<Partial<Record<ChapterId, boolean>>>({});
@@ -76,25 +77,27 @@ export function EvolutionPage() {
 
   const handleUnlock = async (nodeId: string) => {
     try {
-      const previousSpeciesCount = save.species.length;
+      const previousSpeciesIds = new Set(save.species.map((item) => item.id));
       const synced = await tickSave(save.id);
       setSave(synced);
       const updated = await unlockNode(save.id, nodeId);
       setSave(updated);
-      const newSpecies = updated.species.length > previousSpeciesCount ? updated.species[0] : undefined;
+      const newSpecies = updated.species.find((item) => !previousSpeciesIds.has(item.id));
+      hideModal();
       if (newSpecies) {
-        hideModal();
-        useUIStore.getState().showModal("species-discovery", {
-          speciesId: newSpecies.id,
-          showTalentAfter: updated.pendingTalentChoices?.length > 0,
+        enqueueNarrative({
+          id: `species-discovery:${newSpecies.id}`,
+          type: "species-discovery",
+          data: { speciesId: newSpecies.id },
+          priority: 75,
         });
-        return;
       }
       if (updated.pendingTalentChoices?.length > 0) {
-        hideModal();
-        setTimeout(() => {
-          useUIStore.getState().showModal("talent-awakening");
-        }, 300);
+        enqueueNarrative({
+          id: `talent-awakening:${updated.id}:${updated.pendingTalentChoices.map((item) => item.id).join(",")}`,
+          type: "talent-awakening",
+          priority: 68,
+        });
       }
     } catch {
       // canUnlockEvolutionNode gates this path.

@@ -43,8 +43,8 @@ const COOLDOWN_SECONDS = 30;
 const RESONANCE_COOLDOWN_SECONDS = 60;
 type StrategyChapter = "life_birth" | "ecology_burst";
 const LOCKED_RESONANCE_PREVIEWS = [
-  { id: "producer_decomposer", title: "生产者 + 分解者", desc: "有机质回流 +35%，能量回流 +25%", roles: ["producer", "decomposer"] },
-  { id: "full_cycle", title: "生产者 + 分解者 + 滤食者", desc: "接成小生态循环后，全部基础产出约 x2", roles: ["producer", "decomposer", "filterer"] },
+  { id: "producer_decomposer", title: "浅层与池底", desc: "旧薄膜被拆回材料，再送回受光的浅层。", roles: ["producer", "decomposer"] },
+  { id: "full_cycle", title: "第一阵往复", desc: "生产、分解和过滤齐备后，潮池会开始互相喂养。", roles: ["producer", "decomposer", "filterer"] },
 ];
 
 export function StrategySheet() {
@@ -235,13 +235,16 @@ function StrategySheetContent() {
                   {resonanceEmptyCopy(roleStatuses, resonanceRemaining, save?.chapterProgress?.stage)}
                 </div>
               )}
-              {LOCKED_RESONANCE_PREVIEWS.map((preview) => (
+              {save?.chapterProgress?.stage !== "complete" && LOCKED_RESONANCE_PREVIEWS
+                .filter((preview) => !preview.roles.every((role) => roleStatuses.some((item) => item.id === role && item.active)))
+                .slice(0, 1)
+                .map((preview) => (
                 <LockedResonancePreview
                   key={preview.id}
                   preview={preview}
                   activeRoles={new Set(roleStatuses.filter((role) => role.active).map((role) => role.id))}
                 />
-              ))}
+                ))}
             </div>
           </section>
         </div>
@@ -364,7 +367,7 @@ function ResonanceCard({
           <span className="resonance-state">{submitting ? "提交中" : remaining > 0 ? `${remaining}s` : "观察"}</span>
         </span>
         <span className="resonance-desc">{resonance.description}</span>
-        <span className="resonance-effect">{resonance.resultSummary}</span>
+          <span className="resonance-effect">{resonanceDirectionCopy(resonance.id)}</span>
       </span>
     </button>
   );

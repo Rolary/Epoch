@@ -168,4 +168,21 @@ export const uiAssets = {
   },
 } as const;
 
+// Phaser/WebGL textures must remain same-origin. Database asset URLs may be
+// valid for DOM images while still lacking the CORS headers WebGL requires.
+export const phaserAssets = {
+  backgrounds: {
+    homeTidepool: bgHomeTidepool,
+  },
+  scene: {
+    poolCenterpiece,
+  },
+  pickups: {
+    crystal: pickupCrystal,
+    spark: pickupSpark,
+    droplet: pickupDroplet,
+    pulse: pickupPulse,
+  },
+} as const;
+
 export type UIAssetKey = keyof typeof uiAssets;

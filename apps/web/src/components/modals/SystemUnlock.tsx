@@ -7,6 +7,8 @@ export function SystemUnlock() {
   const modalData = useUIStore((s) => s.modalData);
   const hideModal = useUIStore((s) => s.hideModal);
   const setUnlockGuideTarget = useUIStore((s) => s.setUnlockGuideTarget);
+  const completeNarrative = useUIStore((s) => s.completeNarrative);
+  const setPage = useUIStore((s) => s.setPage);
   const [closing, setClosing] = useState(false);
   const name = (modalData.name as string) ?? "演化路径";
   const title = (modalData.title as string) ?? "新的生命痕迹出现了";
@@ -16,18 +18,28 @@ export function SystemUnlock() {
   const icon = (modalData.icon as string) ?? uiAssets.emblems.system;
   const actionLabel = (modalData.actionLabel as string) ?? "前往查看";
   const hintId = modalData.hintId as string | undefined;
+  const narrativeId = modalData.narrativeId as string | undefined;
+  const targetPage = modalData.targetPage as Parameters<typeof setPage>[0] | undefined;
 
   const handleAction = () => {
     if (closing) return;
     setClosing(true);
     window.setTimeout(() => {
-      hideModal();
-      if (hintId) setUnlockGuideTarget(hintId);
+      if (narrativeId) completeNarrative(narrativeId);
+      else hideModal();
+      if (targetPage) setPage(targetPage);
+      else if (hintId) setUnlockGuideTarget(hintId);
     }, 180);
   };
 
   return (
-    <GameModal title={title} closing={closing}>
+    <GameModal
+      title={title}
+      closing={closing}
+      onClose={() => {
+        if (narrativeId) completeNarrative(narrativeId);
+      }}
+    >
       <div className="unlock-content">
         <span className="unlock-icon asset-emblem">
           <img src={icon} alt="" aria-hidden="true" />
