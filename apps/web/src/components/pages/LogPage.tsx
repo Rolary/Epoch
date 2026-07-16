@@ -1,4 +1,4 @@
-import type { EvolutionLog } from "@eco-era/shared";
+import type { EvolutionLog, HiddenTraceRecord } from "@eco-era/shared";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
@@ -58,6 +58,7 @@ export function LogPage() {
       <h2 className="page-title">潮池记忆</h2>
       <p className="page-hint">重复的细小反应会被合并成一段记忆，重要变化会单独留下。</p>
       {save?.chapterProgress?.stage === "complete" && <ChapterTwoSummary save={save} />}
+      {(save?.hiddenTraces?.records.length ?? 0) > 0 && <HiddenTraceMemories records={save!.hiddenTraces!.records} />}
       <div className="memory-timeline">
         {memories.map((entry) => (
           <article key={entry.id} className={`memory-card memory-${entry.tone}`}>
@@ -76,6 +77,35 @@ export function LogPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+function HiddenTraceMemories({ records }: { records: HiddenTraceRecord[] }) {
+  return (
+    <section className="hidden-trace-memory" aria-labelledby="hidden-trace-title">
+      <div className="hidden-trace-memory-head">
+        <div>
+          <span>潮池之外的回声</span>
+          <h3 id="hidden-trace-title">隐秘潮痕</h3>
+        </div>
+        <strong>+{records.reduce((sum, record) => sum + record.score, 0)}</strong>
+      </div>
+      <div className="hidden-trace-list">
+        {records.map((record) => (
+          <article className="hidden-trace-record" key={record.id}>
+            <img src={uiAssets.hiddenTraces.emblem} alt="" aria-hidden="true" />
+            <div>
+              <div className="hidden-trace-record-title">
+                <h4>{record.name}</h4>
+                <span>+{record.score}</span>
+              </div>
+              <p>{record.description}</p>
+              <small>{record.echo}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

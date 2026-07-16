@@ -22,6 +22,7 @@ export declare class HomeScene extends Phaser.Scene {
     private poolVertices;
     private ambientRedrawTimer;
     private ecologyStageRedrawTimer;
+    private hiddenTraceHandler?;
     private dragElements;
     private draggedElement;
     private dragTrail;
@@ -38,6 +39,7 @@ export declare class HomeScene extends Phaser.Scene {
     preload(): void;
     create(): void;
     update(_time: number, delta: number): void;
+    private playHiddenTraceRipple;
     private updateSpawning;
     private spawnElement;
     private spawnElementOfType;

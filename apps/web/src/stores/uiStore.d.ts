@@ -1,5 +1,5 @@
 export type Page = "create-ecology" | "home" | "evolution" | "codex" | "codex-detail" | "talents" | "fossils" | "logs" | "leaderboard" | "settings" | "error";
-export type ModalType = "species-discovery" | "talent-awakening" | "offline-return" | "ecology-event" | "decision-confirm" | "system-unlock" | null;
+export type ModalType = "species-discovery" | "talent-awakening" | "offline-return" | "ecology-event" | "decision-confirm" | "system-unlock" | "hidden-trace" | null;
 export type SheetType = "strategy" | "environment" | null;
 export interface NarrativePrompt {
     id: string;

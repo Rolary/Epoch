@@ -57,6 +57,13 @@ export declare const uiAssets: {
         readonly hotSpring: string;
         readonly clearTide: string;
     };
+    readonly hiddenTraces: {
+        readonly emblem: string;
+        readonly neonFault: string;
+        readonly pixelGlint: string;
+        readonly quietRipple: string;
+        readonly tripleCurrent: string;
+    };
     readonly evolution: {
         readonly organicRichness: string;
         readonly replicatingChain: string;
@@ -78,6 +85,13 @@ export declare const phaserAssets: {
         readonly spark: string;
         readonly droplet: string;
         readonly pulse: string;
+    };
+    readonly hiddenTraces: {
+        readonly emblem: string;
+        readonly neonFault: string;
+        readonly pixelGlint: string;
+        readonly quietRipple: string;
+        readonly tripleCurrent: string;
     };
 };
 export type UIAssetKey = keyof typeof uiAssets;

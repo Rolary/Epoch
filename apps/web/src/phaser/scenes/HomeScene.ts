@@ -59,6 +59,7 @@ export class HomeScene extends Phaser.Scene {
   private poolVertices: { x: number; y: number }[] = [];
   private ambientRedrawTimer = 0;
   private ecologyStageRedrawTimer = 0;
+  private hiddenTraceHandler?: (event: Event) => void;
 
   private dragElements: DragElement[] = [];
   private draggedElement: DragElement | null = null;
@@ -86,6 +87,10 @@ export class HomeScene extends Phaser.Scene {
     this.load.image("pickup-spark", phaserAssets.pickups.spark);
     this.load.image("pickup-droplet", phaserAssets.pickups.droplet);
     this.load.image("pickup-pulse", phaserAssets.pickups.pulse);
+    this.load.image("hidden-trace-pixel-glint", phaserAssets.hiddenTraces.pixelGlint);
+    this.load.image("hidden-trace-triple-current", phaserAssets.hiddenTraces.tripleCurrent);
+    this.load.image("hidden-trace-neon-fault", phaserAssets.hiddenTraces.neonFault);
+    this.load.image("hidden-trace-quiet-ripple", phaserAssets.hiddenTraces.quietRipple);
   }
 
   create(): void {
@@ -127,6 +132,15 @@ export class HomeScene extends Phaser.Scene {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.onPointerDown(pointer));
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.onPointerMove(pointer));
     this.input.on("pointerup", (_pointer: Phaser.Input.Pointer) => this.onPointerUp());
+
+    this.hiddenTraceHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ visualCue?: string }>).detail;
+      this.playHiddenTraceRipple(detail?.visualCue ?? "quiet_ripple");
+    };
+    window.addEventListener("hidden-trace-discovered", this.hiddenTraceHandler);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.hiddenTraceHandler) window.removeEventListener("hidden-trace-discovered", this.hiddenTraceHandler);
+    });
   }
 
   update(_time: number, delta: number): void {
@@ -153,6 +167,60 @@ export class HomeScene extends Phaser.Scene {
       this.ecologyStageRedrawTimer = 0;
     }
     this.updateLightBeams(delta);
+  }
+
+  private playHiddenTraceRipple(visualCue: string): void {
+    const { width, height } = this.cameras.main;
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const color = visualCue === "neon_fault"
+      ? 0xff4fd8
+      : visualCue === "pixel_glint"
+        ? 0xffd54f
+        : visualCue === "triple_current"
+          ? 0x7ce6c8
+          : 0xc9a7ff;
+    const count = reducedMotion ? 1 : visualCue === "triple_current" ? 3 : 2;
+    const textureKey = visualCue === "neon_fault"
+      ? "hidden-trace-neon-fault"
+      : visualCue === "pixel_glint" || visualCue === "golden_ripple"
+        ? "hidden-trace-pixel-glint"
+        : visualCue === "triple_current"
+          ? "hidden-trace-triple-current"
+          : "hidden-trace-quiet-ripple";
+    const overlay = this.add.image(width / 2, height / 2 + 40, textureKey)
+      .setDisplaySize(Math.min(width * 0.78, 680), Math.min(width * 0.78, 680))
+      .setDepth(11)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(visualCue === "pixel_glint" ? 0.22 : 0.48)
+      .setScale(reducedMotion ? 1 : 0.82);
+    this.tweens.add({
+      targets: overlay,
+      alpha: 0,
+      scale: reducedMotion ? 1 : 1.08,
+      duration: reducedMotion ? 260 : visualCue === "neon_fault" ? 720 : 1200,
+      ease: "Sine.easeOut",
+      onComplete: () => overlay.destroy(),
+    });
+
+    for (let index = 0; index < count; index++) {
+      const ring = this.add.circle(width / 2, height / 2 + 40, 72 + index * 18, color, 0.04)
+        .setStrokeStyle(2, color, 0.72)
+        .setDepth(12)
+        .setScale(0.75);
+      this.tweens.add({
+        targets: ring,
+        alpha: 0,
+        scale: reducedMotion ? 1 : 1.9 + index * 0.12,
+        duration: reducedMotion ? 260 : 1050 + index * 180,
+        ease: "Sine.easeOut",
+        onComplete: () => ring.destroy(),
+      });
+    }
+
+    if (!reducedMotion && visualCue === "neon_fault") {
+      this.cameras.main.flash(120, 255, 40, 190, false);
+      this.cameras.main.shake(140, 0.003);
+    }
   }
 
   // ── Spawning ──

@@ -188,9 +188,9 @@ corepack pnpm run build
 
 第三章当前不是实现承诺。完成设计评审后，再按“共享类型和归一化 -> 核心规则和测试 -> Phaser 水线反馈 -> React 主线与生命史 -> 浏览器和移动端验收”的顺序拆分任务。
 
-## 11. 后续技术方向：隐秘潮痕
+## 11. 已接入技术方向：隐秘潮痕
 
-隐秘潮痕的玩家和设计规则见 docs/hidden-achievements-and-easter-eggs.md。当前只锁定技术边界，不代表马上进入实现。
+隐秘潮痕的玩家和设计规则见 docs/hidden-achievements-and-easter-eggs.md。首发共享状态、服务端判定、评分、发现反馈和潮池记忆展示已经接入。
 
 - 继续使用单一 GameState JSON 快照；旧存档通过 normalizeGameState 补齐空的隐藏记录。
 - 共享状态建议增加可选的 hiddenTraces：已解锁 ID、内部进度和已经结算的隐藏分数。

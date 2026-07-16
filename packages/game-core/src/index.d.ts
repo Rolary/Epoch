@@ -1,5 +1,5 @@
 import type { EcologyEvent, EcologyResonance, EcologyResonanceResult, EvolutionLog, EvolutionNode, GameState, LeaderboardScoreBreakdown, PlanetProfile, Resources, SpeciesRecord, Talent } from "@eco-era/shared";
-export declare const OFFLINE_ACCUMULATION_HOURS = 8;
+export declare const OFFLINE_ACCUMULATION_HOURS = 5;
 export declare const evolutionNodes: EvolutionNode[];
 export declare const ecologyEvents: EcologyEvent[];
 export declare const ecologyResonances: EcologyResonance[];
@@ -23,6 +23,7 @@ export declare function selectTalent(input: GameState, talentId: string): GameSt
 export declare function applyInstantEffect(state: GameState, talent: Talent): GameState;
 export declare function rollTalentChoices(state?: GameState, count?: number): Talent[];
 export declare function normalizeGameState(state: GameState): GameState;
+export declare function evaluateHiddenTraces(input: GameState, now?: Date): GameState;
 export declare function canUnlockEvolutionNode(state: GameState, nodeId: string): boolean;
 export declare function calculatePlanetProfile(state: GameState): PlanetProfile;
 export declare function calculateEcologyScore(input: GameState): number;

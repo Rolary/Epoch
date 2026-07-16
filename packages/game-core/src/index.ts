@@ -9,6 +9,7 @@ import type {
   EvolutionNode,
   FossilLegacy,
   GameState,
+  HiddenTraceRecord,
   LeaderboardScoreBreakdown,
   PlanetProfile,
   PoolEffect,
@@ -26,6 +27,92 @@ const FREQUENT_HARVEST_MAX_SECONDS = 90 * 60;
 const OFFLINE_EFFECT_MIN_SECONDS = 10 * 60;
 export const OFFLINE_ACCUMULATION_HOURS = 5;
 const OFFLINE_ACCUMULATION_SECONDS = OFFLINE_ACCUMULATION_HOURS * 60 * 60;
+const HIDDEN_TRACE_SCORE_CAP_RATIO = 0.15;
+
+type HiddenTraceDefinition = Omit<HiddenTraceRecord, "discoveredAt"> & {
+  matches: (state: GameState) => boolean;
+};
+
+const hiddenTraceDefinitions: HiddenTraceDefinition[] = [
+  {
+    id: "peaceful_route",
+    name: "和平路线",
+    description: "没有谁被迫退场，三种早期生命自己接成了往复。",
+    echo: "远方回声：有些旅程会记住你没有挥下的那一刀。",
+    score: 2,
+    rarity: "rare",
+    visualCue: "pixel_glint",
+    matches: (state) => hasEcologyCycleRoles(state)
+      && !state.historyTags.includes("selection_pressure")
+      && !state.species.some((species) => species.status === "extinct" || species.status === "fossilized"),
+  },
+  {
+    id: "all_of_them",
+    name: "我全都要",
+    description: "光、沉积与滤孔同时留在水里，没有一种生命独占潮池。",
+    echo: "远方回声：真正困难的从来不是选择，而是让选择彼此容纳。",
+    score: 2,
+    rarity: "rare",
+    visualCue: "triple_current",
+    matches: (state) => hasEcologyCycleRoles(state)
+      && state.resources.stability >= 45
+      && livingRoles(state).size >= 3,
+  },
+  {
+    id: "add_water_add_flour",
+    name: "面多了加水，水多了加面",
+    description: "多了就调，少了就补，反复往复仍没有折断一条生命线。",
+    echo: "远方回声：配方并不精确，但日子总能继续过。",
+    score: 3,
+    rarity: "legendary",
+    visualCue: "triple_current",
+    matches: (state) => state.hiddenTraces!.progress!.environmentSequence.join(",").endsWith("tide,minerals,tide,minerals,tide,minerals")
+      && hasEcologyCycleRoles(state)
+      && state.resources.stability >= 30
+      && !state.species.some((species) => species.status === "extinct"),
+  },
+  {
+    id: "one_more_tide",
+    name: "再来一个潮汐",
+    description: "故事已经可以收束，你却又陪潮池安静走完了一阵往复。",
+    echo: "远方回声：结束之前，总还可以再等一回合。",
+    score: 2,
+    rarity: "rare",
+    visualCue: "quiet_ripple",
+    matches: (state) => state.chapterProgress?.stage === "complete"
+      && state.hiddenTraces!.progress!.quietObservationSeconds >= 10 * 60,
+  },
+  {
+    id: "quiet_unknown",
+    name: "无名小卒",
+    description: "没有传奇，也没有独占，只有一片小生态安静地继续生活。",
+    echo: "远方回声：短暂燃烧与平静长久，从来都是两种答案。",
+    score: 3,
+    rarity: "legendary",
+    visualCue: "quiet_ripple",
+    matches: (state) => state.chapterProgress?.stage === "complete"
+      && state.planetProfile === "stable_pool"
+      && hasEcologyCycleRoles(state)
+      && !state.hiddenTraces!.records.some((record) => record.id === "become_legend")
+      && state.hiddenTraces!.progress!.actionCount <= 18
+      && state.hiddenTraces!.progress!.quietObservationSeconds >= 20 * 60
+      && !state.species.some((species) => species.status === "extinct"),
+  },
+  {
+    id: "become_legend",
+    name: "名扬天下",
+    description: "一条罕见谱系穿过数次高压，最终把自己的印记留在所有回潮之上。",
+    echo: "远方回声：要安静活着，还是让整个世界记住名字？",
+    score: 3,
+    rarity: "legendary",
+    visualCue: "neon_fault",
+    matches: (state) => state.hiddenTraces!.progress!.pressureEventsSurvived >= 3
+      && !state.hiddenTraces!.records.some((record) => record.id === "quiet_unknown")
+      && state.species.some((species) => ["extremophile", "catalyst"].includes(species.ecologicalRole)
+        && (species.status === "living" || species.status === "flourishing"))
+      && livingRoles(state).size >= 2,
+  },
+];
 
 type PoolEffectTemplate = Omit<PoolEffect, "startedAt" | "expiresAt"> & { durationMinutes: number };
 
@@ -879,6 +966,7 @@ export function createInitialState(id: string, name = "始源潮池", initialTal
     },
     historyTags: initialTalent ? historyTagsForTalent(initialTalent.id) : [],
     eventHistory: [],
+    hiddenTraces: emptyHiddenTraceState(),
     planetProfile: "balanced",
     lastCalculatedAt: now,
     createdAt: now,
@@ -936,6 +1024,9 @@ export function advanceState(input: GameState, now = new Date()): GameState {
   const delta = calculateResourceDelta(normalized, elapsedSeconds);
   const capacity = unclaimedResourceCapacity(normalized);
   const next = cloneState(normalized);
+  if (next.chapterProgress?.stage === "complete") {
+    next.hiddenTraces!.progress!.quietObservationSeconds += elapsedSeconds;
+  }
   for (const key of Object.keys(delta) as Array<keyof Resources>) {
     next.unclaimedResources[key] = clamp((next.unclaimedResources[key] ?? 0) + delta[key], 0, capacity[key]);
   }
@@ -990,13 +1081,13 @@ export function advanceState(input: GameState, now = new Date()): GameState {
 
   maybeAssignEcologyEvent(next);
   refreshChapterDerivedState(next, now);
-
-  return next;
+  return evaluateHiddenTraces(next, now);
 }
 
 export function applyEnvironmentAction(input: GameState, action: string): GameState {
   const next = normalizeGameState(cloneState(input));
   const now = new Date().toISOString();
+  recordHiddenAction(next, action, now);
 
   if (action === "harvest_tide") {
     const bonus = frequentHarvestBonus(next);
@@ -1055,7 +1146,7 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
   maybeAssignEcologyEvent(next);
   refreshChapterDerivedState(next);
   next.updatedAt = now;
-  return next;
+  return evaluateHiddenTraces(next, new Date(now));
 }
 
 export function unlockEvolutionNode(input: GameState, nodeId: string): GameState {
@@ -1101,6 +1192,7 @@ export function unlockEvolutionNode(input: GameState, nodeId: string): GameState
   maybeAssignEcologyEvent(next);
   refreshChapterDerivedState(next);
   next.updatedAt = new Date().toISOString();
+  recordHiddenAction(next, `evolution:${nodeId}`, next.updatedAt);
   return next;
 }
 
@@ -1171,10 +1263,15 @@ export function applyEcologyEventChoice(input: GameState, eventId: string, optio
   const newTags = option.addHistoryTags ?? [];
   const hasEcho = newTags.some((tag) => (input.historyTags ?? []).includes(tag));
   next.logs.unshift(createLog("event", hasEcho ? `${option.logMessage} 这类变化正在成为潮池的性格。` : option.logMessage));
+  if (["bloom_pressure", "murky_low_oxygen", "decomposer_layer_spread"].includes(event.id)
+    && !next.species.some((species) => species.status === "extinct")) {
+    next.hiddenTraces!.progress!.pressureEventsSurvived += 1;
+  }
   next.planetProfile = calculatePlanetProfile(next);
   refreshChapterDerivedState(next);
   next.updatedAt = new Date().toISOString();
-  return next;
+  recordHiddenAction(next, `event:${event.id}:${option.id}`, next.updatedAt);
+  return evaluateHiddenTraces(next, new Date(next.updatedAt));
 }
 
 export function availableEcologyResonances(state: GameState, now = new Date()): EcologyResonance[] {
@@ -1213,6 +1310,8 @@ export function applyEcologyResonance(input: GameState, resonanceId: string, now
   next.planetProfile = calculatePlanetProfile(next);
   next.updatedAt = now.toISOString();
   refreshChapterDerivedState(next, now);
+  recordHiddenAction(next, `resonance:${resonanceId}`, next.updatedAt);
+  evaluateHiddenTraces(next, now);
 
   return {
     state: next,
@@ -1347,7 +1446,8 @@ export function normalizeGameState(state: GameState): GameState {
     codexObservations: state.codexObservations ?? [],
     chapterWitness: normalizeChapterWitness(state),
     historyTags: state.historyTags ?? [],
-    eventHistory: state.eventHistory ?? []
+    eventHistory: state.eventHistory ?? [],
+    hiddenTraces: normalizeHiddenTraceState(state),
   };
   backfillUnlockedRoleSpecies(normalized);
   return {
@@ -1355,6 +1455,61 @@ export function normalizeGameState(state: GameState): GameState {
     chapterProgress: deriveChapterProgress(normalized),
     pendingEcologyResonances: availableEcologyResonances(normalized)
   };
+}
+
+function emptyHiddenTraceState(): NonNullable<GameState["hiddenTraces"]> {
+  return {
+    records: [],
+    progress: {
+      actionCount: 0,
+      lastActionAt: null,
+      environmentSequence: [],
+      pressureEventsSurvived: 0,
+      quietObservationSeconds: 0,
+    },
+  };
+}
+
+function normalizeHiddenTraceState(state: GameState): NonNullable<GameState["hiddenTraces"]> {
+  const empty = emptyHiddenTraceState();
+  const progress = state.hiddenTraces?.progress;
+  return {
+    records: [...(state.hiddenTraces?.records ?? [])],
+    progress: {
+      actionCount: progress?.actionCount ?? empty.progress!.actionCount,
+      lastActionAt: progress?.lastActionAt ?? empty.progress!.lastActionAt,
+      environmentSequence: [...(progress?.environmentSequence ?? [])].slice(-12),
+      pressureEventsSurvived: progress?.pressureEventsSurvived ?? empty.progress!.pressureEventsSurvived,
+      quietObservationSeconds: progress?.quietObservationSeconds ?? empty.progress!.quietObservationSeconds,
+    },
+  };
+}
+
+function recordHiddenAction(state: GameState, action: string, at: string) {
+  const progress = state.hiddenTraces!.progress!;
+  progress.actionCount += 1;
+  progress.lastActionAt = at;
+  progress.quietObservationSeconds = 0;
+  if (action === "tide" || action === "minerals") {
+    progress.environmentSequence = [...progress.environmentSequence, action].slice(-12);
+  } else if (!action.startsWith("harvest_")) {
+    progress.environmentSequence = [];
+  }
+}
+
+export function evaluateHiddenTraces(input: GameState, now = new Date()): GameState {
+  const state = input.hiddenTraces ? input : normalizeGameState(input);
+  const discovered = new Set(state.hiddenTraces!.records.map((record) => record.id));
+
+  for (const definition of hiddenTraceDefinitions) {
+    if (discovered.has(definition.id) || !definition.matches(state)) continue;
+    const { matches: _matches, ...record } = definition;
+    state.hiddenTraces!.records.unshift({ ...record, discoveredAt: now.toISOString() });
+    state.logs.unshift(createLog("event", `隐秘潮痕浮现：「${record.name}」。${record.description}`));
+    discovered.add(record.id);
+  }
+
+  return state;
 }
 
 function backfillUnlockedRoleSpecies(state: GameState) {
@@ -1473,7 +1628,7 @@ export function calculateEcologyScoreBreakdown(input: GameState): LeaderboardSco
     cappedResourceScore(state.resources.mutation, 700, 0.075) +
     Math.max(0, Math.min(100, state.resources.stability)) * 0.85;
 
-  return {
+  const base = {
     era: ERA_SCORE[state.currentEra],
     evolution: state.unlockedNodes.length * 115,
     species: livingSpecies * 90 + Math.max(0, state.species.length - livingSpecies) * 28,
@@ -1481,6 +1636,10 @@ export function calculateEcologyScoreBreakdown(input: GameState): LeaderboardSco
     talents: state.talents.length * 34 + new Set(state.consumedTalents ?? []).size * 12,
     resources: Math.round(resourceScore)
   };
+  const baseTotal = Object.values(base).reduce((sum, value) => sum + value, 0);
+  const rawHiddenScore = state.hiddenTraces!.records.reduce((sum, record) => sum + record.score, 0);
+  const hiddenTraces = Math.min(rawHiddenScore, Math.floor(baseTotal * HIDDEN_TRACE_SCORE_CAP_RATIO));
+  return hiddenTraces > 0 ? { ...base, hiddenTraces } : base;
 }
 
 function cappedResourceScore(value: number, cap: number, weight: number) {

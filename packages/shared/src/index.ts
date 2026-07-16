@@ -215,6 +215,32 @@ export interface EvolutionLog {
   createdAt: string;
 }
 
+export type HiddenTraceRarity = "rare" | "legendary";
+
+export interface HiddenTraceRecord {
+  id: string;
+  name: string;
+  description: string;
+  echo: string;
+  score: number;
+  rarity: HiddenTraceRarity;
+  visualCue: "quiet_ripple" | "golden_ripple" | "triple_current" | "pixel_glint" | "neon_fault";
+  discoveredAt: string;
+}
+
+export interface HiddenTraceProgress {
+  actionCount: number;
+  lastActionAt: string | null;
+  environmentSequence: string[];
+  pressureEventsSurvived: number;
+  quietObservationSeconds: number;
+}
+
+export interface HiddenTraceState {
+  records: HiddenTraceRecord[];
+  progress?: HiddenTraceProgress;
+}
+
 export interface GameState {
   id: string;
   name: string;
@@ -240,6 +266,7 @@ export interface GameState {
   chapterWitness?: ChapterWitness;
   historyTags: string[];
   eventHistory: string[];
+  hiddenTraces?: HiddenTraceState;
   planetProfile: PlanetProfile;
   lastCalculatedAt: string;
   createdAt: string;
@@ -268,6 +295,7 @@ export interface LeaderboardScoreBreakdown {
   legacy: number;
   talents: number;
   resources: number;
+  hiddenTraces?: number;
 }
 
 export interface LeaderboardResponse {
@@ -309,6 +337,11 @@ export const uiAssetPaths = [
   "emblem-system.png",
   "events/event-clear-tide.png",
   "events/event-hot-spring.png",
+  "hidden-traces/hidden-trace-emblem.png",
+  "hidden-traces/neon-fault.png",
+  "hidden-traces/pixel-glint.png",
+  "hidden-traces/quiet-ripple.png",
+  "hidden-traces/triple-current.png",
   "evolution/metabolic-loop.png",
   "evolution/organic-richness.png",
   "evolution/photo-pigment.png",

@@ -77,7 +77,7 @@ server.post("/debug/second-chapter-save", async (request, reply) => {
   const body = (request.body ?? {}) as { stage?: SecondChapterDebugStage };
   const save = buildSecondChapterDebugSave(createSaveId(), body.stage ?? "cycle");
   await putSave(guestKey, save);
-  return { save };
+  return { save: toPublicGameState(save) };
 });
 
 server.get("/leaderboard", async (request) => {
@@ -102,7 +102,7 @@ server.get("/leaderboard", async (request) => {
 server.get("/saves", async (request, reply) => {
   const guestKey = requireGuestKey(request.headers["x-guest-key"]);
   if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
-  return { saves: await listSaves(guestKey) };
+  return { saves: (await listSaves(guestKey)).map(toPublicGameState) };
 });
 
 server.post("/saves", async (request, reply) => {
@@ -112,7 +112,7 @@ server.post("/saves", async (request, reply) => {
   const name = body.name?.trim() || "未命名生态";
   const save = createInitialState(createSaveId(), name.slice(0, 16), body.talentId);
   await putSave(guestKey, save);
-  return { save };
+  return { save: toPublicGameState(save) };
 });
 
 server.get("/saves/:saveId", async (request, reply) => {
@@ -123,7 +123,7 @@ server.get("/saves/:saveId", async (request, reply) => {
   if (!save) return reply.code(404).send({ message: "存档不存在" });
   const advanced = advanceState(normalizeGameState(save));
   await putSave(guestKey, advanced);
-  return { save: advanced };
+  return { save: toPublicGameState(advanced) };
 });
 
 server.patch("/saves/:saveId", async (request, reply) => {
@@ -138,7 +138,7 @@ server.patch("/saves/:saveId", async (request, reply) => {
   if (!save) return reply.code(404).send({ message: "存档不存在" });
   const next = { ...normalizeGameState(save), name: nextName, updatedAt: new Date().toISOString() };
   await putSave(guestKey, next);
-  return { save: next };
+  return { save: toPublicGameState(next) };
 });
 
 server.post("/saves/:saveId/tick", async (request, reply) => {
@@ -149,7 +149,7 @@ server.post("/saves/:saveId/tick", async (request, reply) => {
   if (!save) return reply.code(404).send({ message: "存档不存在" });
   const advanced = advanceState(normalizeGameState(save));
   await putSave(guestKey, advanced);
-  return { save: advanced };
+  return { save: toPublicGameState(advanced) };
 });
 
 server.post("/saves/:saveId/actions/environment", async (request, reply) => {
@@ -164,7 +164,7 @@ server.post("/saves/:saveId/actions/environment", async (request, reply) => {
     const advanced = advanceState(normalizeGameState(save));
     const next = applyEnvironmentAction(advanced, action ?? "");
     await putSave(guestKey, next);
-    return { save: next };
+    return { save: toPublicGameState(next) };
   } catch (error) {
     return reply.code(400).send({ message: error instanceof Error ? error.message : "操作失败" });
   }
@@ -183,7 +183,7 @@ server.post("/saves/:saveId/evolution/unlock", async (request, reply) => {
   }
   const next = unlockEvolutionNode(advanced, nodeId);
   await putSave(guestKey, next);
-  return { save: next };
+  return { save: toPublicGameState(next) };
 });
 
 server.post("/saves/:saveId/events/choose", async (request, reply) => {
@@ -197,7 +197,7 @@ server.post("/saves/:saveId/events/choose", async (request, reply) => {
     const advanced = advanceState(normalizeGameState(save));
     const next = applyEcologyEventChoice(advanced, eventId, optionId);
     await putSave(guestKey, next);
-    return { save: next };
+    return { save: toPublicGameState(next) };
   } catch (error) {
     return reply.code(400).send({ message: error instanceof Error ? error.message : "选择失败" });
   }
@@ -214,7 +214,7 @@ server.post("/saves/:saveId/ecology/resonance", async (request, reply) => {
     const advanced = advanceState(normalizeGameState(save));
     const { state: next, resonanceResult } = applyEcologyResonance(advanced, resonanceId);
     await putSave(guestKey, next);
-    return { save: next, resonanceResult };
+    return { save: toPublicGameState(next), resonanceResult };
   } catch (error) {
     return reply.code(400).send({ message: error instanceof Error ? error.message : "共鸣失败" });
   }
@@ -230,7 +230,7 @@ server.post("/saves/:saveId/talents/select", async (request, reply) => {
   try {
     const next = selectTalent(normalizeGameState(save), talentId);
     await putSave(guestKey, next);
-    return { save: next };
+    return { save: toPublicGameState(next) };
   } catch (error) {
     return reply.code(400).send({ message: error instanceof Error ? error.message : "选择失败" });
   }
@@ -263,6 +263,15 @@ server.get("/assets/*", async (request, reply) => {
 
 function requireGuestKey(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function toPublicGameState(state: GameState): GameState {
+  return {
+    ...state,
+    hiddenTraces: {
+      records: [...(state.hiddenTraces?.records ?? [])],
+    },
+  };
 }
 
 function createGuestKey() {

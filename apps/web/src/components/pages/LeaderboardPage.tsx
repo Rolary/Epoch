@@ -164,6 +164,7 @@ function LeaderboardRow({ entry, compact = false }: { entry: LeaderboardEntry; c
 }
 
 function ScoreBreakdown({ entry, compact = false }: { entry: LeaderboardEntry; compact?: boolean }) {
+  const canSeeHiddenTraces = useGameStore((state) => (state.save?.hiddenTraces?.records.length ?? 0) > 0);
   const items = [
     ["纪元", entry.scoreBreakdown.era],
     ["演化", entry.scoreBreakdown.evolution],
@@ -171,6 +172,9 @@ function ScoreBreakdown({ entry, compact = false }: { entry: LeaderboardEntry; c
     ["资源", entry.scoreBreakdown.resources],
     ["遗产", entry.scoreBreakdown.legacy],
     ["印记", entry.scoreBreakdown.talents],
+    ...(canSeeHiddenTraces && entry.scoreBreakdown.hiddenTraces
+      ? [["隐秘潮痕", entry.scoreBreakdown.hiddenTraces] as const]
+      : []),
   ] as const;
   const visibleItems = compact ? items.slice(0, 4) : items;
 

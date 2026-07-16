@@ -10,6 +10,11 @@ const emblemReward = new URL("./ui/emblem-reward.png", import.meta.url).href;
 const emblemSystem = new URL("./ui/emblem-system.png", import.meta.url).href;
 const eventClearTide = new URL("./ui/events/event-clear-tide.png", import.meta.url).href;
 const eventHotSpring = new URL("./ui/events/event-hot-spring.png", import.meta.url).href;
+const hiddenTraceEmblem = new URL("./ui/hidden-traces/hidden-trace-emblem.png", import.meta.url).href;
+const hiddenTraceNeonFault = new URL("./ui/hidden-traces/neon-fault.png", import.meta.url).href;
+const hiddenTracePixelGlint = new URL("./ui/hidden-traces/pixel-glint.png", import.meta.url).href;
+const hiddenTraceQuietRipple = new URL("./ui/hidden-traces/quiet-ripple.png", import.meta.url).href;
+const hiddenTraceTripleCurrent = new URL("./ui/hidden-traces/triple-current.png", import.meta.url).href;
 const evolutionMetabolicLoop = new URL("./ui/evolution/metabolic-loop.png", import.meta.url).href;
 const evolutionOrganicRichness = new URL("./ui/evolution/organic-richness.png", import.meta.url).href;
 const evolutionPhotoPigment = new URL("./ui/evolution/photo-pigment.png", import.meta.url).href;
@@ -158,6 +163,13 @@ export const uiAssets = {
     get hotSpring() { return image("events/event-hot-spring.png", eventHotSpring); },
     get clearTide() { return image("events/event-clear-tide.png", eventClearTide); },
   },
+  hiddenTraces: {
+    get emblem() { return image("hidden-traces/hidden-trace-emblem.png", hiddenTraceEmblem); },
+    get neonFault() { return image("hidden-traces/neon-fault.png", hiddenTraceNeonFault); },
+    get pixelGlint() { return image("hidden-traces/pixel-glint.png", hiddenTracePixelGlint); },
+    get quietRipple() { return image("hidden-traces/quiet-ripple.png", hiddenTraceQuietRipple); },
+    get tripleCurrent() { return image("hidden-traces/triple-current.png", hiddenTraceTripleCurrent); },
+  },
   evolution: {
     get organicRichness() { return image("evolution/organic-richness.png", evolutionOrganicRichness); },
     get replicatingChain() { return image("evolution/replicating-chain.png", evolutionReplicatingChain); },
@@ -182,6 +194,13 @@ export const phaserAssets = {
     spark: pickupSpark,
     droplet: pickupDroplet,
     pulse: pickupPulse,
+  },
+  hiddenTraces: {
+    emblem: hiddenTraceEmblem,
+    neonFault: hiddenTraceNeonFault,
+    pixelGlint: hiddenTracePixelGlint,
+    quietRipple: hiddenTraceQuietRipple,
+    tripleCurrent: hiddenTraceTripleCurrent,
   },
 } as const;
 

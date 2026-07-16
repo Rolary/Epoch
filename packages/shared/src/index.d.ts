@@ -161,6 +161,28 @@ export interface EvolutionLog {
     message: string;
     createdAt: string;
 }
+export type HiddenTraceRarity = "rare" | "legendary";
+export interface HiddenTraceRecord {
+    id: string;
+    name: string;
+    description: string;
+    echo: string;
+    score: number;
+    rarity: HiddenTraceRarity;
+    visualCue: "quiet_ripple" | "golden_ripple" | "triple_current" | "pixel_glint" | "neon_fault";
+    discoveredAt: string;
+}
+export interface HiddenTraceProgress {
+    actionCount: number;
+    lastActionAt: string | null;
+    environmentSequence: string[];
+    pressureEventsSurvived: number;
+    quietObservationSeconds: number;
+}
+export interface HiddenTraceState {
+    records: HiddenTraceRecord[];
+    progress?: HiddenTraceProgress;
+}
 export interface GameState {
     id: string;
     name: string;
@@ -186,6 +208,7 @@ export interface GameState {
     chapterWitness?: ChapterWitness;
     historyTags: string[];
     eventHistory: string[];
+    hiddenTraces?: HiddenTraceState;
     planetProfile: PlanetProfile;
     lastCalculatedAt: string;
     createdAt: string;
@@ -212,6 +235,7 @@ export interface LeaderboardScoreBreakdown {
     legacy: number;
     talents: number;
     resources: number;
+    hiddenTraces?: number;
 }
 export interface LeaderboardResponse {
     entries: LeaderboardEntry[];
@@ -222,7 +246,7 @@ export declare function formatChineseNumber(value: number): string;
 export interface GuestAuthResponse {
     guestKey: string;
 }
-export declare const uiAssetPaths: readonly ["bg-tidepool-board.png", "bg-home-tidepool.png", "card-crystal.png", "card-energy.png", "card-tide.png", "emblem-discovery.png", "emblem-ecology-intervention.png", "emblem-reward.png", "emblem-system.png", "events/event-clear-tide.png", "events/event-hot-spring.png", "evolution/metabolic-loop.png", "evolution/organic-richness.png", "evolution/photo-pigment.png", "evolution/primitive-vesicle.png", "evolution/proto-cell.png", "evolution/replicating-chain.png", "pickup-crystal.png", "pickup-droplet.png", "pickup-pulse.png", "pickup-spark.png", "pool-centerpiece.png", "resource-biomass.png", "resource-energy.png", "resource-minerals.png", "resource-mutation.png", "resource-organic.png", "resource-stability.png", "talents/talent-epic-black-tide-oath.png", "talents/talent-epic-genetic-return.png", "talents/talent-epic-protocell-herald.png", "talents/talent-epic-stardust-catalyst.png", "talents/talent-epic-symbiosis-ember.png", "talents/talent-type-crystal.png", "talents/talent-type-membrane.png", "talents/talent-type-mutation.png", "talents/talent-type-spark.png", "talents/talent-type-tide.png", "species/species-catalyst.png", "species/species-decomposer.png", "species/species-extremophile.png", "species/species-filterer.png", "species/species-producer.png", "species/species-symbiont.png"];
+export declare const uiAssetPaths: readonly ["bg-tidepool-board.png", "bg-home-tidepool.png", "card-crystal.png", "card-energy.png", "card-tide.png", "emblem-discovery.png", "emblem-ecology-intervention.png", "emblem-reward.png", "emblem-system.png", "events/event-clear-tide.png", "events/event-hot-spring.png", "hidden-traces/hidden-trace-emblem.png", "hidden-traces/neon-fault.png", "hidden-traces/pixel-glint.png", "hidden-traces/quiet-ripple.png", "hidden-traces/triple-current.png", "evolution/metabolic-loop.png", "evolution/organic-richness.png", "evolution/photo-pigment.png", "evolution/primitive-vesicle.png", "evolution/proto-cell.png", "evolution/replicating-chain.png", "pickup-crystal.png", "pickup-droplet.png", "pickup-pulse.png", "pickup-spark.png", "pool-centerpiece.png", "resource-biomass.png", "resource-energy.png", "resource-minerals.png", "resource-mutation.png", "resource-organic.png", "resource-stability.png", "talents/talent-epic-black-tide-oath.png", "talents/talent-epic-genetic-return.png", "talents/talent-epic-protocell-herald.png", "talents/talent-epic-stardust-catalyst.png", "talents/talent-epic-symbiosis-ember.png", "talents/talent-type-crystal.png", "talents/talent-type-membrane.png", "talents/talent-type-mutation.png", "talents/talent-type-spark.png", "talents/talent-type-tide.png", "species/species-catalyst.png", "species/species-decomposer.png", "species/species-extremophile.png", "species/species-filterer.png", "species/species-producer.png", "species/species-symbiont.png"];
 export type UiAssetPath = (typeof uiAssetPaths)[number];
 export interface UiAssetUrl {
     path: UiAssetPath | string;

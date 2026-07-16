@@ -1247,6 +1247,26 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 }
 /* === Memory Timeline === */
 .memory-page .page-hint { margin-bottom: 14px; }
+.hidden-trace-memory { margin-bottom: 14px; padding: 12px; border: 1px solid rgba(186,104,200,0.28); border-radius: 8px; background: rgba(12,10,24,0.72); box-shadow: inset 0 0 28px rgba(186,104,200,0.05); }
+.hidden-trace-memory-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.hidden-trace-memory-head span { color: rgba(255,255,255,0.44); font-size: 10px; }
+.hidden-trace-memory-head h3 { margin: 2px 0 0; color: #E6C9FF; font-size: 16px; }
+.hidden-trace-memory-head strong { color: #F5D078; font-size: 18px; }
+.hidden-trace-list { display: flex; flex-direction: column; gap: 8px; }
+.hidden-trace-record { display: grid; grid-template-columns: 38px minmax(0,1fr); gap: 10px; padding: 9px; border: 1px solid rgba(255,255,255,0.07); border-radius: 7px; background: rgba(255,255,255,0.025); }
+.hidden-trace-record > img { width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 0 7px rgba(79,195,247,0.22)); }
+.hidden-trace-record-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hidden-trace-record h4 { margin: 0; color: rgba(255,255,255,0.9); font-size: 13px; }
+.hidden-trace-record-title span { color: #F5D078; font-size: 11px; font-weight: 900; }
+.hidden-trace-record p { margin: 3px 0; color: rgba(255,255,255,0.62); font-size: 11px; line-height: 1.5; }
+.hidden-trace-record small { color: rgba(230,201,255,0.58); font-size: 10px; line-height: 1.45; }
+.hidden-trace-discovery { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 9px; }
+.hidden-trace-emblem { width: 96px; height: 96px; display: grid; place-items: center; }
+.hidden-trace-emblem img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 0 14px rgba(79,195,247,0.26)); }
+.hidden-trace-kicker { color: rgba(230,201,255,0.72); font-size: 10px; font-weight: 900; }
+.hidden-trace-discovery h3 { margin: 0; color: #F5D078; font-size: 21px; }
+.hidden-trace-discovery p { margin: 0; color: rgba(255,255,255,0.7); font-size: 13px; line-height: 1.65; }
+.hidden-trace-score { padding: 4px 9px; border: 1px solid rgba(245,208,120,0.25); border-radius: 999px; color: #F5D078; background: rgba(245,208,120,0.07); font-size: 11px; font-weight: 900; }
 .chapter-summary-card { margin-bottom: 14px; padding: 12px; border-radius: 12px; border: 1px solid rgba(245,208,120,0.24); background: linear-gradient(135deg, rgba(245,208,120,0.1), rgba(79,195,247,0.055)); box-shadow: inset 0 0 22px rgba(245,208,120,0.035); }
 .chapter-summary-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .chapter-summary-head img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; filter: drop-shadow(0 0 12px rgba(245,208,120,0.22)); }

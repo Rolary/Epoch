@@ -21,6 +21,7 @@ export type ModalType =
   | "ecology-event"
   | "decision-confirm"
   | "system-unlock"
+  | "hidden-trace"
   | null;
 
 export type SheetType = "strategy" | "environment" | null;

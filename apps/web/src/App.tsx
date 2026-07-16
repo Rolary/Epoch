@@ -35,6 +35,7 @@ const SpeciesDiscovery = lazy(() => import("./components/modals/SpeciesDiscovery
 const TalentAwakening = lazy(() => import("./components/modals/TalentAwakening.js").then((m) => ({ default: m.TalentAwakening })));
 const OfflineReturn = lazy(() => import("./components/modals/OfflineReturn.js").then((m) => ({ default: m.OfflineReturn })));
 const SystemUnlock = lazy(() => import("./components/modals/SystemUnlock.js").then((m) => ({ default: m.SystemUnlock })));
+const HiddenTraceDiscovery = lazy(() => import("./components/modals/HiddenTraceDiscovery.js").then((m) => ({ default: m.HiddenTraceDiscovery })));
 const EcologyEventModal = lazy(() => import("./components/modals/EcologyEventModal.js").then((m) => ({ default: m.EcologyEventModal })));
 const DecisionConfirm = lazy(() => import("./components/modals/DecisionConfirm.js").then((m) => ({ default: m.DecisionConfirm })));
 const StrategySheet = lazy(() => import("./components/sheets/StrategySheet.js").then((m) => ({ default: m.StrategySheet })));
@@ -277,6 +278,7 @@ export function App() {
   const gameRef = useRef<PhaserGame | null>(null);
   const processingAbsorbIdRef = useRef<number | null>(null);
   const previousUnlockHintsRef = useRef<Set<string> | null>(null);
+  const previousHiddenTracesRef = useRef<Set<string> | null>(null);
   const activeSaveScopeRef = useRef<string | null>(null);
   const page = useUIStore((s) => s.page);
   const modalType = useUIStore((s) => s.modalType);
@@ -310,6 +312,7 @@ export function App() {
     if (activeSaveScopeRef.current === scope) return;
     activeSaveScopeRef.current = scope;
     previousUnlockHintsRef.current = null;
+    previousHiddenTracesRef.current = null;
   }, [save?.id]);
 
   // Initialize Phaser
@@ -534,6 +537,31 @@ export function App() {
   }, [save, seenUnlockHints, markUnlockHintSeen, enqueueNarrative]);
 
   useEffect(() => {
+    if (!save) return;
+    const records = save.hiddenTraces?.records ?? [];
+    const currentIds = new Set(records.map((record) => record.id));
+    if (!previousHiddenTracesRef.current) {
+      previousHiddenTracesRef.current = currentIds;
+      for (const id of currentIds) markUnlockHintSeen(`hidden-trace:${id}`);
+      return;
+    }
+
+    const previousIds = previousHiddenTracesRef.current;
+    previousHiddenTracesRef.current = currentIds;
+    const discovered = records.filter((record) => !previousIds.has(record.id) && !seenUnlockHints.includes(`hidden-trace:${record.id}`));
+    for (const record of discovered.reverse()) {
+      window.dispatchEvent(new CustomEvent("hidden-trace-discovered", { detail: { visualCue: record.visualCue } }));
+      enqueueNarrative({
+        id: `hidden-trace:${record.id}`,
+        type: "hidden-trace",
+        data: { record },
+        priority: 76,
+        seenHintId: `hidden-trace:${record.id}`,
+      });
+    }
+  }, [save?.hiddenTraces?.records, seenUnlockHints, markUnlockHintSeen, enqueueNarrative]);
+
+  useEffect(() => {
     if (activeNarrative || unlockGuideTarget || modalType || sheetType || page === "create-ecology" || guide) return;
     activateNextNarrative();
   }, [activeNarrative, unlockGuideTarget, modalType, sheetType, page, guide, activateNextNarrative]);
@@ -631,6 +659,7 @@ export function App() {
         {modalType === "ecology-event" && <EcologyEventModal />}
         {modalType === "decision-confirm" && <DecisionConfirm />}
         {modalType === "system-unlock" && <SystemUnlock />}
+        {modalType === "hidden-trace" && <HiddenTraceDiscovery />}
 
         {/* Sheets */}
         {sheetType === "strategy" && <StrategySheet />}
