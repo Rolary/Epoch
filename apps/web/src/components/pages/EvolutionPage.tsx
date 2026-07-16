@@ -55,6 +55,7 @@ export function EvolutionPage() {
   const chapterBlocks = useMemo(() => buildChapterBlocks(evolutionNodes), []);
   const [expandedBranchIds, setExpandedBranchIds] = useState<string[]>([]);
   const [collapsedChapters, setCollapsedChapters] = useState<Partial<Record<ChapterId, boolean>>>({});
+  const [recentlyUnlockedNodeId, setRecentlyUnlockedNodeId] = useState<string | null>(null);
 
   if (!save) {
     return (
@@ -82,6 +83,8 @@ export function EvolutionPage() {
       setSave(synced);
       const updated = await unlockNode(save.id, nodeId);
       setSave(updated);
+      setRecentlyUnlockedNodeId(nodeId);
+      window.setTimeout(() => setRecentlyUnlockedNodeId((current) => current === nodeId ? null : current), 900);
       const newSpecies = updated.species.find((item) => !previousSpeciesIds.has(item.id));
       hideModal();
       if (newSpecies) {
@@ -228,7 +231,7 @@ export function EvolutionPage() {
     return (
       <button
         key={node.id}
-        className={`evolution-node ${stateClass} ${branchNode ? "branch-node" : ""}`}
+        className={`evolution-node ${stateClass} ${branchNode ? "branch-node" : ""} ${recentlyUnlockedNodeId === node.id ? "just-unlocked" : ""}`}
         disabled={!canUnlock}
         onClick={() => (node.branchGroupId ? confirmBranchUnlock(node) : handleUnlock(node.id))}
       >

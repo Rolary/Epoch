@@ -23,9 +23,14 @@ export declare class HomeScene extends Phaser.Scene {
     private ambientRedrawTimer;
     private ecologyStageRedrawTimer;
     private hiddenTraceHandler?;
+    private reducedMotion;
+    private motionPreference?;
+    private motionPreferenceHandler?;
     private dragElements;
     private draggedElement;
     private dragTrail;
+    private dragWell;
+    private dragTrailPoints;
     private poolHintText;
     private poolHintArrow;
     private absorbCount;

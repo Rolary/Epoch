@@ -60,10 +60,15 @@ export class HomeScene extends Phaser.Scene {
   private ambientRedrawTimer = 0;
   private ecologyStageRedrawTimer = 0;
   private hiddenTraceHandler?: (event: Event) => void;
+  private reducedMotion = false;
+  private motionPreference?: MediaQueryList;
+  private motionPreferenceHandler?: (event: MediaQueryListEvent) => void;
 
   private dragElements: DragElement[] = [];
   private draggedElement: DragElement | null = null;
   private dragTrail!: Phaser.GameObjects.Graphics;
+  private dragWell!: Phaser.GameObjects.Graphics;
+  private dragTrailPoints: Array<{ x: number; y: number }> = [];
   private poolHintText!: Phaser.GameObjects.Text;
   private poolHintArrow!: Phaser.GameObjects.Graphics;
   private absorbCount = 0;
@@ -95,8 +100,16 @@ export class HomeScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.cameras.main;
+    this.motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    this.reducedMotion = this.motionPreference?.matches ?? false;
+    this.motionPreferenceHandler = (event) => {
+      this.reducedMotion = event.matches;
+    };
+    this.motionPreference?.addEventListener?.("change", this.motionPreferenceHandler);
     this.dragTrail = this.add.graphics();
     this.dragTrail.setDepth(10);
+    this.dragWell = this.add.graphics();
+    this.dragWell.setDepth(6);
 
     this.createBackground(width, height);
     this.createLightBeams(width, height);
@@ -140,15 +153,16 @@ export class HomeScene extends Phaser.Scene {
     window.addEventListener("hidden-trace-discovered", this.hiddenTraceHandler);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (this.hiddenTraceHandler) window.removeEventListener("hidden-trace-discovered", this.hiddenTraceHandler);
+      if (this.motionPreferenceHandler) this.motionPreference?.removeEventListener?.("change", this.motionPreferenceHandler);
     });
   }
 
   update(_time: number, delta: number): void {
     this.poolPulseTime += delta;
-    const pulse = 1 + Math.sin(this.poolPulseTime * 0.001) * 0.03;
+    const pulse = 1 + Math.sin(this.poolPulseTime * 0.001) * (this.reducedMotion ? 0.006 : 0.03);
     if (this.poolOuter) this.poolOuter.setAlpha(0.15 * pulse * 5);
     if (this.poolInner) this.poolInner.setAlpha(0.08 * pulse * 5);
-    if (this.poolImage) this.poolImage.setAlpha(0.96 + Math.sin(this.poolPulseTime * 0.0012) * 0.035);
+    if (this.poolImage) this.poolImage.setAlpha(0.97 + Math.sin(this.poolPulseTime * 0.0012) * (this.reducedMotion ? 0.008 : 0.025));
 
     this.updateOrganisms(delta);
     this.updateResourceOrbs(delta);
@@ -498,8 +512,14 @@ export class HomeScene extends Phaser.Scene {
     const el = this.getTapElement(pointer.x, pointer.y);
     if (el) {
       this.draggedElement = el;
+      this.dragTrailPoints = [{ x: pointer.x, y: pointer.y }];
       this.tweens.killTweensOf(el.container);
-      this.tweens.add({ targets: el.container, scale: 1.15, duration: 150, ease: "Back.easeOut" });
+      this.tweens.add({
+        targets: el.container,
+        scale: this.reducedMotion ? 1.04 : 1.15,
+        duration: this.reducedMotion ? 80 : 150,
+        ease: "Back.easeOut",
+      });
     }
   }
 
@@ -514,12 +534,19 @@ export class HomeScene extends Phaser.Scene {
     }
     this.draggedElement.container.x = pointer.x;
     this.draggedElement.container.y = pointer.y;
+    const lastPoint = this.dragTrailPoints[this.dragTrailPoints.length - 1];
+    if (!lastPoint || Phaser.Math.Distance.Between(lastPoint.x, lastPoint.y, pointer.x, pointer.y) > 7) {
+      this.dragTrailPoints.push({ x: pointer.x, y: pointer.y });
+      if (this.dragTrailPoints.length > (this.reducedMotion ? 4 : 12)) this.dragTrailPoints.shift();
+    }
   }
 
   private onPointerUp(): void {
     if (!this.draggedElement) return;
     const el = this.draggedElement;
     this.draggedElement = null;
+    this.dragTrailPoints = [];
+    this.dragWell.clear();
     const cx = this.cameras.main.width / 2;
     const cy = this.cameras.main.height / 2 + 40;
     if (Phaser.Math.Distance.Between(el.container.x, el.container.y, cx, cy) < HomeScene.POOL_ABSORB_RADIUS) {
@@ -539,16 +566,38 @@ export class HomeScene extends Phaser.Scene {
 
   private updateDragTrail(): void {
     this.dragTrail.clear();
+    this.dragWell.clear();
     if (!this.draggedElement) return;
     const x = this.draggedElement.container.x;
     const y = this.draggedElement.container.y;
     const cfg = ELEMENT_CONFIG[this.draggedElement.type];
-    this.dragTrail.lineStyle(1.5, cfg.color, 0.25);
-    for (let i = 0; i < 8; i++) {
-      const ox = x + (Math.random() - 0.5) * 14;
-      const oy = y + (Math.random() - 0.5) * 14;
-      this.dragTrail.fillStyle(cfg.color, 0.12);
-      this.dragTrail.fillCircle(ox, oy, 1.5 + i * 0.6);
+    const cx = this.cameras.main.width / 2;
+    const cy = this.cameras.main.height / 2 + 40;
+    const distance = Phaser.Math.Distance.Between(x, y, cx, cy);
+    const attraction = Phaser.Math.Clamp(1 - distance / (HomeScene.ELEMENT_POOL_AVOID_RADIUS + 90), 0, 1);
+
+    if (this.dragTrailPoints.length > 1) {
+      for (let i = 1; i < this.dragTrailPoints.length; i++) {
+        const previous = this.dragTrailPoints[i - 1];
+        const point = this.dragTrailPoints[i];
+        const progress = i / this.dragTrailPoints.length;
+        this.dragTrail.lineStyle(1 + progress * 2, cfg.color, progress * 0.28);
+        this.dragTrail.lineBetween(previous.x, previous.y, point.x, point.y);
+        if (!this.reducedMotion && i % 2 === 0) {
+          this.dragTrail.fillStyle(cfg.color, progress * 0.22);
+          this.dragTrail.fillCircle(point.x, point.y, 1 + progress * 2.2);
+        }
+      }
+    }
+
+    if (attraction > 0.02) {
+      const breathe = this.reducedMotion ? 0 : Math.sin(this.poolPulseTime * 0.006) * 4;
+      this.dragWell.lineStyle(1.5, cfg.color, 0.12 + attraction * 0.4);
+      this.dragWell.strokeCircle(cx, cy, HomeScene.POOL_ABSORB_RADIUS + 12 + breathe);
+      this.dragWell.lineStyle(1, 0xffffff, attraction * 0.16);
+      this.dragWell.strokeCircle(cx, cy, HomeScene.POOL_ABSORB_RADIUS - 5 - breathe * 0.4);
+      this.dragWell.lineStyle(1.25, cfg.color, 0.08 + attraction * 0.24);
+      this.dragWell.lineBetween(x, y, cx, cy);
     }
   }
 
@@ -601,21 +650,29 @@ export class HomeScene extends Phaser.Scene {
 
   private playAbsorbFeedback(cx: number, cy: number, type: ElementType, outcome: Outcome, skipShake = false): void {
     const cfg = ELEMENT_CONFIG[type];
-
-    const ripple = this.add.graphics();
-    this.tapRipples.push(ripple);
-    this.tweens.add({
-      targets: {}, duration: 600,
-      onUpdate: (t) => {
-        ripple.clear();
-        const r = 20 + t.progress * 50;
-        const a = 0.6 * (1 - t.progress);
-        const col = outcome === "negative" ? 0xEF5350 : outcome === "rare" ? 0xFFD54F : cfg.color;
-        ripple.lineStyle(2, col, a);
-        ripple.strokeCircle(cx, cy, r);
-      },
-      onComplete: () => { ripple.destroy(); const idx = this.tapRipples.indexOf(ripple); if (idx >= 0) this.tapRipples.splice(idx, 1); },
-    });
+    const feedbackColor = outcome === "negative" ? 0xEF5350 : outcome === "rare" ? 0xFFD54F : cfg.color;
+    const rippleCount = this.reducedMotion ? 1 : outcome === "rare" ? 4 : 3;
+    for (let ringIndex = 0; ringIndex < rippleCount; ringIndex++) {
+      const ripple = this.add.graphics().setDepth(6);
+      this.tapRipples.push(ripple);
+      this.tweens.add({
+        targets: {},
+        delay: ringIndex * 70,
+        duration: this.reducedMotion ? 260 : 620 + ringIndex * 90,
+        onUpdate: (t) => {
+          ripple.clear();
+          const radius = 18 + ringIndex * 5 + t.progress * (this.reducedMotion ? 34 : 66 + ringIndex * 7);
+          const alpha = (0.56 - ringIndex * 0.07) * (1 - t.progress);
+          ripple.lineStyle(Math.max(1, 2.4 - ringIndex * 0.3), feedbackColor, alpha);
+          ripple.strokeEllipse(cx, cy, radius * 2, radius * 1.15);
+        },
+        onComplete: () => {
+          ripple.destroy();
+          const idx = this.tapRipples.indexOf(ripple);
+          if (idx >= 0) this.tapRipples.splice(idx, 1);
+        },
+      });
+    }
 
     const burstColors = outcome === "negative"
       ? [0xEF5350, 0xFF8A80, 0xFFCDD2]
@@ -623,7 +680,7 @@ export class HomeScene extends Phaser.Scene {
       ? [0xFFD54F, 0xFFAB40, 0xFFFFFF, cfg.color]
       : [cfg.color, 0xFFFFFF, cfg.color];
 
-    for (let i = 0; i < (outcome === "rare" ? 20 : 10); i++) {
+    for (let i = 0; i < (this.reducedMotion ? 4 : outcome === "rare" ? 24 : 14); i++) {
       const ang = Math.random() * Math.PI * 2;
       const dist = 15 + Math.random() * 40;
       const col = burstColors[Math.floor(Math.random() * burstColors.length)];
@@ -635,7 +692,45 @@ export class HomeScene extends Phaser.Scene {
       });
     }
 
-    if (outcome === "negative" && !skipShake) this.cameras.main.shake(120, 0.003);
+    if (outcome === "negative" && !skipShake && !this.reducedMotion) this.cameras.main.shake(120, 0.003);
+
+    if (this.poolImage) {
+      this.tweens.killTweensOf(this.poolImage);
+      const baseScaleX = this.poolImage.scaleX;
+      const baseScaleY = this.poolImage.scaleY;
+      this.tweens.add({
+        targets: this.poolImage,
+        scaleX: baseScaleX * (this.reducedMotion ? 1.006 : 1.035),
+        scaleY: baseScaleY * (this.reducedMotion ? 0.998 : 0.975),
+        duration: this.reducedMotion ? 90 : 150,
+        yoyo: true,
+        ease: "Sine.easeOut",
+      });
+    }
+
+    if (!this.reducedMotion) {
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.25;
+        const startRadius = 76 + Math.random() * 28;
+        const mote = this.add.circle(
+          cx + Math.cos(angle) * startRadius,
+          cy + Math.sin(angle) * startRadius * 0.58,
+          1.4 + Math.random() * 1.8,
+          feedbackColor,
+          0.55,
+        ).setDepth(6);
+        this.tweens.add({
+          targets: mote,
+          x: cx,
+          y: cy,
+          alpha: 0.08,
+          scale: 0.25,
+          duration: 280 + Math.random() * 180,
+          ease: "Quad.easeIn",
+          onComplete: () => mote.destroy(),
+        });
+      }
+    }
 
     if (this.poolInner) {
       const glowColor = outcome === "negative" ? 0xEF5350 : outcome === "rare" ? 0xFFD54F : 0x4FC3F7;
@@ -688,11 +783,12 @@ export class HomeScene extends Phaser.Scene {
   }
 
   private updateOrganisms(delta: number): void {
+    const motionScale = this.reducedMotion ? 0.12 : 1;
     for (let i = this.organisms.length - 1; i >= 0; i--) {
       const org = this.organisms[i];
       if (!org || !org.active) { this.organisms.splice(i, 1); continue; }
-      org.x += (org.getData("vx") as number) ?? 0;
-      org.y += (org.getData("vy") as number) ?? 0;
+      org.x += ((org.getData("vx") as number) ?? 0) * motionScale;
+      org.y += ((org.getData("vy") as number) ?? 0) * motionScale;
       const cx = this.cameras.main.width / 2;
       const cy = this.cameras.main.height / 2 + 40;
       const dist = Phaser.Math.Distance.Between(org.x, org.y, cx, cy);
@@ -713,19 +809,20 @@ export class HomeScene extends Phaser.Scene {
 
   private updateResourceOrbs(_delta: number): void {
     const t = this.poolPulseTime;
+    const motionScale = this.reducedMotion ? 0.12 : 1;
     for (const orb of this.resourceOrbs) {
       if (!orb.active) continue;
       // Apply gentle random acceleration + damping
       let vx = (orb.getData("vx") as number) || 0;
       let vy = (orb.getData("vy") as number) || 0;
-      vx += (Math.random() - 0.5) * 0.04;
-      vy += (Math.random() - 0.5) * 0.04;
+      vx += (Math.random() - 0.5) * 0.04 * motionScale;
+      vy += (Math.random() - 0.5) * 0.04 * motionScale;
       vx *= 0.98;
       vy *= 0.98;
-      orb.x += vx;
-      orb.y += vy;
+      orb.x += vx * motionScale;
+      orb.y += vy * motionScale;
       // Bobbing
-      orb.y += Math.sin(t * 0.0015 + orb.getData("phase") as number) * 0.8;
+      orb.y += Math.sin(t * 0.0015 + orb.getData("phase") as number) * 0.8 * motionScale;
       // Containment: pull back if too far from pool center
       const cx = this.cameras.main.width / 2;
       const cy = this.cameras.main.height / 2 + 40;
@@ -755,7 +852,7 @@ export class HomeScene extends Phaser.Scene {
   // ── Caustics & algae ──
 
   private updateCaustics(delta: number): void {
-    this.causticDrift += delta * 0.05;
+    this.causticDrift += delta * (this.reducedMotion ? 0.004 : 0.05);
     this.causticGraphics.clear();
     const cx = this.cameras.main.width / 2;
     const cy = this.cameras.main.height / 2 + 40;
@@ -801,7 +898,7 @@ export class HomeScene extends Phaser.Scene {
   private updateLightBeams(_delta: number): void {
     const t = this.poolPulseTime;
     for (const beam of this.lightBeams) {
-      const a = 0.2 + Math.sin(t * 0.0008 + beam.phase) * 0.15;
+      const a = 0.2 + Math.sin(t * 0.0008 + beam.phase) * (this.reducedMotion ? 0.025 : 0.15);
       beam.gfx.setAlpha(Math.max(0.04, a));
     }
   }
@@ -1128,6 +1225,7 @@ export class HomeScene extends Phaser.Scene {
     this.time.addEvent({
       delay: 3000, loop: true,
       callback: () => {
+        if (this.reducedMotion) return;
         ringGraphics.clear();
         ringGraphics.lineStyle(1, 0x4FC3F7, 0.12);
         ringGraphics.strokeCircle(cx, cy, 135);

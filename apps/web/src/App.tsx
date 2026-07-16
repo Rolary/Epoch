@@ -641,16 +641,20 @@ export function App() {
 
       <Suspense fallback={null}>
         {/* Pages */}
-        {page === "create-ecology" && <CreateEcology />}
-        {page === "evolution" && <EvolutionPage />}
-        {page === "codex" && <CodexPage />}
-        {page === "codex-detail" && <CodexDetailPage />}
-        {page === "talents" && <TalentArchivePage />}
-        {page === "fossils" && <FossilPage />}
-        {page === "logs" && <LogPage />}
-        {page === "leaderboard" && <LeaderboardPage />}
-        {page === "settings" && <SettingsPage />}
-        {page === "error" && <ErrorPage />}
+        {!isHome && (
+          <div key={page} className="page-transition-layer">
+            {page === "create-ecology" && <CreateEcology />}
+            {page === "evolution" && <EvolutionPage />}
+            {page === "codex" && <CodexPage />}
+            {page === "codex-detail" && <CodexDetailPage />}
+            {page === "talents" && <TalentArchivePage />}
+            {page === "fossils" && <FossilPage />}
+            {page === "logs" && <LogPage />}
+            {page === "leaderboard" && <LeaderboardPage />}
+            {page === "settings" && <SettingsPage />}
+            {page === "error" && <ErrorPage />}
+          </div>
+        )}
 
         {/* Modals */}
         {modalType === "species-discovery" && <SpeciesDiscovery />}
