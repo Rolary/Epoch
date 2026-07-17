@@ -5,7 +5,7 @@ import { useGameStore } from "./stores/gameStore.js";
 import type { ElementType, Outcome } from "./stores/gameStore.js";
 import { useUIStore } from "./stores/uiStore.js";
 import type { NarrativePrompt, Page } from "./stores/uiStore.js";
-import { ensureGuest, getSave, tickSave, getSaveId, applyAction } from "./api.js";
+import { createThirdChapterDebugSave, ensureGuest, getSave, tickSave, getSaveId, applyAction } from "./api.js";
 import {
   calculateResourceDelta,
   canUnlockEvolutionNode,
@@ -334,10 +334,22 @@ export function App() {
         if (cancelled) return;
         const scene = game.scene.getScene("HomeScene") as {
           onAbsorb?: (type: ElementType, outcome: Outcome) => void;
+          onGuideShore?: () => Promise<void>;
         } | null;
         if (scene) {
           scene.onAbsorb = (type: ElementType, outcome: Outcome) => {
             useGameStore.getState().enqueueAbsorb(type, outcome);
+          };
+          scene.onGuideShore = async () => {
+            const currentSaveId = useGameStore.getState().saveId;
+            if (!currentSaveId) throw new Error("存档尚未准备好");
+            const next = await applyAction(currentSaveId, "guide_shore_tide");
+            useGameStore.getState().setSave(next);
+            setToasts((prev) => [...prev, {
+              id: Date.now(),
+              text: "一支生命沿着水光贴住了湿岸",
+              color: "#7CE6C8",
+            }]);
           };
         } else {
           requestAnimationFrame(tryWire);
@@ -370,6 +382,23 @@ export function App() {
   // Restore session
   useEffect(() => {
     const restore = async () => {
+      const debugChapter = import.meta.env.DEV
+        ? new URLSearchParams(window.location.search).get("debugChapter3")
+        : null;
+      if (debugChapter && ["exposed", "shore", "event", "exchange"].includes(debugChapter)) {
+        try {
+          await ensureGuest();
+          const debugSave = await createThirdChapterDebugSave(debugChapter as "exposed" | "shore" | "event" | "exchange");
+          setSave(debugSave);
+          setSaveId(debugSave.id);
+          hydrateScopedUIState();
+          setGuestReady(true);
+          setPage("home");
+        } finally {
+          setSessionReady(true);
+        }
+        return;
+      }
       const existingId = getSaveId();
       if (!existingId) {
         setPage("create-ecology");
@@ -426,7 +455,7 @@ export function App() {
 
   // Periodic API sync
   useEffect(() => {
-    if (!saveId || page !== "home") return;
+    if (!saveId || page !== "home" || isThirdChapterDebugPreview()) return;
     const interval = setInterval(async () => {
       try {
         const prevCount = useGameStore.getState().save?.species.length ?? 0;
@@ -764,13 +793,89 @@ function chapterNarrativesFor(
 ): NarrativePrompt[] {
   const prompts: NarrativePrompt[] = [];
   const witness = save.chapterWitness?.ecologyBurst;
+  const shorelineWitness = save.chapterWitness?.shorelineDifferentiation;
 
   if (save.pendingEcologyEvent && save.pendingEcologyEvent.id !== snoozedEcologyEventId) {
     prompts.push({
       id: `ecology-event:${save.pendingEcologyEvent.id}`,
       type: "ecology-event",
-      priority: 100,
+      priority: save.pendingEcologyEvent.id === "ebb_dryness" ? 65 : 100,
     });
+  }
+
+  if (save.chapterProgress?.chapter === "shoreline_differentiation" && shorelineWitness) {
+    prompts.push({
+      id: "chapter-shoreline-differentiation",
+      type: "system-unlock",
+      priority: 90,
+      seenHintId: "chapter-shoreline-differentiation",
+      data: {
+        title: "水线露出来了",
+        name: "潮池的边缘",
+        description: "退潮把第一阵往复推到浅水之外，湿岩和仍未干去的沉积物第一次显现。",
+        impact: "生命还没有离开潮池，但它们已经能看见另一种落脚处。",
+        advice: "先观察岸边怎样变暗、反光，再让一缕水势靠近那圈湿痕。",
+        icon: uiAssets.cards.tide,
+        actionLabel: "看向水线",
+      },
+    });
+
+    if (shorelineWitness.shoreColonized) {
+      prompts.push({
+        id: "shoreline-witness-colonized",
+        type: "system-unlock",
+        priority: 80,
+        seenHintId: "shoreline-witness-colonized",
+        data: {
+          title: "有一支生命贴住了湿岸",
+          name: "第一次贴岸",
+          description: "水光只替它保留了一次机会；真正抓住湿岩的，是原有谱系自己的结构。",
+          impact: "浅水与潮间湿岩开始留下不同姿态，潮池第一次拥有了边缘。",
+          advice: "退潮很快会把这次尝试交给阳光、盐分和失水。",
+          icon: uiAssets.species.producer,
+          actionLabel: "看岸痕留下",
+        },
+      });
+    }
+
+    if (shorelineWitness.dryWetPressureWitnessed) {
+      prompts.push({
+        id: "shoreline-witness-pressure",
+        type: "system-unlock",
+        priority: 50,
+        seenHintId: "shoreline-witness-pressure",
+        data: {
+          title: "退潮留下了一种岸线倾向",
+          name: "晒痕之后",
+          description: shorelinePressureCopy(shorelineWitness.shorelineStrategy),
+          impact: "这次选择不会指定后来的物种，却会改变岸边更容易保住什么。",
+          advice: "让下一阵回潮把岸边变化重新接回浅水。",
+          icon: uiAssets.emblems.ecologyResonance,
+          actionLabel: "等待回潮",
+        },
+      });
+    }
+
+    if (shorelineWitness.shorelineExchangeWitnessed) {
+      prompts.push({
+        id: "shoreline-witness-exchange",
+        type: "system-unlock",
+        priority: 35,
+        seenHintId: "shoreline-witness-exchange",
+        data: {
+          title: "岸边与浅水接上了往返",
+          name: "第一次回流",
+          description: "回潮把岸边碎屑带回池中，原有循环也把养分重新送向湿岩。",
+          impact: "越过水线的生命没有离开自己的历史，两处栖位开始互相影响。",
+          advice: "潮池记忆会收下水线露出、第一次贴岸和第一次回流。",
+          icon: uiAssets.cards.tide,
+          actionLabel: "翻开潮池记忆",
+          targetPage: "logs",
+        },
+      });
+    }
+
+    return prompts;
   }
 
   if (save.chapterProgress?.chapter !== "ecology_burst" || !witness) return prompts;
@@ -883,6 +988,16 @@ function chapterNarrativesFor(
   }
 
   return prompts;
+}
+
+function shorelinePressureCopy(strategy: string | undefined) {
+  if (strategy === "rock_attachment") return "湿岩完全见光，一部分薄膜收缩，仍有附着斑抓住了更粗糙的岩面。";
+  if (strategy === "tidal_dispersal") return "岸痕随回潮变淡，碎屑退回浅水，扩散比定居更早成为这片水的选择。";
+  return "薄水膜多停留了一阵，第一处附着痕被保住，更远的岸面仍在等待。";
+}
+
+function isThirdChapterDebugPreview() {
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).has("debugChapter3");
 }
 
 function UnlockGuideOverlay({ target }: { target: string }) {

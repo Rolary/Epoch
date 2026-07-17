@@ -55,6 +55,15 @@ export class HomeScene extends Phaser.Scene {
   private algaeGraphics!: Phaser.GameObjects.Graphics;
   private cloudGraphics!: Phaser.GameObjects.Graphics;
   private ecologyStageGraphics!: Phaser.GameObjects.Graphics;
+  private shorelineBaseGraphics!: Phaser.GameObjects.Graphics;
+  private shorelineTraceGraphics!: Phaser.GameObjects.Graphics;
+  private shoreGuide!: Phaser.GameObjects.Container;
+  private shoreGuideDragging = false;
+  private shoreGuideSubmitting = false;
+  private shoreGuideHome = { x: 0, y: 0 };
+  private shoreGuideTarget = { x: 0, y: 0 };
+  private shorelinePreviewOption: string | null = null;
+  private shorelinePreviewHandler?: (event: Event) => void;
   private causticDrift = 0;
   private poolVertices: { x: number; y: number }[] = [];
   private ambientRedrawTimer = 0;
@@ -79,6 +88,7 @@ export class HomeScene extends Phaser.Scene {
   static readonly ELEMENT_POOL_AVOID_RADIUS = 150;
 
   onAbsorb?: (type: ElementType, outcome: Outcome) => void;
+  onGuideShore?: () => Promise<void>;
 
   constructor() {
     super({ key: "HomeScene" });
@@ -116,6 +126,7 @@ export class HomeScene extends Phaser.Scene {
     this.createPool(width, height);
     this.createAlgaeAndClouds(width, height);
     this.createEcologyStageLayer();
+    this.createShorelineLayer(width, height);
     this.createFloatingParticles(width, height);
     this.createResourceOrbs(width, height);
     this.createTitle(width, height);
@@ -151,8 +162,14 @@ export class HomeScene extends Phaser.Scene {
       this.playHiddenTraceRipple(detail?.visualCue ?? "quiet_ripple");
     };
     window.addEventListener("hidden-trace-discovered", this.hiddenTraceHandler);
+    this.shorelinePreviewHandler = (event: Event) => {
+      this.shorelinePreviewOption = (event as CustomEvent<{ optionId?: string | null }>).detail?.optionId ?? null;
+      this.updateShorelineLayer();
+    };
+    window.addEventListener("shoreline-choice-preview", this.shorelinePreviewHandler);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (this.hiddenTraceHandler) window.removeEventListener("hidden-trace-discovered", this.hiddenTraceHandler);
+      if (this.shorelinePreviewHandler) window.removeEventListener("shoreline-choice-preview", this.shorelinePreviewHandler);
       if (this.motionPreferenceHandler) this.motionPreference?.removeEventListener?.("change", this.motionPreferenceHandler);
     });
   }
@@ -178,6 +195,7 @@ export class HomeScene extends Phaser.Scene {
     this.ecologyStageRedrawTimer += delta;
     if (this.ecologyStageRedrawTimer >= 120) {
       this.updateEcologyStageLayer();
+      this.updateShorelineLayer();
       this.ecologyStageRedrawTimer = 0;
     }
     this.updateLightBeams(delta);
@@ -509,6 +527,13 @@ export class HomeScene extends Phaser.Scene {
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
+    if (this.shoreGuide.visible && !this.shoreGuideSubmitting
+      && Phaser.Math.Distance.Between(pointer.x, pointer.y, this.shoreGuide.x, this.shoreGuide.y) < 34) {
+      this.shoreGuideDragging = true;
+      this.tweens.killTweensOf(this.shoreGuide);
+      this.shoreGuide.setScale(this.reducedMotion ? 1.02 : 1.12);
+      return;
+    }
     const el = this.getTapElement(pointer.x, pointer.y);
     if (el) {
       this.draggedElement = el;
@@ -524,6 +549,10 @@ export class HomeScene extends Phaser.Scene {
   }
 
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
+    if (this.shoreGuideDragging) {
+      this.shoreGuide.setPosition(pointer.x, pointer.y);
+      return;
+    }
     if (!this.draggedElement) {
       const cx = this.cameras.main.width / 2;
       const cy = this.cameras.main.height / 2 + 40;
@@ -542,6 +571,36 @@ export class HomeScene extends Phaser.Scene {
   }
 
   private onPointerUp(): void {
+    if (this.shoreGuideDragging) {
+      this.shoreGuideDragging = false;
+      const reachedShore = Phaser.Math.Distance.Between(
+        this.shoreGuide.x,
+        this.shoreGuide.y,
+        this.shoreGuideTarget.x,
+        this.shoreGuideTarget.y,
+      ) < 48;
+      if (reachedShore) {
+        this.playShoreGuideFeedback();
+        this.shoreGuideSubmitting = true;
+        this.shoreGuide.setVisible(false);
+        Promise.resolve(this.onGuideShore?.())
+          .catch(() => undefined)
+          .finally(() => {
+            this.shoreGuideSubmitting = false;
+            this.updateShorelineLayer();
+          });
+      } else {
+        this.tweens.add({
+          targets: this.shoreGuide,
+          x: this.shoreGuideHome.x,
+          y: this.shoreGuideHome.y,
+          scale: 1,
+          duration: this.reducedMotion ? 120 : 320,
+          ease: "Sine.easeOut",
+        });
+      }
+      return;
+    }
     if (!this.draggedElement) return;
     const el = this.draggedElement;
     this.draggedElement = null;
@@ -1251,6 +1310,143 @@ export class HomeScene extends Phaser.Scene {
     this.ecologyStageGraphics.setDepth(3.5);
   }
 
+  private createShorelineLayer(w: number, h: number): void {
+    // These code-native layers reserve the final wet-rock and shoreline-trace asset slots.
+    this.shorelineBaseGraphics = this.add.graphics().setDepth(0.5);
+    this.shorelineTraceGraphics = this.add.graphics().setDepth(3.8);
+    const cx = w / 2;
+    const cy = h / 2 + 40;
+    this.shoreGuideHome = { x: cx + 44, y: cy + 18 };
+    this.shoreGuideTarget = { x: cx + 122, y: cy + 72 };
+
+    const outer = this.add.circle(0, 0, 18, 0x7CE6C8, 0.08).setStrokeStyle(1.5, 0x7CE6C8, 0.58);
+    const middle = this.add.circle(0, 0, 10, 0x4FC3F7, 0.22).setStrokeStyle(1, 0xFFFFFF, 0.32);
+    const core = this.add.circle(-2, -2, 4, 0xFFFFFF, 0.72);
+    this.shoreGuide = this.add.container(this.shoreGuideHome.x, this.shoreGuideHome.y, [outer, middle, core])
+      .setDepth(8)
+      .setVisible(false);
+  }
+
+  private updateShorelineLayer(): void {
+    if (!this.shorelineBaseGraphics || !this.shorelineTraceGraphics || !this.shoreGuide) return;
+    const save = useGameStore.getState().save;
+    const progress = save?.chapterProgress;
+    const witness = save?.chapterWitness?.shorelineDifferentiation;
+    this.shorelineBaseGraphics.clear();
+    this.shorelineTraceGraphics.clear();
+
+    if (!save || progress?.chapter !== "shoreline_differentiation" || !witness?.waterlineExposed) {
+      this.shoreGuide.setVisible(false);
+      return;
+    }
+
+    const cx = this.cameras.main.width / 2;
+    const cy = this.cameras.main.height / 2 + 40;
+    const motion = this.reducedMotion ? 0 : Math.sin(this.poolPulseTime * 0.0011);
+    const exchange = witness.shorelineExchangeWitnessed;
+    const edgeX = cx + (exchange ? 102 : 112) + motion * (exchange ? 2 : 4);
+
+    this.shorelineBaseGraphics.fillStyle(0x1D2B2B, 0.82);
+    this.shorelineBaseGraphics.fillEllipse(edgeX, cy + 70, 96, 66);
+    this.shorelineBaseGraphics.fillStyle(0x344A43, 0.72);
+    this.shorelineBaseGraphics.fillEllipse(edgeX + 22, cy + 48, 58, 42);
+    this.shorelineBaseGraphics.fillEllipse(edgeX - 20, cy + 84, 64, 38);
+    this.shorelineBaseGraphics.fillStyle(0x829187, 0.12);
+    this.shorelineBaseGraphics.fillEllipse(edgeX + 12, cy + 60, 52, 24);
+
+    this.shorelineTraceGraphics.lineStyle(2, 0x7CE6C8, exchange ? 0.34 : 0.22);
+    this.shorelineTraceGraphics.strokeEllipse(cx + 8, cy + 2, 278 + motion * 4, 232 + motion * 2);
+    for (let index = 0; index < 5; index++) {
+      const rockX = cx + 88 + index * 10;
+      const rockY = cy + 38 + index * 10;
+      this.shorelineTraceGraphics.fillStyle(0xA7B6A8, 0.1 + index * 0.018);
+      this.shorelineTraceGraphics.fillEllipse(rockX, rockY, 18 + index * 2, 8 + index);
+    }
+
+    const previewStrategy = shorelineStrategyForOption(this.shorelinePreviewOption);
+    const activeStrategy = previewStrategy ?? witness.shorelineStrategy;
+    const traceAlpha = previewStrategy ? 0.58 : 0.34;
+    if (witness.shoreColonized || previewStrategy) {
+      if (activeStrategy === "rock_attachment") {
+        for (let index = 0; index < 7; index++) {
+          const x = cx + 92 + (index % 3) * 14;
+          const y = cy + 36 + Math.floor(index / 3) * 18;
+          this.shorelineTraceGraphics.fillStyle(index % 2 ? 0xD9E2D0 : 0xF5D078, traceAlpha);
+          this.shorelineTraceGraphics.fillTriangle(x, y + 7, x + 4, y - 5, x + 8, y + 7);
+        }
+      } else if (activeStrategy === "tidal_dispersal") {
+        for (let index = 0; index < 4; index++) {
+          const y = cy + 30 + index * 12;
+          this.shorelineTraceGraphics.lineStyle(1.5, 0x4FC3F7, traceAlpha - index * 0.06);
+          this.shorelineTraceGraphics.beginPath();
+          this.shorelineTraceGraphics.moveTo(cx + 132, y);
+          this.shorelineTraceGraphics.lineTo(cx + 88, y + 8 + motion * 3);
+          this.shorelineTraceGraphics.lineTo(cx + 48, y + 2);
+          this.shorelineTraceGraphics.strokePath();
+        }
+      } else {
+        this.shorelineTraceGraphics.fillStyle(0x7CE6C8, traceAlpha * 0.42);
+        this.shorelineTraceGraphics.fillEllipse(cx + 106, cy + 62, 76, 52);
+        this.shorelineTraceGraphics.lineStyle(2, 0x66BB6A, traceAlpha);
+        for (let index = 0; index < 5; index++) {
+          this.shorelineTraceGraphics.strokeEllipse(cx + 88 + index * 9, cy + 36 + index * 8, 22, 8);
+        }
+      }
+    }
+
+    if (save.pendingEcologyEvent?.id === "ebb_dryness" && !previewStrategy) {
+      this.shorelineTraceGraphics.lineStyle(1, 0xF5D078, 0.22);
+      for (let index = 0; index < 5; index++) {
+        this.shorelineTraceGraphics.lineBetween(cx + 86 + index * 9, cy + 24, cx + 94 + index * 10, cy + 96);
+      }
+    }
+
+    if (exchange) {
+      for (let index = 0; index < 3; index++) {
+        const y = cy + 28 + index * 14;
+        this.shorelineTraceGraphics.lineStyle(2 - index * 0.35, 0x7CE6C8, 0.34 - index * 0.06);
+        this.shorelineTraceGraphics.beginPath();
+        this.shorelineTraceGraphics.moveTo(cx + 132, y);
+        this.shorelineTraceGraphics.lineTo(cx + 86, y + 10 + motion * 4);
+        this.shorelineTraceGraphics.lineTo(cx + 34, y + motion * 3);
+        this.shorelineTraceGraphics.strokePath();
+      }
+    }
+
+    this.shoreGuideHome = { x: cx + 44, y: cy + 18 };
+    this.shoreGuideTarget = { x: cx + 122, y: cy + 72 };
+    const showGuide = save.unlockedNodes.includes("shore_attachment")
+      && !witness.shoreColonized
+      && !this.shoreGuideSubmitting;
+    this.shoreGuide.setVisible(showGuide);
+    if (showGuide && !this.shoreGuideDragging) {
+      this.shoreGuide.setPosition(this.shoreGuideHome.x, this.shoreGuideHome.y + motion * 3);
+      this.shoreGuide.setScale(1 + motion * 0.04);
+      this.shorelineTraceGraphics.lineStyle(1.5, 0x7CE6C8, 0.26);
+      this.shorelineTraceGraphics.strokeCircle(this.shoreGuideTarget.x, this.shoreGuideTarget.y, 24 + motion * 2);
+      this.shorelineTraceGraphics.lineStyle(1, 0x7CE6C8, 0.13);
+      this.shorelineTraceGraphics.lineBetween(this.shoreGuideHome.x + 16, this.shoreGuideHome.y, this.shoreGuideTarget.x - 22, this.shoreGuideTarget.y);
+    }
+  }
+
+  private playShoreGuideFeedback(): void {
+    const { x, y } = this.shoreGuideTarget;
+    const count = this.reducedMotion ? 1 : 3;
+    for (let index = 0; index < count; index++) {
+      const ring = this.add.circle(x, y, 14 + index * 6, 0x7CE6C8, 0.06)
+        .setStrokeStyle(1.5, 0x7CE6C8, 0.54)
+        .setDepth(9);
+      this.tweens.add({
+        targets: ring,
+        alpha: 0,
+        scale: this.reducedMotion ? 1.15 : 1.8 + index * 0.18,
+        duration: this.reducedMotion ? 220 : 620 + index * 120,
+        ease: "Sine.easeOut",
+        onComplete: () => ring.destroy(),
+      });
+    }
+  }
+
   private updateEcologyStageLayer(): void {
     if (!this.ecologyStageGraphics) return;
     const save = useGameStore.getState().save;
@@ -1400,4 +1596,11 @@ export class HomeScene extends Phaser.Scene {
     gfx.generateTexture("bubble", 8, 8);
     gfx.destroy();
   }
+}
+
+function shorelineStrategyForOption(optionId: string | null): "moisture_retention" | "rock_attachment" | "tidal_dispersal" | null {
+  if (optionId === "protect_moisture_film") return "moisture_retention";
+  if (optionId === "expose_wet_rock") return "rock_attachment";
+  if (optionId === "return_to_shallows") return "tidal_dispersal";
+  return null;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUIStore } from "../../stores/uiStore.js";
 import { GameModal } from "./GameModal.js";
 
@@ -16,6 +16,15 @@ export function DecisionConfirm() {
   const cancelLabel = (modalData.cancelLabel as string) ?? "先放一放";
   const onConfirm = modalData.onConfirm as (() => void | Promise<void>) | undefined;
   const onCancel = modalData.onCancel as (() => void) | undefined;
+  const previewOptionId = modalData.previewOptionId as string | undefined;
+
+  useEffect(() => {
+    if (!previewOptionId) return;
+    window.dispatchEvent(new CustomEvent("shoreline-choice-preview", { detail: { optionId: previewOptionId } }));
+    return () => {
+      window.dispatchEvent(new CustomEvent("shoreline-choice-preview", { detail: { optionId: null } }));
+    };
+  }, [previewOptionId]);
 
   const handleConfirm = async () => {
     if (!onConfirm || submitting) return;

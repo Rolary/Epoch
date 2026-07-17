@@ -23,6 +23,7 @@ export declare function getSpecies(saveId: string): Promise<import("@eco-era/sha
 export declare function getLogs(saveId: string): Promise<import("@eco-era/shared").EvolutionLog[]>;
 export declare function getEvolutionNodes(): Promise<import("@eco-era/shared").EvolutionNode[]>;
 export declare function getTalentChoices(): Promise<import("@eco-era/shared").Talent[]>;
+export declare function createThirdChapterDebugSave(stage: "exposed" | "shore" | "event" | "exchange"): Promise<import("@eco-era/shared").GameState>;
 export declare function getLeaderboard(limit?: number): Promise<import("@eco-era/shared").LeaderboardResponse>;
 export declare function healthCheck(): Promise<boolean>;
 //# sourceMappingURL=api.d.ts.map

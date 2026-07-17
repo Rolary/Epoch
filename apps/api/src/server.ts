@@ -10,6 +10,7 @@ import {
   applyEnvironmentAction,
   calculateEcologyScore,
   calculateEcologyScoreBreakdown,
+  buildThirdChapterDebugSave,
   canUnlockEvolutionNode,
   createInitialState,
   evolutionNodes,
@@ -19,6 +20,7 @@ import {
   talentCatalog,
   unlockEvolutionNode
 } from "@eco-era/game-core";
+import type { ThirdChapterDebugStage } from "@eco-era/game-core";
 import type { GameState, LeaderboardEntry } from "@eco-era/shared";
 import { closeRepository, getSave, listLeaderboardSaves, listSaves, listUiAssetUrls, putSave } from "./repository.js";
 
@@ -69,7 +71,6 @@ server.get("/meta/talent-choices", async () => ({ choices: rollTalentChoices(und
 server.get("/meta/ui-assets", async () => ({ assets: await listUiAssetUrls() }));
 
 type SecondChapterDebugStage = "light" | "roles" | "resonance" | "cycle" | "imbalance" | "personality" | "complete";
-
 server.post("/debug/second-chapter-save", async (request, reply) => {
   if (isProduction) return reply.code(404).send({ message: "Not found" });
   const guestKey = requireGuestKey(request.headers["x-guest-key"]);
@@ -77,6 +78,17 @@ server.post("/debug/second-chapter-save", async (request, reply) => {
   const body = (request.body ?? {}) as { stage?: SecondChapterDebugStage };
   const save = buildSecondChapterDebugSave(createSaveId(), body.stage ?? "cycle");
   await putSave(guestKey, save);
+  return { save: toPublicGameState(save) };
+});
+
+server.post("/debug/third-chapter-save", async (request, reply) => {
+  if (isProduction) return reply.code(404).send({ message: "Not found" });
+  const guestKey = requireGuestKey(request.headers["x-guest-key"]);
+  if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
+  const body = (request.body ?? {}) as { stage?: ThirdChapterDebugStage };
+  const { persist } = (request.query ?? {}) as { persist?: string };
+  const save = buildThirdChapterDebugSave(createSaveId(), body.stage ?? "exposed");
+  if (persist !== "false") await putSave(guestKey, save);
   return { save: toPublicGameState(save) };
 });
 

@@ -8,6 +8,7 @@ import {
   advanceState,
   availableEcologyResonances,
   availableEcologyEvents,
+  buildThirdChapterDebugSave,
   calculateEcologyScore,
   calculateResourceDelta,
   canUnlockEvolutionNode,
@@ -457,6 +458,110 @@ describe("roguelike life-history progression", () => {
     expect(normalized.lastHarvestedAt).toBeTruthy();
     expect(normalized.codexObservations).toEqual([]);
     expect(normalized.chapterWitness?.ecologyBurst.rolesWitnessed).toEqual([]);
+    expect(normalized.chapterWitness?.shorelineDifferentiation).toEqual({
+      chapterStarted: false,
+      waterlineExposed: false,
+      shoreColonized: false,
+      habitatsWitnessed: [],
+      dryWetPressureWitnessed: false,
+      shorelineExchangeWitnessed: false,
+      shorelineMemoryWitnessed: false,
+      shorelineStrategy: undefined,
+    });
+  });
+
+  it("keeps a completed second chapter save at its stable ending until chapter three starts", () => {
+    const completed = buildThirdChapterDebugSave("chapter-three-source", "exposed");
+    const oldSecondChapterSave = {
+      ...completed,
+      chapterWitness: {
+        ecologyBurst: completed.chapterWitness!.ecologyBurst,
+        shorelineDifferentiation: undefined,
+      },
+      historyTags: completed.historyTags.filter((tag) => tag !== "waterline_exposed"),
+    } as unknown as ReturnType<typeof createInitialState>;
+
+    const normalized = normalizeGameState(oldSecondChapterSave);
+
+    expect(normalized.chapterProgress?.chapter).toBe("ecology_burst");
+    expect(normalized.chapterProgress?.stage).toBe("complete");
+    expect(normalized.chapterWitness?.shorelineDifferentiation.chapterStarted).toBe(false);
+    expect(normalized.species.every((species) => species.habitats === undefined)).toBe(true);
+  });
+
+  it("builds the first third chapter debug slice without inventing a shoreline species", () => {
+    const save = buildThirdChapterDebugSave("chapter-three-exposed", "exposed");
+
+    expect(save.chapterProgress?.chapter).toBe("shoreline_differentiation");
+    expect(save.chapterProgress?.stage).toBe("attach_shore");
+    expect(save.chapterProgress?.completedStages).toEqual(["discover_waterline"]);
+    expect(save.chapterWitness?.shorelineDifferentiation).toMatchObject({
+      chapterStarted: true,
+      waterlineExposed: true,
+      shoreColonized: false,
+      habitatsWitnessed: ["shallow_water"],
+    });
+    expect(save.historyTags).toContain("waterline_exposed");
+    expect(save.species.every((species) => species.habitats === undefined)).toBe(true);
+  });
+
+  it("guides an existing lineage to the wet rock once without directly creating a species", () => {
+    let save = buildThirdChapterDebugSave("chapter-three-guide", "exposed");
+    save = {
+      ...save,
+      resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
+    };
+    save = unlockEvolutionNode(save, "shore_attachment");
+    save.pendingEcologyEvent = null;
+    const speciesCount = save.species.length;
+
+    const guided = applyEnvironmentAction(save, "guide_shore_tide");
+    const guidedAgain = applyEnvironmentAction(guided, "guide_shore_tide");
+    const attached = guided.species.find((species) => species.habitats?.includes("intertidal_wet_rock"));
+
+    expect(guided.species).toHaveLength(speciesCount);
+    expect(attached?.habitats).toEqual(expect.arrayContaining(["shallow_water", "intertidal_wet_rock"]));
+    expect(guided.chapterWitness?.shorelineDifferentiation.shoreColonized).toBe(true);
+    expect(guided.chapterProgress?.stage).toBe("endure_dry_wet");
+    expect(guided.pendingEcologyEvent?.id).toBe("ebb_dryness");
+    expect(guidedAgain.logs.filter((log) => log.message.includes("贴住了湿岩"))).toHaveLength(1);
+  });
+
+  it("records exactly one shoreline strategy after the ebb dryness choice", () => {
+    const eventSave = buildThirdChapterDebugSave("chapter-three-event", "event");
+    expect(eventSave.pendingEcologyEvent?.options.map((option) => option.id)).toEqual([
+      "protect_moisture_film",
+      "expose_wet_rock",
+      "return_to_shallows",
+    ]);
+
+    const outcomes = [
+      ["protect_moisture_film", "moisture_retention"],
+      ["expose_wet_rock", "rock_attachment"],
+      ["return_to_shallows", "tidal_dispersal"],
+    ] as const;
+    for (const [optionId, strategy] of outcomes) {
+      const freshEventSave = buildThirdChapterDebugSave(`chapter-three-event-${optionId}`, "event");
+      const next = applyEcologyEventChoice(freshEventSave, "ebb_dryness", optionId);
+      expect(next.chapterWitness?.shorelineDifferentiation).toMatchObject({
+        dryWetPressureWitnessed: true,
+        shorelineStrategy: strategy,
+      });
+      expect(next.chapterProgress?.stage).toBe("reconnect_cycle");
+      expect(next.historyTags).toContain(strategy);
+      expect(outcomes.filter(([, candidate]) => candidate !== strategy).every(([, candidate]) => !next.historyTags.includes(candidate))).toBe(true);
+      expect(() => applyEcologyEventChoice(next, "ebb_dryness", "protect_moisture_film")).toThrow("潮池事件不可用");
+    }
+  });
+
+  it("builds the first shoreline exchange after pressure has been witnessed", () => {
+    const save = buildThirdChapterDebugSave("chapter-three-exchange", "exchange");
+
+    expect(save.chapterProgress?.chapter).toBe("shoreline_differentiation");
+    expect(save.chapterProgress?.stage).toBe("shoreline_memory");
+    expect(save.chapterProgress?.shorelineExchangeFormed).toBe(true);
+    expect(save.chapterWitness?.shorelineDifferentiation.shorelineExchangeWitnessed).toBe(true);
+    expect(save.historyTags).toContain("shoreline_exchange");
   });
 
   it("requires second chapter roles and cooldown before ecology resonance", () => {

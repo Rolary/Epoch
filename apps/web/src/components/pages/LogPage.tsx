@@ -57,7 +57,8 @@ export function LogPage() {
     <div className="page log-page memory-page">
       <h2 className="page-title">潮池记忆</h2>
       <p className="page-hint">重复的细小反应会被合并成一段记忆，重要变化会单独留下。</p>
-      {save?.chapterProgress?.stage === "complete" && <ChapterTwoSummary save={save} />}
+      {save?.chapterProgress?.chapter === "shoreline_differentiation" && <ShorelineMemoryBand save={save} />}
+      {save?.chapterProgress?.chapter === "ecology_burst" && save.chapterProgress.stage === "complete" && <ChapterTwoSummary save={save} />}
       {(save?.hiddenTraces?.records.length ?? 0) > 0 && <HiddenTraceMemories records={save!.hiddenTraces!.records} />}
       <div className="memory-timeline">
         {memories.map((entry) => (
@@ -78,6 +79,60 @@ export function LogPage() {
       </div>
     </div>
   );
+}
+
+function ShorelineMemoryBand({ save }: { save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]> }) {
+  const witness = save.chapterWitness?.shorelineDifferentiation;
+  if (!witness?.waterlineExposed) return null;
+  const moments = [
+    {
+      id: "waterline",
+      title: "水线露出",
+      description: "退潮第一次在浅水之外露出湿岩。",
+      visible: true,
+    },
+    {
+      id: "attachment",
+      title: "第一次贴岸",
+      description: witness.dryWetPressureWitnessed
+        ? shorelineStrategyMemory(witness.shorelineStrategy)
+        : "一支原有生命沿着水势贴住了湿岸。",
+      visible: witness.shoreColonized,
+    },
+    {
+      id: "exchange",
+      title: "第一次回流",
+      description: "岸边碎屑回到浅水，两处栖位接成往返。",
+      visible: witness.shorelineExchangeWitnessed,
+    },
+  ];
+  return (
+    <section className="shoreline-memory-band" aria-labelledby="shoreline-memory-title">
+      <div className="shoreline-memory-heading">
+        <span>海陆痕迹</span>
+        <h3 id="shoreline-memory-title">水线怎样形成</h3>
+      </div>
+      <div className="shoreline-memory-moments">
+        {moments.map((moment) => (
+          <article key={moment.id} className={`shoreline-memory-moment ${moment.visible ? "visible" : "waiting"}`}>
+            <div className={`shoreline-memory-scene scene-${moment.id}`} aria-hidden="true">
+              <span className="shoreline-memory-water" />
+              <span className="shoreline-memory-rock" />
+              <span className="shoreline-memory-trace" />
+            </div>
+            <h4>{moment.visible ? moment.title : "岸线仍在等待"}</h4>
+            <p>{moment.visible ? moment.description : "下一阵水势还没有抵达这里。"}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function shorelineStrategyMemory(strategy: string | undefined) {
+  if (strategy === "rock_attachment") return "湿岩见光后，仍有附着斑抓住岸面。";
+  if (strategy === "tidal_dispersal") return "第一次岸痕退回浅水，留下随潮播散的倾向。";
+  return "薄水膜被多留了一阵，护住了第一处附着痕。";
 }
 
 function HiddenTraceMemories({ records }: { records: HiddenTraceRecord[] }) {
@@ -184,6 +239,18 @@ function buildMemoryEntries(logs: EvolutionLog[]): MemoryEntry[] {
 }
 
 function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
+  if (/水线露出来|水线显现/.test(log.message)) {
+    return keyMemory(log, "tide", "水线露出来了", "退潮第一次在浅水之外留下湿岩，潮池开始拥有自己的边缘。");
+  }
+
+  if (/贴住了湿岩|第一次贴岸/.test(log.message)) {
+    return keyMemory(log, "species", "有一支生命贴住湿岸", "玩家只引导了一缕水势，原有谱系自己留下了第一次岸痕。");
+  }
+
+  if (/岸线往返|岸边碎屑带回浅水/.test(log.message)) {
+    return keyMemory(log, "tide", "岸边与浅水接上往返", "回潮把岸边变化带回原有循环，两个栖位开始互相影响。");
+  }
+
   if (/生态共鸣|水中回响/.test(log.message)) {
     return keyMemory(log, "species", "水中回响被看见", "两处生命痕迹开始彼此回应，后来的潮水也会被它轻轻改动。");
   }

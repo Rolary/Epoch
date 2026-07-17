@@ -2,7 +2,7 @@
 
 ## 1. 技术结论
 
-第一阶段「生命诞生篇」与第二章「生态爆发篇」已经完成基础闭环，第三章「海陆分化篇」进入设计阶段。当前技术路线将前两章作为稳定回归基线，继续使用 React + Phaser + Fastify + PostgreSQL 架构。
+第一阶段「生命诞生篇」与第二章「生态爆发篇」已经完成基础闭环，第三章「海陆分化篇」进入开发启动阶段。当前技术路线将前两章作为稳定回归基线，继续使用 React + Phaser + Fastify + PostgreSQL 架构。
 
 | 模块 | 当前选择 | 当前说明 |
 | --- | --- | --- |
@@ -174,9 +174,9 @@ corepack pnpm run build
 - 移动端交付图保留 PNG 路径兼容，角色图长边 512、事件图长边 600、背景长边 960；高分辨率原图继续保存在 `original-ui`。
 - Phaser/WebGL 场景纹理固定使用 Vite 打包的同源资源，避免数据库远程图片缺少 CORS 响应头时出现绿色缺失纹理；React 图片仍保留数据库与远程映射能力。
 
-## 10. 第三章设计阶段技术约束
+## 10. 第三章开发启动技术约束
 
-第三章的设计基线见 `docs/third-chapter-progression.md`，阶段执行顺序见 `docs/third-chapter-build-plan.md`。在实现开始前，技术方案只锁定以下边界：
+第三章的设计基线见 `docs/third-chapter-progression.md`，阶段执行顺序见 `docs/third-chapter-build-plan.md`。当前已实现共享章节/栖位类型、第三章见证与派生进度、首批节点和事件，并提供非生产环境 `POST /debug/third-chapter-save` 的 `exposed / shore / event / exchange` 切片；开发模式可用 `?debugChapter3=event` 等查询参数进行非持久化视觉验收。其余技术边界保持如下：
 
 - 继续使用单一 `GameState` JSON 快照，不为浅水、潮间湿岩和湿润岸缘创建独立存储表或独立存档。
 - 在 `packages/shared` 增加第三章章节标识、阶段和见证结构；`normalizeGameState` 为旧第一章、第二章存档补齐缺失字段，不自动生成岸线物种或岸线历史。
@@ -186,7 +186,7 @@ corepack pnpm run build
 - 所有概率、成本、惩罚、解锁条件和谱系生成都由 `packages/game-core` 的纯函数决定。AI 或本地生成器只能包装已经确定的物种和生命史事实。
 - 第三章必须有独立的 `smoke:chapter3` 调试切片，且 `smoke:chapter2` 不依赖第三章字段或阶段。
 
-第三章当前不是实现承诺。完成设计评审后，再按“共享类型和归一化 -> 核心规则和测试 -> Phaser 水线反馈 -> React 主线与生命史 -> 浏览器和移动端验收”的顺序拆分任务。
+第三章继续按“共享类型和归一化 -> 核心规则和测试 -> Phaser 水线反馈 -> React 主线与生命史 -> 浏览器和移动端验收”的顺序推进。当前只完成第一步和首个调试切片，不把尚未实现的场景、事件或完整章节标记为完成。
 
 ## 11. 已接入技术方向：隐秘潮痕
 

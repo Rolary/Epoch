@@ -1,4 +1,5 @@
 import type { EcologyEvent } from "@eco-era/shared";
+import { useState } from "react";
 import { chooseEcologyEvent } from "../../api.js";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
@@ -14,6 +15,7 @@ export function EcologyEventModal() {
   const modalData = useUIStore((s) => s.modalData);
   const narrativeId = modalData.narrativeId as string | undefined;
   const event = save?.pendingEcologyEvent as EcologyEvent | null | undefined;
+  const [previewOptionId, setPreviewOptionId] = useState<string | null>(null);
 
   if (!save || !event) {
     hideModal();
@@ -30,12 +32,14 @@ export function EcologyEventModal() {
       cost: tradeoffCopy(option.resourceEffect, option.environmentEffect),
       confirmLabel: "顺着它走",
       cancelLabel: "先放一放",
+      previewOptionId: event.id === "ebb_dryness" ? optionId : undefined,
       onCancel: () => {
         useUIStore.getState().showModal("ecology-event", narrativeId ? { narrativeId } : {});
       },
       onConfirm: async () => {
         try {
           const next = await chooseEcologyEvent(save.id, event.id, optionId);
+          previewShorelineChoice(null);
           snoozeEcologyEvent(null);
           setSave(next);
           if (narrativeId) completeNarrative(narrativeId);
@@ -46,7 +50,13 @@ export function EcologyEventModal() {
     });
   };
 
+  const preview = (optionId: string | null) => {
+    setPreviewOptionId(optionId);
+    previewShorelineChoice(optionId);
+  };
+
   const snooze = () => {
+    previewShorelineChoice(null);
     snoozeEcologyEvent(event.id);
     if (narrativeId) completeNarrative(narrativeId);
     else hideModal();
@@ -55,16 +65,35 @@ export function EcologyEventModal() {
   return (
     <GameModal title={event.title} onClose={snooze}>
       <div className="ecology-event-modal">
-        <img className="event-visual" src={eventAssetFor(event)} alt="" aria-hidden="true" />
-        <span className="event-choice-kicker">潮池时刻 · 选择一项回应</span>
+        {event.id === "ebb_dryness" ? (
+          <div className={`event-visual shoreline-event-visual preview-${previewOptionId ?? "idle"}`} aria-hidden="true">
+            <span className="shoreline-event-water" />
+            <span className="shoreline-event-rock" />
+            <span className="shoreline-event-film" />
+            <span className="shoreline-event-sun" />
+          </div>
+        ) : (
+          <img className="event-visual" src={eventAssetFor(event)} alt="" aria-hidden="true" />
+        )}
+        <span className="event-choice-kicker">{event.id === "ebb_dryness" ? "岸线时刻" : "潮池时刻"} · 选择一项回应</span>
         <p className="event-description">{event.description}</p>
         <span className="event-tendency">潮池正在显露：{event.tendencyTag}</span>
         <div className="event-options">
           {event.options.map((option) => (
-            <button key={option.id} className="event-option" onClick={() => choose(option.id)}>
+            <button
+              key={option.id}
+              className="event-option"
+              onClick={() => choose(option.id)}
+              onMouseEnter={() => event.id === "ebb_dryness" && preview(option.id)}
+              onMouseLeave={() => event.id === "ebb_dryness" && preview(null)}
+              onFocus={() => event.id === "ebb_dryness" && preview(option.id)}
+              onBlur={() => event.id === "ebb_dryness" && preview(null)}
+            >
               <span className="event-option-title">{option.title}</span>
               <span className="event-option-desc">{option.description}</span>
-              <span className="event-option-effect">水势变化：{effectCopy(option.resourceEffect, option.environmentEffect)}</span>
+              <span className="event-option-effect">
+                {event.id === "ebb_dryness" ? shorelineEffectCopy(option.id) : `水势变化：${effectCopy(option.resourceEffect, option.environmentEffect)}`}
+              </span>
             </button>
           ))}
         </div>
@@ -74,6 +103,16 @@ export function EcologyEventModal() {
       </div>
     </GameModal>
   );
+}
+
+function previewShorelineChoice(optionId: string | null) {
+  window.dispatchEvent(new CustomEvent("shoreline-choice-preview", { detail: { optionId } }));
+}
+
+function shorelineEffectCopy(optionId: string) {
+  if (optionId === "protect_moisture_film") return "会留下：薄水膜与稳定附着 · 会承压：更远岩面暂缓";
+  if (optionId === "expose_wet_rock") return "会留下：矿物结面与大胆附着 · 会承压：水分与稳定";
+  return "会留下：回流与播散倾向 · 会承压：岸边定居痕迹";
 }
 
 function eventAssetFor(event: EcologyEvent): string {

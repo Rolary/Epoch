@@ -18,6 +18,15 @@ export declare class HomeScene extends Phaser.Scene {
     private algaeGraphics;
     private cloudGraphics;
     private ecologyStageGraphics;
+    private shorelineBaseGraphics;
+    private shorelineTraceGraphics;
+    private shoreGuide;
+    private shoreGuideDragging;
+    private shoreGuideSubmitting;
+    private shoreGuideHome;
+    private shoreGuideTarget;
+    private shorelinePreviewOption;
+    private shorelinePreviewHandler?;
     private causticDrift;
     private poolVertices;
     private ambientRedrawTimer;
@@ -40,6 +49,7 @@ export declare class HomeScene extends Phaser.Scene {
     static readonly POOL_ABSORB_RADIUS = 112;
     static readonly ELEMENT_POOL_AVOID_RADIUS = 150;
     onAbsorb?: (type: ElementType, outcome: Outcome) => void;
+    onGuideShore?: () => Promise<void>;
     constructor();
     preload(): void;
     create(): void;
@@ -78,6 +88,9 @@ export declare class HomeScene extends Phaser.Scene {
     private createPool;
     private createAlgaeAndClouds;
     private createEcologyStageLayer;
+    private createShorelineLayer;
+    private updateShorelineLayer;
+    private playShoreGuideFeedback;
     private updateEcologyStageLayer;
     private createFloatingParticles;
     private createResourceOrbs;

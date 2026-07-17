@@ -9,12 +9,14 @@ import type {
   EvolutionNode,
   FossilLegacy,
   GameState,
+  HabitatId,
   HiddenTraceRecord,
   LeaderboardScoreBreakdown,
   PlanetProfile,
   PoolEffect,
   ResourceKey,
   Resources,
+  ShorelineStrategy,
   SpeciesRecord,
   Talent
 } from "@eco-era/shared";
@@ -271,6 +273,27 @@ export const evolutionNodes: EvolutionNode[] = [
     description: "那些反复出现的水势沉进记忆里，这片潮池开始有了自己的样子。",
     cost: { biomass: 340, stability: 36, mutation: 72 },
     requires: ["mutual_ecology_cycle"]
+  },
+  {
+    id: "waterline_exposure",
+    name: "水线显现",
+    description: "第一阵生态往复推到潮池边缘，退潮开始露出仍然湿润的岩面。",
+    cost: { energy: 420, minerals: 180, stability: 42 },
+    requires: ["ecological_personality"]
+  },
+  {
+    id: "shore_attachment",
+    name: "湿岸附着",
+    description: "已有生命获得贴住短暂湿痕的机会，等待一缕水势把它们带向岸边。",
+    cost: { organic: 360, minerals: 160, biomass: 220 },
+    requires: ["waterline_exposure"]
+  },
+  {
+    id: "shoreline_exchange",
+    name: "岸线往返",
+    description: "回潮开始把岸边碎屑带回浅水，让水线两侧重新接成一阵循环。",
+    cost: { organic: 420, energy: 280, biomass: 360, stability: 24 },
+    requires: ["shore_attachment"]
   }
 ];
 
@@ -517,6 +540,41 @@ export const ecologyEvents: EcologyEvent[] = [
         environmentEffect: { volatility: -0.02 },
         addHistoryTags: ["ecology_imbalance_faced", "symbiotic_seed"],
         logMessage: "薄膜与分解层在边缘交换材料，潮池第一次把冲突变成了互相接续。"
+      }
+    ]
+  },
+  {
+    id: "ebb_dryness",
+    title: "退潮晒痕",
+    description: "退潮把水线推远了，薄水膜、湿岩和刚刚留下的附着痕正在迅速失去水分。",
+    tendencyTag: "岸线取舍",
+    options: [
+      {
+        id: "protect_moisture_film",
+        title: "护住薄水膜",
+        description: "让浅水多停留一阵，替贴岸的生命挡住最先到来的干燥。",
+        resourceEffect: { organic: -18, stability: 14, biomass: 8 },
+        environmentEffect: { tide: 0.1, heat: -0.04, volatility: -0.03 },
+        addHistoryTags: ["dry_wet_pressure", "moisture_retention", "shore_moisture_preserved"],
+        logMessage: "一层薄水膜贴住湿岩，水线退得更慢；附着痕被保住，更远的岩面仍在等待。"
+      },
+      {
+        id: "expose_wet_rock",
+        title: "让湿岩见光",
+        description: "允许边缘完全暴露，让留下来的结构面对光、盐与干燥。",
+        resourceEffect: { minerals: 34, mutation: 18, stability: -12 },
+        environmentEffect: { heat: 0.1, volatility: 0.08 },
+        addHistoryTags: ["dry_wet_pressure", "rock_attachment", "selection_pressure"],
+        logMessage: "湿岩在光下结出浅色薄面，一部分薄膜收缩，仍有附着斑抓在岸边。"
+      },
+      {
+        id: "return_to_shallows",
+        title: "随回潮退回浅水",
+        description: "不强留岸边，让这次尝试跟着下一阵水回到原有循环。",
+        resourceEffect: { organic: 26, biomass: 14, stability: 8 },
+        environmentEffect: { tide: 0.12, volatility: -0.02 },
+        addHistoryTags: ["dry_wet_pressure", "tidal_dispersal", "shallow_cycle_recovered"],
+        logMessage: "岸痕跟着回流水纹变淡，碎屑被带回池中，浅水循环先恢复了呼吸。"
       }
     ]
   }
@@ -963,6 +1021,7 @@ export function createInitialState(id: string, name = "始源潮池", initialTal
     codexObservations: [],
     chapterWitness: {
       ecologyBurst: emptyEcologyBurstWitness(),
+      shorelineDifferentiation: emptyShorelineDifferentiationWitness(),
     },
     historyTags: initialTalent ? historyTagsForTalent(initialTalent.id) : [],
     eventHistory: [],
@@ -1089,6 +1148,10 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
   const now = new Date().toISOString();
   recordHiddenAction(next, action, now);
 
+  if (action === "guide_shore_tide") {
+    guideShoreTide(next);
+  }
+
   if (action === "harvest_tide") {
     const bonus = frequentHarvestBonus(next);
     const harvested = scaleResources(next.unclaimedResources, 1 + bonus);
@@ -1209,6 +1272,10 @@ export function availableEcologyEvents(state: GameState): EcologyEvent[] {
     if (event.id === "bloom_pressure") return state.unlockedNodes.includes("mutual_ecology_cycle") || hasEcologyCycleRoles(state);
     if (event.id === "murky_low_oxygen") return state.unlockedNodes.includes("mutual_ecology_cycle") && (tags.has("filterer_seed") || tags.has("bloom_resonance"));
     if (event.id === "decomposer_layer_spread") return state.unlockedNodes.includes("decomposition_layer") && tags.has("decomposer_seed");
+    if (event.id === "ebb_dryness") {
+      const witness = normalizeChapterWitness(state).shorelineDifferentiation;
+      return witness.chapterStarted && witness.shoreColonized && !witness.dryWetPressureWitnessed;
+    }
     return true;
   });
 }
@@ -1240,15 +1307,14 @@ export function rollEcologyEvent(state: GameState): EcologyEvent | null {
 
 export function ecologyEventChanceFor(state: GameState): number {
   if (state.species.length === 0) return 0.06;
+  if (state.chapterProgress?.chapter === "shoreline_differentiation") return 0.14;
   if (state.chapterProgress?.chapter === "ecology_burst") return 0.12;
   return 0.1;
 }
 
 export function applyEcologyEventChoice(input: GameState, eventId: string, optionId: string): GameState {
   const next = normalizeGameState(cloneState(input));
-  const event = next.pendingEcologyEvent?.id === eventId
-    ? next.pendingEcologyEvent
-    : ecologyEvents.find((item) => item.id === eventId);
+  const event = next.pendingEcologyEvent?.id === eventId ? next.pendingEcologyEvent : undefined;
   const option = event?.options.find((item) => item.id === optionId);
   if (!event || !option) {
     throw new Error("潮池事件不可用");
@@ -1259,6 +1325,9 @@ export function applyEcologyEventChoice(input: GameState, eventId: string, optio
   next.historyTags = addUniqueTags(next.historyTags ?? [], option.addHistoryTags ?? []);
   if (next.chapterProgress?.chapter === "ecology_burst" || ["bloom_pressure", "murky_low_oxygen", "decomposer_layer_spread"].includes(event.id)) {
     next.chapterWitness!.ecologyBurst.imbalanceWitnessed = true;
+  }
+  if (event.id === "ebb_dryness") {
+    applyEbbDrynessOutcome(next, option.id);
   }
   const newTags = option.addHistoryTags ?? [];
   const hasEcho = newTags.some((tag) => (input.historyTags ?? []).includes(tag));
@@ -1431,7 +1500,10 @@ export function rollTalentChoices(state?: GameState, count = 3): Talent[] {
 export function normalizeGameState(state: GameState): GameState {
   const normalized = {
     ...state,
-    species: [...(state.species ?? [])],
+    species: (state.species ?? []).map((species) => ({
+      ...species,
+      ...(species.habitats ? { habitats: normalizeHabitats(species.habitats) } : {}),
+    })),
     logs: [...(state.logs ?? [])],
     talents: state.talents ?? [],
     pendingTalentChoices: state.pendingTalentChoices ?? [],
@@ -1454,6 +1526,82 @@ export function normalizeGameState(state: GameState): GameState {
     ...normalized,
     chapterProgress: deriveChapterProgress(normalized),
     pendingEcologyResonances: availableEcologyResonances(normalized)
+  };
+}
+
+export type ThirdChapterDebugStage = "exposed" | "shore" | "event" | "exchange";
+
+export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugStage = "exposed"): GameState {
+  let save = createInitialState(id, "第三章验收潮池");
+  const unlockOrder = [
+    "organic_richness",
+    "replicating_chain",
+    "replication_fidelity",
+    "primitive_vesicle",
+    "metabolic_loop",
+    "proto_cell",
+    "photo_pigment",
+    "early_producer_film",
+    "decomposition_layer",
+    "tidal_filter_pores",
+    "mutual_ecology_cycle",
+  ];
+
+  for (const nodeId of unlockOrder) {
+    save = {
+      ...normalizeGameState(save),
+      resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
+    };
+    if (canUnlockEvolutionNode(save, nodeId)) save = unlockEvolutionNode(save, nodeId);
+  }
+
+  if (save.pendingEcologyEvent?.id === "bloom_pressure") {
+    save = applyEcologyEventChoice(save, "bloom_pressure", "thin_bloom");
+  }
+  save = {
+    ...normalizeGameState(save),
+    resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
+  };
+  if (canUnlockEvolutionNode(save, "ecological_personality")) {
+    save = unlockEvolutionNode(save, "ecological_personality");
+  }
+
+  save = withDebugResources(save);
+  if (canUnlockEvolutionNode(save, "waterline_exposure")) {
+    save = unlockEvolutionNode(save, "waterline_exposure");
+  }
+  save.pendingEcologyEvent = null;
+
+  if (["shore", "event", "exchange"].includes(stage)) {
+    save = withDebugResources(save);
+    if (canUnlockEvolutionNode(save, "shore_attachment")) {
+      save = unlockEvolutionNode(save, "shore_attachment");
+    }
+    save.pendingEcologyEvent = null;
+    save = applyEnvironmentAction(save, "guide_shore_tide");
+    if (stage === "shore") save.pendingEcologyEvent = null;
+  }
+
+  if (stage === "exchange") {
+    save = applyEcologyEventChoice(save, "ebb_dryness", "protect_moisture_film");
+    save = withDebugResources(save);
+    if (canUnlockEvolutionNode(save, "shoreline_exchange")) {
+      save = unlockEvolutionNode(save, "shoreline_exchange");
+    }
+    save.pendingEcologyEvent = null;
+  }
+
+  return normalizeGameState({
+    ...save,
+    resources: { organic: 1200, energy: 1200, minerals: 1200, stability: 90, mutation: 420, biomass: 900 },
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+function withDebugResources(save: GameState): GameState {
+  return {
+    ...normalizeGameState(save),
+    resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
   };
 }
 
@@ -1542,8 +1690,22 @@ function emptyEcologyBurstWitness() {
   };
 }
 
+function emptyShorelineDifferentiationWitness() {
+  return {
+    chapterStarted: false,
+    waterlineExposed: false,
+    shoreColonized: false,
+    habitatsWitnessed: [] as HabitatId[],
+    dryWetPressureWitnessed: false,
+    shorelineExchangeWitnessed: false,
+    shorelineMemoryWitnessed: false,
+    shorelineStrategy: undefined as ShorelineStrategy | undefined,
+  };
+}
+
 function normalizeChapterWitness(state: GameState) {
   const witness = state.chapterWitness?.ecologyBurst ?? emptyEcologyBurstWitness();
+  const shorelineWitness = state.chapterWitness?.shorelineDifferentiation ?? emptyShorelineDifferentiationWitness();
   const rolesFromSpecies = state.species
     .filter((item) => item.status === "living" || item.status === "flourishing")
     .map((item) => item.ecologicalRole)
@@ -1562,7 +1724,28 @@ function normalizeChapterWitness(state: GameState) {
       imbalanceWitnessed: witness.imbalanceWitnessed || (state.eventHistory ?? []).includes("bloom_pressure") || (state.historyTags ?? []).includes("ecology_imbalance_faced"),
       personalityWitnessed: witness.personalityWitnessed || state.unlockedNodes.includes("ecological_personality") || (state.historyTags ?? []).includes("ecological_personality"),
     },
+    shorelineDifferentiation: {
+      chapterStarted: Boolean(shorelineWitness.chapterStarted),
+      waterlineExposed: shorelineWitness.waterlineExposed || (state.historyTags ?? []).includes("waterline_exposed"),
+      shoreColonized: shorelineWitness.shoreColonized || (state.historyTags ?? []).includes("shore_colonized"),
+      habitatsWitnessed: normalizeHabitats(shorelineWitness.habitatsWitnessed),
+      dryWetPressureWitnessed: shorelineWitness.dryWetPressureWitnessed || (state.historyTags ?? []).includes("dry_wet_pressure"),
+      shorelineExchangeWitnessed: shorelineWitness.shorelineExchangeWitnessed || (state.historyTags ?? []).includes("shoreline_exchange"),
+      shorelineMemoryWitnessed: shorelineWitness.shorelineMemoryWitnessed || (state.historyTags ?? []).includes("shoreline_memory"),
+      shorelineStrategy: normalizeShorelineStrategy(shorelineWitness.shorelineStrategy, state.historyTags ?? []),
+    },
   };
+}
+
+function normalizeHabitats(habitats: HabitatId[] | undefined): HabitatId[] {
+  const allowed = new Set<HabitatId>(["shallow_water", "intertidal_wet_rock", "moist_shore"]);
+  return Array.from(new Set((habitats ?? []).filter((habitat): habitat is HabitatId => allowed.has(habitat))));
+}
+
+function normalizeShorelineStrategy(strategy: ShorelineStrategy | undefined, historyTags: string[]): ShorelineStrategy | undefined {
+  const strategies: ShorelineStrategy[] = ["moisture_retention", "rock_attachment", "tidal_dispersal"];
+  if (strategy && strategies.includes(strategy)) return strategy;
+  return strategies.find((candidate) => historyTags.includes(candidate));
 }
 
 function markWitnessedRole(state: GameState, role: EcologicalRole) {
@@ -1582,6 +1765,15 @@ export function canUnlockEvolutionNode(state: GameState, nodeId: string): boolea
     return false;
   }
   if (nodeId === "ecological_personality" && !normalizeChapterWitness(state).ecologyBurst.imbalanceWitnessed) {
+    return false;
+  }
+  if (nodeId === "waterline_exposure" && normalizeChapterWitness(state).ecologyBurst.personalityWitnessed !== true) {
+    return false;
+  }
+  if (nodeId === "shore_attachment" && !normalizeChapterWitness(state).shorelineDifferentiation.waterlineExposed) {
+    return false;
+  }
+  if (nodeId === "shoreline_exchange" && !normalizeChapterWitness(state).shorelineDifferentiation.dryWetPressureWitnessed) {
     return false;
   }
   if (node.branchGroupId) {
@@ -1843,6 +2035,26 @@ function applyNodeHistoryEffects(state: GameState, nodeId: string) {
       state.historyTags = addUniqueTags(state.historyTags ?? [], ["ecological_personality"]);
       state.chapterWitness!.ecologyBurst.personalityWitnessed = true;
       state.logs.unshift(createLog("era", `潮池留下自己的样子：${planetProfileLabel(calculatePlanetProfile(state))}。这片水已经有了反复出现的节奏。`));
+    },
+    waterline_exposure: () => {
+      const witness = state.chapterWitness!.shorelineDifferentiation;
+      witness.chapterStarted = true;
+      witness.waterlineExposed = true;
+      witness.habitatsWitnessed = addUniqueHabitats(witness.habitatsWitnessed, ["shallow_water"]);
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["waterline_exposed"]);
+      state.environment.tide = clamp(state.environment.tide - 0.08, 0.4, 3);
+      state.logs.unshift(createLog("era", "水线露出来了：退潮在浅水之外留下湿岩和一圈仍未干去的岸痕。"));
+    },
+    shore_attachment: () => {
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["shore_attachment_ready"]);
+      state.logs.unshift(createLog("event", "一缕水势正在潮池边缘聚拢，已有生命开始靠近刚刚露出的湿岩。"));
+    },
+    shoreline_exchange: () => {
+      const witness = state.chapterWitness!.shorelineDifferentiation;
+      witness.shorelineExchangeWitnessed = true;
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["shoreline_exchange"]);
+      state.environment.tide = clamp(state.environment.tide + 0.08, 0.4, 3);
+      state.logs.unshift(createLog("event", "第一次岸线往返接上了：回潮把岸边碎屑带回浅水，原有循环也把养分送向湿岩。"));
     }
   };
   effects[nodeId]?.();
@@ -1872,10 +2084,72 @@ function maybeAssignEcologyEvent(state: GameState) {
       return;
     }
   }
+  const shorelineWitness = normalizeChapterWitness(state).shorelineDifferentiation;
+  if (shorelineWitness.shoreColonized && !shorelineWitness.dryWetPressureWitnessed && !(state.eventHistory ?? []).includes("ebb_dryness")) {
+    const dryness = ecologyEvents.find((event) => event.id === "ebb_dryness");
+    if (dryness) {
+      state.pendingEcologyEvent = dryness;
+      addLog(state, "system", `岸线事件出现：${dryness.title}`);
+      return;
+    }
+  }
+  if (shorelineWitness.chapterStarted) return;
   const event = rollEcologyEvent(state);
   if (!event) return;
   state.pendingEcologyEvent = event;
   addLog(state, "system", `潮池事件出现：${event.title}`);
+}
+
+function guideShoreTide(state: GameState) {
+  const witness = state.chapterWitness!.shorelineDifferentiation;
+  if (state.chapterProgress?.chapter !== "shoreline_differentiation" || !state.unlockedNodes.includes("shore_attachment")) {
+    throw new Error("水线还没有准备好接住这缕水势");
+  }
+  if (witness.shoreColonized) return;
+
+  const candidates = state.species.filter((species) => species.status === "living" || species.status === "flourishing");
+  if (candidates.length === 0) throw new Error("潮池里还没有能够回应水线的生命");
+  const preferredRole: EcologicalRole = state.historyTags.includes("stable_cycle")
+    ? "filterer"
+    : state.historyTags.includes("decomposer_cycle")
+      ? "decomposer"
+      : "producer";
+  const species = candidates.find((candidate) => candidate.ecologicalRole === preferredRole) ?? candidates[0];
+
+  species.habitats = addUniqueHabitats(species.habitats ?? [], ["shallow_water", "intertidal_wet_rock"]);
+  species.historyTags = addUniqueTags(species.historyTags ?? [], ["shore_colonized", "intertidal_attachment"]);
+  witness.shoreColonized = true;
+  witness.habitatsWitnessed = addUniqueHabitats(witness.habitatsWitnessed, ["shallow_water", "intertidal_wet_rock"]);
+  state.historyTags = addUniqueTags(state.historyTags ?? [], ["shore_colonized"]);
+  state.logs.unshift(createLog("species", `${species.name}沿着这缕水势贴住了湿岩。潮池没有命令它上岸，只替它保留了一次尝试。`));
+}
+
+function applyEbbDrynessOutcome(state: GameState, optionId: string) {
+  const strategyByOption: Record<string, ShorelineStrategy> = {
+    protect_moisture_film: "moisture_retention",
+    expose_wet_rock: "rock_attachment",
+    return_to_shallows: "tidal_dispersal",
+  };
+  const strategy = strategyByOption[optionId];
+  if (!strategy) return;
+
+  const witness = state.chapterWitness!.shorelineDifferentiation;
+  witness.dryWetPressureWitnessed = true;
+  witness.shorelineStrategy = strategy;
+  const shorelineSpecies = state.species.find((species) => species.habitats?.includes("intertidal_wet_rock"));
+  if (shorelineSpecies && strategy === "rock_attachment" && state.resources.stability < 50) {
+    shorelineSpecies.status = "endangered";
+  }
+  if (shorelineSpecies && strategy === "tidal_dispersal") {
+    shorelineSpecies.habitats = addUniqueHabitats(
+      (shorelineSpecies.habitats ?? []).filter((habitat) => habitat !== "intertidal_wet_rock"),
+      ["shallow_water"],
+    );
+  }
+}
+
+function addUniqueHabitats(existing: HabitatId[], incoming: HabitatId[]): HabitatId[] {
+  return normalizeHabitats([...existing, ...incoming]);
 }
 
 function shouldCreateSpecies(state: GameState) {
@@ -2365,7 +2639,7 @@ function deriveChapterProgress(state: GameState): ChapterProgress {
     }
   }
 
-  return {
+  const ecologyProgress: ChapterProgress = {
     chapter: "ecology_burst",
     stage,
     completedStages,
@@ -2374,6 +2648,83 @@ function deriveChapterProgress(state: GameState): ChapterProgress {
     currentMoodLabel: ecologyStageMood(stage),
     nextHintLabel: ecologyStageHint(stage, state),
   };
+
+  const shorelineWitness = normalizeChapterWitness(state).shorelineDifferentiation;
+  if (stage !== "complete" || !shorelineWitness.chapterStarted) return ecologyProgress;
+
+  return deriveShorelineProgress(state, shorelineWitness);
+}
+
+function deriveShorelineProgress(
+  state: GameState,
+  witness: NonNullable<GameState["chapterWitness"]>["shorelineDifferentiation"],
+): ChapterProgress {
+  const completedStages: string[] = [];
+  let stage: ChapterProgress["stage"] = "discover_waterline";
+  const habitats = normalizeHabitats(witness.habitatsWitnessed);
+
+  if (witness.waterlineExposed) {
+    completedStages.push("discover_waterline");
+    stage = "attach_shore";
+  }
+  if (witness.shoreColonized) {
+    completedStages.push("attach_shore");
+    stage = "split_niches";
+  }
+  if (habitats.length >= 2) {
+    completedStages.push("split_niches");
+    stage = "endure_dry_wet";
+  }
+  if (witness.dryWetPressureWitnessed) {
+    completedStages.push("endure_dry_wet");
+    stage = "reconnect_cycle";
+  }
+  if (witness.shorelineExchangeWitnessed) {
+    completedStages.push("reconnect_cycle");
+    stage = "shoreline_memory";
+  }
+  if (witness.shorelineMemoryWitnessed) {
+    completedStages.push("shoreline_memory");
+    stage = "complete";
+  }
+
+  return {
+    chapter: "shoreline_differentiation",
+    stage,
+    completedStages,
+    ecologyCycleFormed: true,
+    shorelineExchangeFormed: witness.shorelineExchangeWitnessed,
+    connectedHabitats: habitats,
+    ecologyPersonality: calculatePlanetProfile(state),
+    currentMoodLabel: shorelineStageMood(stage),
+    nextHintLabel: shorelineStageHint(stage),
+  };
+}
+
+function shorelineStageMood(stage: ChapterProgress["stage"]): string {
+  const map: Record<string, string> = {
+    discover_waterline: "潮水正在退开，潮池边缘露出一圈仍然湿润的岩面。",
+    attach_shore: "水线已经显现，已有生命正试着贴住潮水之外的湿痕。",
+    split_niches: "浅水和湿岸开始留下不同的生命姿态。",
+    endure_dry_wet: "岸边的薄水膜正面对第一次晒干与回潮。",
+    reconnect_cycle: "岸边留下了痕迹，但它还需要重新接回浅水。",
+    shoreline_memory: "水线两侧已经开始往返，一段岸线历史正在成形。",
+    complete: "生命已经越过水线，潮池拥有了自己的岸线。",
+  };
+  return map[stage] ?? "潮池边缘正在发生变化。";
+}
+
+function shorelineStageHint(stage: ChapterProgress["stage"]): string {
+  const map: Record<string, string> = {
+    discover_waterline: "留意退潮后的边缘，湿岩会先于文字显现。",
+    attach_shore: "让一缕水势靠近湿岸，看看哪支生命会留下痕迹。",
+    split_niches: "观察同一支生命在浅水与岸边怎样改变姿态。",
+    endure_dry_wet: "退潮会留下选择：保住水膜、承担暴露，或退回浅水。",
+    reconnect_cycle: "等待回潮把岸边的变化重新带回水中。",
+    shoreline_memory: "回到潮池记忆，收下水线露出、贴岸与回流。",
+    complete: "回看这片潮池怎样从一个中心长出自己的边界。",
+  };
+  return map[stage] ?? "继续观察水线。";
 }
 
 function refreshChapterDerivedState(state: GameState, now = new Date()) {
@@ -2449,6 +2800,9 @@ function mainlineEchoForNode(nodeId: string): string {
     tidal_filter_pores: "潮汐孔隙筛入颗粒，第三类生态角色开始稳定出现。",
     mutual_ecology_cycle: "第一个小循环接上了，潮池已经不只是有生命。",
     ecological_personality: "这片潮池留下了自己的样子，第一组小循环也沉进了记忆。",
+    waterline_exposure: "潮水第一次退到小循环之外，生命史从一个中心长出了一条边界。",
+    shore_attachment: "生命没有被指定去向，但湿岩上已经出现一次可以被回应的尝试。",
+    shoreline_exchange: "岸边与浅水第一次互相带回材料，越过水线的生命没有离开原有循环。",
   };
   return map[nodeId] ?? "";
 }

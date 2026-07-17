@@ -2,7 +2,7 @@ export type ResourceKey = "organic" | "energy" | "minerals" | "stability" | "mut
 
 export type EraId = "primordial_pool" | "self_replicators" | "proto_cell" | "photosynthesis_eve";
 
-export type LifeHistoryChapter = "life_birth" | "ecology_burst";
+export type LifeHistoryChapter = "life_birth" | "ecology_burst" | "shoreline_differentiation";
 
 export type ChapterTwoStage =
   | "pursue_light"
@@ -12,11 +12,26 @@ export type ChapterTwoStage =
   | "ecological_personality"
   | "complete";
 
+export type ChapterThreeStage =
+  | "discover_waterline"
+  | "attach_shore"
+  | "split_niches"
+  | "endure_dry_wet"
+  | "reconnect_cycle"
+  | "shoreline_memory"
+  | "complete";
+
+export type HabitatId = "shallow_water" | "intertidal_wet_rock" | "moist_shore";
+
+export type ShorelineStrategy = "moisture_retention" | "rock_attachment" | "tidal_dispersal";
+
 export interface ChapterProgress {
   chapter: LifeHistoryChapter;
-  stage: ChapterTwoStage | "life_birth";
+  stage: ChapterTwoStage | ChapterThreeStage | "life_birth";
   completedStages: string[];
   ecologyCycleFormed: boolean;
+  shorelineExchangeFormed?: boolean;
+  connectedHabitats?: HabitatId[];
   ecologyPersonality?: PlanetProfile;
   currentMoodLabel?: string;
   nextHintLabel?: string;
@@ -33,6 +48,18 @@ export interface EcologyBurstWitness {
 
 export interface ChapterWitness {
   ecologyBurst: EcologyBurstWitness;
+  shorelineDifferentiation: ShorelineDifferentiationWitness;
+}
+
+export interface ShorelineDifferentiationWitness {
+  chapterStarted: boolean;
+  waterlineExposed: boolean;
+  shoreColonized: boolean;
+  habitatsWitnessed: HabitatId[];
+  dryWetPressureWitnessed: boolean;
+  shorelineExchangeWitnessed: boolean;
+  shorelineMemoryWitnessed: boolean;
+  shorelineStrategy?: ShorelineStrategy;
 }
 
 export type SpeciesStatus = "living" | "flourishing" | "endangered" | "extinct" | "fossilized";
@@ -184,6 +211,7 @@ export interface SpeciesRecord {
   niche: string;
   status: SpeciesStatus;
   ecologicalRole: EcologicalRole;
+  habitats?: HabitatId[];
   traits: string[];
   vulnerabilities: string[];
   historyTags?: string[];

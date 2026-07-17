@@ -192,6 +192,14 @@ export async function getTalentChoices() {
   return data.choices;
 }
 
+export async function createThirdChapterDebugSave(stage: "exposed" | "shore" | "event" | "exchange") {
+  const data = await fetchJson<{ save: import("@eco-era/shared").GameState }>(
+    "/debug/third-chapter-save?persist=false",
+    { method: "POST", body: JSON.stringify({ stage }) },
+  );
+  return data.save;
+}
+
 export async function getLeaderboard(limit = 50) {
   return fetchJson<import("@eco-era/shared").LeaderboardResponse>(
     `/leaderboard?limit=${encodeURIComponent(String(limit))}`,

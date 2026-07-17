@@ -825,6 +825,19 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
   to { opacity: 1; transform: translateY(0); }
 }
 .ecology-event-modal { display: flex; flex-direction: column; gap: 12px; }
+.shoreline-event-visual { position: relative; overflow: hidden; background: #101B20; border-color: rgba(124,230,200,0.22); }
+.shoreline-event-water { position: absolute; left: -10%; bottom: -42%; width: 78%; height: 122%; border-radius: 50%; background: rgba(28,132,154,0.48); border: 1px solid rgba(79,195,247,0.36); }
+.shoreline-event-rock { position: absolute; right: -8%; bottom: -18%; width: 54%; height: 92%; border-radius: 56% 32% 0 0; background: #334944; box-shadow: inset 14px 10px 0 rgba(191,202,184,0.07), inset -8px 16px 0 rgba(5,12,14,0.2); }
+.shoreline-event-film { position: absolute; right: 22%; bottom: 24%; width: 28%; height: 12%; border-radius: 50%; background: rgba(102,187,106,0.64); box-shadow: 0 0 18px rgba(124,230,200,0.34); transform: rotate(-8deg); }
+.shoreline-event-sun { position: absolute; right: 11%; top: 13%; width: 24px; height: 24px; border-radius: 50%; background: rgba(245,208,120,0.72); box-shadow: 0 0 28px rgba(245,208,120,0.38); }
+.shoreline-event-visual span { transition: 220ms ease; }
+.shoreline-event-visual.preview-protect_moisture_film .shoreline-event-water { width: 88%; background: rgba(28,132,154,0.58); }
+.shoreline-event-visual.preview-protect_moisture_film .shoreline-event-film { width: 34%; box-shadow: 0 0 24px rgba(124,230,200,0.5); }
+.shoreline-event-visual.preview-expose_wet_rock .shoreline-event-rock { background: #52645C; }
+.shoreline-event-visual.preview-expose_wet_rock .shoreline-event-film { width: 18%; height: 9%; opacity: 0.72; }
+.shoreline-event-visual.preview-expose_wet_rock .shoreline-event-sun { transform: scale(1.2); box-shadow: 0 0 38px rgba(245,208,120,0.58); }
+.shoreline-event-visual.preview-return_to_shallows .shoreline-event-water { width: 104%; transform: translateX(10%); }
+.shoreline-event-visual.preview-return_to_shallows .shoreline-event-film { transform: translate(-72%, 24%) rotate(-14deg); opacity: 0.48; }
 .event-visual { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; border: 1px solid rgba(245,208,120,0.22); box-shadow: 0 0 18px rgba(79,195,247,0.12); }
 .event-choice-kicker { width: fit-content; border-radius: 999px; padding: 3px 9px; background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.24); color: rgba(210,246,255,0.9); font-size: 10px; font-weight: 900; }
 .event-description { color: rgba(255,255,255,0.68); font-size: 13px; line-height: 1.6; }
@@ -1325,6 +1338,24 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 }
 /* === Memory Timeline === */
 .memory-page .page-hint { margin-bottom: 14px; }
+.shoreline-memory-band { margin-bottom: 16px; padding: 12px 0 14px; border-top: 1px solid rgba(124,230,200,0.2); border-bottom: 1px solid rgba(124,230,200,0.12); }
+.shoreline-memory-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.shoreline-memory-heading span { color: rgba(124,230,200,0.68); font-size: 10px; font-weight: 800; }
+.shoreline-memory-heading h3 { margin: 0; color: rgba(255,255,255,0.9); font-size: 16px; }
+.shoreline-memory-moments { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.shoreline-memory-moment { min-width: 0; }
+.shoreline-memory-scene { position: relative; height: 74px; overflow: hidden; border-radius: 6px; background: #111A20; border: 1px solid rgba(124,230,200,0.14); }
+.shoreline-memory-water { position: absolute; left: -12%; bottom: -30%; width: 82%; height: 86%; border-radius: 50%; background: rgba(79,195,247,0.3); border: 1px solid rgba(79,195,247,0.28); }
+.shoreline-memory-rock { position: absolute; right: -16%; bottom: -24%; width: 58%; height: 92%; border-radius: 48% 42% 0 0; background: #314541; box-shadow: inset 10px 8px 0 rgba(167,182,168,0.08); }
+.shoreline-memory-trace { position: absolute; right: 18%; bottom: 28%; width: 24%; height: 12%; border-radius: 50%; background: rgba(102,187,106,0.62); box-shadow: 0 0 12px rgba(124,230,200,0.28); }
+.scene-waterline .shoreline-memory-water { left: -22%; }
+.scene-waterline .shoreline-memory-trace { opacity: 0; }
+.scene-attachment .shoreline-memory-trace { width: 30%; height: 16%; transform: rotate(-9deg); }
+.scene-exchange .shoreline-memory-water { width: 96%; box-shadow: 38px -6px 0 rgba(79,195,247,0.12); }
+.scene-exchange .shoreline-memory-trace { right: 38%; width: 34%; background: rgba(124,230,200,0.5); }
+.shoreline-memory-moment h4 { margin: 7px 0 3px; color: rgba(255,255,255,0.82); font-size: 11px; }
+.shoreline-memory-moment p { margin: 0; color: rgba(255,255,255,0.48); font-size: 10px; line-height: 1.45; }
+.shoreline-memory-moment.waiting { opacity: 0.4; }
 .hidden-trace-memory { margin-bottom: 14px; padding: 12px; border: 1px solid rgba(186,104,200,0.28); border-radius: 8px; background: rgba(12,10,24,0.72); box-shadow: inset 0 0 28px rgba(186,104,200,0.05); }
 .hidden-trace-memory-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .hidden-trace-memory-head span { color: rgba(255,255,255,0.44); font-size: 10px; }

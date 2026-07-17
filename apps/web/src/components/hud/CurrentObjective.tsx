@@ -21,6 +21,7 @@ const RES_LABELS: Record<string, { asset: string; label: string }> = {
 
 const LIFE_BIRTH_STAGES = ["加入养料", "留下痕迹", "学会延续", "发现生命"] as const;
 const ECOLOGY_BURST_STAGES = ["追逐光照", "分化角色", "形成循环", "面对失衡", "留下性格"] as const;
+const SHORELINE_STAGES = ["发现水线", "贴住湿岸", "分出栖位", "承受干湿", "接回循环", "留下岸痕"] as const;
 const LIFE_HISTORY_CHAPTERS = [
   "生命诞生",
   "水中回响",
@@ -70,9 +71,22 @@ export function CurrentObjective() {
   const objective = getObjective(save, nextNode);
   const preview = nextNode ? previewEvolutionNodeProduction(save, nextNode.id) : null;
   const percent = Math.min(100, Math.round((objective.progress / Math.max(1, objective.target)) * 100));
-  const chapterIndex = save.chapterProgress?.chapter === "ecology_burst" ? 1 : 0;
-  const stageLabels = chapterIndex === 1 ? ECOLOGY_BURST_STAGES : LIFE_BIRTH_STAGES;
-  const currentStageIndex = chapterIndex === 1 ? getEcologyStageIndex(save.chapterProgress?.stage) : getCurrentStageIndex(unlocked, save.species.length);
+  const chapterIndex = save.chapterProgress?.chapter === "shoreline_differentiation"
+    ? 2
+    : save.chapterProgress?.chapter === "ecology_burst"
+      ? 1
+      : 0;
+  const stageLabels = chapterIndex === 2 ? SHORELINE_STAGES : chapterIndex === 1 ? ECOLOGY_BURST_STAGES : LIFE_BIRTH_STAGES;
+  const currentStageIndex = chapterIndex === 2
+    ? getShorelineStageIndex(save.chapterProgress?.stage)
+    : chapterIndex === 1
+      ? getEcologyStageIndex(save.chapterProgress?.stage)
+      : getCurrentStageIndex(unlocked, save.species.length);
+  const mainline = chapterIndex === 2
+    ? "主线：让生命越过水线"
+    : chapterIndex === 1
+      ? "主线：让潮池接上第一阵往复"
+      : "主线：养出第一只生命";
 
   const toggleDetails = () => {
     setDetailsOpen((open) => {
@@ -112,7 +126,7 @@ export function CurrentObjective() {
       ) : (
         <>
           <div className="objective-mainline">
-            <span className="objective-kicker">{chapterIndex === 1 ? "主线：让潮池接上第一阵往复" : "主线：养出第一只生命"}</span>
+            <span className="objective-kicker">{mainline}</span>
             <span className="objective-mainline-actions">
               <button
                 className="objective-toggle"
@@ -153,7 +167,7 @@ export function CurrentObjective() {
           {preview && preview.ratio > 1.03 && (
             <div className="objective-next-jump">
               <span>下一次跃迁</span>
-              <strong>产能约 x{preview.ratio.toFixed(preview.ratio >= 10 ? 0 : 1)}</strong>
+              <strong>产能约 x{preview.ratio.toFixed(preview.ratio >= 10 ? 0 : preview.ratio < 1.1 ? 2 : 1)}</strong>
             </div>
           )}
 
@@ -213,6 +227,9 @@ export function CurrentObjective() {
 }
 
 function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, nextNode: typeof evolutionNodes[number] | undefined) {
+  if (save.chapterProgress?.chapter === "shoreline_differentiation") {
+    return getShorelineObjective(save, nextNode);
+  }
   if (save.chapterProgress?.chapter === "ecology_burst") {
     return getEcologyObjective(save, nextNode);
   }
@@ -263,6 +280,86 @@ function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>
   }
 
   return { title, action, observation, term, progressLabel, progress, target, costEntries };
+}
+
+function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, nextNode: typeof evolutionNodes[number] | undefined) {
+  const stage = save.chapterProgress?.stage ?? "discover_waterline";
+  const witness = save.chapterWitness?.shorelineDifferentiation;
+  const stageCopy: Record<string, { title: string; action: string; observation: string; term: string; progressLabel: string; target: number; progress: number }> = {
+    discover_waterline: {
+      title: "让水线显现",
+      action: "前往演化，让第一阵往复触到潮池边缘",
+      observation: "潮池已经接上循环，退潮正在寻找一条新的边界。",
+      term: "水线",
+      progressLabel: "水线见证",
+      target: 1,
+      progress: witness?.waterlineExposed ? 1 : 0,
+    },
+    attach_shore: {
+      title: "让一缕水势靠近湿岸",
+      action: save.unlockedNodes.includes("shore_attachment") ? "把水中的微光引向刚露出的湿岩" : "前往演化，让生命能够贴住湿痕",
+      observation: "已有生命在水线附近徘徊，但它们会自己决定是否留下。",
+      term: "湿岸附着",
+      progressLabel: "贴岸见证",
+      target: 1,
+      progress: witness?.shoreColonized ? 1 : 0,
+    },
+    split_niches: {
+      title: "看见两处不同的生命姿态",
+      action: "观察浅水和湿岩怎样留下不同痕迹",
+      observation: "同一阵生命开始在水下与岸边用不同方式延续。",
+      term: "相连栖位",
+      progressLabel: "已见证栖位",
+      target: 2,
+      progress: witness?.habitatsWitnessed.length ?? 0,
+    },
+    endure_dry_wet: {
+      title: "面对第一次退潮晒痕",
+      action: save.pendingEcologyEvent?.id === "ebb_dryness" ? "决定哪些岸痕会被留下" : "等待退潮把干湿压力推到岸边",
+      observation: "贴住湿岩只是开始，阳光、盐分和失水正在逼近。",
+      term: "干湿压力",
+      progressLabel: "岸线取舍",
+      target: 1,
+      progress: witness?.dryWetPressureWitnessed ? 1 : 0,
+    },
+    reconnect_cycle: {
+      title: "把岸边重新接回浅水",
+      action: "前往演化，让下一阵回潮带回岸边变化",
+      observation: "越过水线不等于离开生态，岸边仍需要原有循环。",
+      term: "岸线往返",
+      progressLabel: "回流见证",
+      target: 1,
+      progress: witness?.shorelineExchangeWitnessed ? 1 : 0,
+    },
+    shoreline_memory: {
+      title: "第一阵岸线往返已经接上",
+      action: "翻开潮池记忆，回看水线露出、贴岸与回流",
+      observation: "浅水和湿岩开始互相带回材料，潮池第一次拥有了边缘。",
+      term: "岸线记忆",
+      progressLabel: "岸线片段",
+      target: 3,
+      progress: 3,
+    },
+    complete: {
+      title: "生命已经越过水线",
+      action: "翻开潮池记忆，回看这条岸线怎样形成",
+      observation: "这片潮池不再只有中心，它开始记得自己的边界。",
+      term: "海陆痕迹",
+      progressLabel: "岸线记忆",
+      target: 1,
+      progress: 1,
+    },
+  };
+  const base = stageCopy[stage] ?? stageCopy.discover_waterline;
+  const costEntries = nextNode ? Object.entries(nextNode.cost) as Array<[string, number]> : [];
+  return {
+    ...base,
+    observation: save.chapterProgress?.currentMoodLabel ?? base.observation,
+    action: nextNode && canUnlockEvolutionNode(save, nextNode.id)
+      ? shorelineActionForNode(nextNode.id)
+      : (save.chapterProgress?.nextHintLabel ?? base.action),
+    costEntries,
+  };
 }
 
 function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, nextNode: typeof evolutionNodes[number] | undefined) {
@@ -366,6 +463,28 @@ function getEcologyStageIndex(stage: string | undefined) {
     complete: 4,
   };
   return map[stage ?? "pursue_light"] ?? 0;
+}
+
+function getShorelineStageIndex(stage: string | undefined) {
+  const map: Record<string, number> = {
+    discover_waterline: 0,
+    attach_shore: 1,
+    split_niches: 2,
+    endure_dry_wet: 3,
+    reconnect_cycle: 4,
+    shoreline_memory: 5,
+    complete: 5,
+  };
+  return map[stage ?? "discover_waterline"] ?? 0;
+}
+
+function shorelineActionForNode(nodeId: string) {
+  const map: Record<string, string> = {
+    waterline_exposure: "让水线显现",
+    shore_attachment: "留下贴岸的机会",
+    shoreline_exchange: "接回第一阵岸线往返",
+  };
+  return map[nodeId] ?? "记录这次岸线变化";
 }
 
 function countEarlyRoles(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
