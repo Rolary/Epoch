@@ -347,13 +347,13 @@ function actionFor(nodeId: string): string {
     error_retention: "保留一次错误",
     fragment_budding: "允许旁支萌发",
     primitive_vesicle: "包住这段反应",
-    metabolic_loop: "接上能量循环",
+    metabolic_loop: "形成能量循环",
     proto_cell: "记录这个跃迁",
     photo_pigment: "追逐第一缕光",
     early_producer_film: "记录受光生产者",
     decomposition_layer: "记录分解层",
     tidal_filter_pores: "记录滤食孔隙",
-    mutual_ecology_cycle: "接上小循环",
+    mutual_ecology_cycle: "形成小循环",
     ecological_personality: "留下潮池的样子",
   };
   return map[nodeId] ?? "记录这个变化";

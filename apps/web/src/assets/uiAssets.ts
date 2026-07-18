@@ -9,6 +9,7 @@ const emblemEcologyResonance = new URL("./ui/emblem-ecology-resonance.png", impo
 const emblemReward = new URL("./ui/emblem-reward.png", import.meta.url).href;
 const emblemSystem = new URL("./ui/emblem-system.png", import.meta.url).href;
 const eventClearTide = new URL("./ui/events/event-clear-tide.png", import.meta.url).href;
+const eventEbbDryness = new URL("./ui/events/event-ebb-dryness.png", import.meta.url).href;
 const eventHotSpring = new URL("./ui/events/event-hot-spring.png", import.meta.url).href;
 const hiddenTraceEmblem = new URL("./ui/hidden-traces/hidden-trace-emblem.png", import.meta.url).href;
 const hiddenTraceNeonFault = new URL("./ui/hidden-traces/neon-fault.png", import.meta.url).href;
@@ -48,6 +49,11 @@ const speciesExtremophile = new URL("./ui/species/species-extremophile.png", imp
 const speciesFilterer = new URL("./ui/species/species-filterer.png", import.meta.url).href;
 const speciesProducer = new URL("./ui/species/species-producer.png", import.meta.url).href;
 const speciesSymbiont = new URL("./ui/species/species-symbiont.png", import.meta.url).href;
+const speciesShorelineRolePosture = new URL("./ui/species/shoreline-role-posture.png", import.meta.url).href;
+const shorelineTraceMoistureFilm = new URL("./ui/shoreline/trace-moisture-film.png", import.meta.url).href;
+const shorelineTraceRockAttachment = new URL("./ui/shoreline/trace-rock-attachment.png", import.meta.url).href;
+const shorelineTraceTidalDispersal = new URL("./ui/shoreline/trace-tidal-dispersal.png", import.meta.url).href;
+const shorelineWetRockOverlay = new URL("./ui/shoreline/wet-rock-overlay.png", import.meta.url).href;
 
 const imageParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 const imageSource = imageParams?.get("imageSource") ?? import.meta.env.VITE_IMAGE_SOURCE ?? "db";
@@ -158,10 +164,18 @@ export const uiAssets = {
     get extremophile() { return image("species/species-extremophile.png", speciesExtremophile); },
     get filterer() { return image("species/species-filterer.png", speciesFilterer); },
     get catalyst() { return image("species/species-catalyst.png", speciesCatalyst); },
+    get shorelineRolePosture() { return image("species/shoreline-role-posture.png", speciesShorelineRolePosture); },
   },
   events: {
     get hotSpring() { return image("events/event-hot-spring.png", eventHotSpring); },
     get clearTide() { return image("events/event-clear-tide.png", eventClearTide); },
+    get ebbDryness() { return image("events/event-ebb-dryness.png", eventEbbDryness); },
+  },
+  shoreline: {
+    get wetRockOverlay() { return image("shoreline/wet-rock-overlay.png", shorelineWetRockOverlay); },
+    get moistureFilm() { return image("shoreline/trace-moisture-film.png", shorelineTraceMoistureFilm); },
+    get rockAttachment() { return image("shoreline/trace-rock-attachment.png", shorelineTraceRockAttachment); },
+    get tidalDispersal() { return image("shoreline/trace-tidal-dispersal.png", shorelineTraceTidalDispersal); },
   },
   hiddenTraces: {
     get emblem() { return image("hidden-traces/hidden-trace-emblem.png", hiddenTraceEmblem); },
@@ -201,6 +215,12 @@ export const phaserAssets = {
     pixelGlint: hiddenTracePixelGlint,
     quietRipple: hiddenTraceQuietRipple,
     tripleCurrent: hiddenTraceTripleCurrent,
+  },
+  shoreline: {
+    wetRockOverlay: shorelineWetRockOverlay,
+    moistureFilm: shorelineTraceMoistureFilm,
+    rockAttachment: shorelineTraceRockAttachment,
+    tidalDispersal: shorelineTraceTidalDispersal,
   },
 } as const;
 

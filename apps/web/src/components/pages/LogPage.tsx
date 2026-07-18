@@ -90,20 +90,23 @@ function ShorelineMemoryBand({ save }: { save: NonNullable<ReturnType<typeof use
       title: "水线露出",
       description: "退潮第一次在浅水之外露出湿岩。",
       visible: true,
+      traceAsset: null,
     },
     {
       id: "attachment",
       title: "第一次贴岸",
       description: witness.dryWetPressureWitnessed
         ? shorelineStrategyMemory(witness.shorelineStrategy)
-        : "一支原有生命沿着水势贴住了湿岸。",
+        : "一支原有生命随水流贴住了湿岸。",
       visible: witness.shoreColonized,
+      traceAsset: shorelineMemoryTraceAsset(witness.shorelineStrategy),
     },
     {
       id: "exchange",
       title: "第一次回流",
       description: "岸边碎屑回到浅水，两处栖位接成往返。",
       visible: witness.shorelineExchangeWitnessed,
+      traceAsset: uiAssets.shoreline.tidalDispersal,
     },
   ];
   return (
@@ -117,11 +120,11 @@ function ShorelineMemoryBand({ save }: { save: NonNullable<ReturnType<typeof use
           <article key={moment.id} className={`shoreline-memory-moment ${moment.visible ? "visible" : "waiting"}`}>
             <div className={`shoreline-memory-scene scene-${moment.id}`} aria-hidden="true">
               <span className="shoreline-memory-water" />
-              <span className="shoreline-memory-rock" />
-              <span className="shoreline-memory-trace" />
+              <img className="shoreline-memory-rock" src={uiAssets.shoreline.wetRockOverlay} alt="" />
+              {moment.traceAsset && <img className="shoreline-memory-trace" src={moment.traceAsset} alt="" />}
             </div>
             <h4>{moment.visible ? moment.title : "岸线仍在等待"}</h4>
-            <p>{moment.visible ? moment.description : "下一阵水势还没有抵达这里。"}</p>
+            <p>{moment.visible ? moment.description : "这一段变化还没有发生。"}</p>
           </article>
         ))}
       </div>
@@ -133,6 +136,12 @@ function shorelineStrategyMemory(strategy: string | undefined) {
   if (strategy === "rock_attachment") return "湿岩见光后，仍有附着斑抓住岸面。";
   if (strategy === "tidal_dispersal") return "第一次岸痕退回浅水，留下随潮播散的倾向。";
   return "薄水膜被多留了一阵，护住了第一处附着痕。";
+}
+
+function shorelineMemoryTraceAsset(strategy: string | undefined) {
+  if (strategy === "rock_attachment") return uiAssets.shoreline.rockAttachment;
+  if (strategy === "tidal_dispersal") return uiAssets.shoreline.tidalDispersal;
+  return uiAssets.shoreline.moistureFilm;
 }
 
 function HiddenTraceMemories({ records }: { records: HiddenTraceRecord[] }) {
@@ -180,13 +189,13 @@ function ChapterTwoSummary({ save }: { save: NonNullable<ReturnType<typeof useGa
         <img src={uiAssets.emblems.ecologyResonance} alt="" aria-hidden="true" />
         <div>
           <span className="chapter-summary-kicker">潮池记忆</span>
-          <h3>第一阵往复已经接上</h3>
+          <h3>第一组生态循环已经形成</h3>
         </div>
       </div>
-      <p>这片潮池已经留下自己的样子：{planetProfileLabel(save.planetProfile)}。</p>
+      <p>当前生态倾向：{planetProfileLabel(save.planetProfile)}。</p>
       <div className="chapter-summary-grid">
         <span><strong>撑住水面的生命</strong>{roles.join(" / ") || "尚未记录"}</span>
-        <span><strong>接上过的水痕</strong>{resonances.slice(-2).join(" / ") || "生产、分解、滤食接成小循环"}</span>
+        <span><strong>发生过的生态互动</strong>{resonances.slice(-2).join(" / ") || "生产、分解、滤食形成小循环"}</span>
         <span><strong>承受过的过盛</strong>{imbalances.join(" / ") || "繁盛压力"}</span>
         <span><strong>留下的样子</strong>{planetProfileLabel(save.planetProfile)}</span>
       </div>
@@ -244,11 +253,11 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   }
 
   if (/贴住了湿岩|第一次贴岸/.test(log.message)) {
-    return keyMemory(log, "species", "有一支生命贴住湿岸", "玩家只引导了一缕水势，原有谱系自己留下了第一次岸痕。");
+    return keyMemory(log, "species", "有一支生命贴住湿岸", "玩家改变了水流方向，原有谱系靠自身结构留在湿岩上。");
   }
 
   if (/岸线往返|岸边碎屑带回浅水/.test(log.message)) {
-    return keyMemory(log, "tide", "岸边与浅水接上往返", "回潮把岸边变化带回原有循环，两个栖位开始互相影响。");
+    return keyMemory(log, "tide", "岸边与浅水开始往返", "回潮把岸边碎屑带回浅水，两个栖位开始交换材料。");
   }
 
   if (/生态共鸣|水中回响/.test(log.message)) {
@@ -256,7 +265,7 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   }
 
   if (/第一个小生态循环|互养小循环|生态组合显现/.test(log.message)) {
-    return keyMemory(log, "species", "第一个小循环接上了", "光、沉积和滤孔不再只是分别存在，它们开始互相接续这片潮池。");
+    return keyMemory(log, "species", "第一个小循环形成了", "生产、分解和过滤开始互相提供材料。");
   }
 
   if (/繁盛薄膜|生态失衡|过盛薄膜|经历失衡|水面太满|过盛/.test(log.message)) {
@@ -264,7 +273,7 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   }
 
   if (/生态性格|潮池留下自己的样子|稳定循环|突变爆发|共生网络|极端适应/.test(log.message)) {
-    return keyMemory(log, "era", "潮池留下自己的样子", "那些反复出现的水势沉进记忆里，这片水开始像自己。");
+    return keyMemory(log, "era", "长期生态倾向形成", "反复出现的环境变化被记录为稳定循环、突变偏向或其他生态倾向。");
   }
 
   if (log.type === "species") {
@@ -273,7 +282,7 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   }
 
   if (log.type === "era") {
-    return keyMemory(log, "era", "水势换了方向", "一次关键变化落进潮池，后来的生命会顺着它多走一段。");
+    return keyMemory(log, "era", "环境出现长期变化", "一次关键变化开始影响后续演化。");
   }
 
   if (log.type === "legacy") {
@@ -340,7 +349,7 @@ function routineCopy(tone: MemoryTone, count = 1): Pick<MemoryEntry, "title" | "
     },
     species: { title: "新生命被记住", description: "潮池里出现了新的生命分支。" },
     legacy: { title: "旧生命沉入遗产", description: "一段生命沉淀成后续生态的遗产。" },
-    era: { title: "水势换了方向", description: "一次关键变化落进潮池，后来的生命会顺着它多走一段。" },
+    era: { title: "环境出现长期变化", description: "一次关键变化开始影响后续演化。" },
     talent: { title: "源质印记融入潮池", description: "新的源质印记改变了之后的成长倾向。" },
   };
   return map[tone];

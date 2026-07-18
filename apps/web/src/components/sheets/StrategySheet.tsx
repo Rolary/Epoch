@@ -138,7 +138,7 @@ function StrategySheetContent() {
       description: resonance.description,
       gain: resonanceDirectionCopy(resonance.id),
       cost: resonanceTradeoffCopy(resonance.id),
-      confirmLabel: "顺着它走",
+      confirmLabel: "确认选择",
       cancelLabel: "先放一放",
       onConfirm: async () => {
         setSubmittingId(resonanceId);
@@ -427,7 +427,7 @@ function calcResonanceRemaining(lastResonanceAt: string | null | undefined) {
 function resonanceDirectionCopy(resonanceId: string) {
   const map: Record<string, string> = {
     decomposer_feeds_producer: "旧薄膜拆回来的养分，会被送回受光的浅层。",
-    filter_pores_clear_tide: "滤孔会接住浑浊颗粒，让水层重新透出呼吸。",
+    filter_pores_clear_tide: "滤孔会过滤浑浊颗粒，让水层恢复清澈。",
     bloom_selection_pressure: "拥挤的薄膜会继续分开道路，留下更旺盛的分化。",
   };
   return map[resonanceId] ?? "这阵水势会留下自己的痕迹。";

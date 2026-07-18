@@ -814,7 +814,7 @@ function chapterNarrativesFor(
         name: "潮池的边缘",
         description: "退潮把第一阵往复推到浅水之外，湿岩和仍未干去的沉积物第一次显现。",
         impact: "生命还没有离开潮池，但它们已经能看见另一种落脚处。",
-        advice: "先观察岸边怎样变暗、反光，再让一缕水势靠近那圈湿痕。",
+        advice: "先观察岸边的颜色和反光，再把引导光点拖到湿岩上。",
         icon: uiAssets.cards.tide,
         actionLabel: "看向水线",
       },
@@ -829,11 +829,11 @@ function chapterNarrativesFor(
         data: {
           title: "有一支生命贴住了湿岸",
           name: "第一次贴岸",
-          description: "水光只替它保留了一次机会；真正抓住湿岩的，是原有谱系自己的结构。",
-          impact: "浅水与潮间湿岩开始留下不同姿态，潮池第一次拥有了边缘。",
+          description: "它靠自身结构贴住了湿岩；玩家只改变了水流方向。",
+          impact: "同一支生命在浅水中舒展，在湿岩上收拢。",
           advice: "退潮很快会把这次尝试交给阳光、盐分和失水。",
           icon: uiAssets.species.producer,
-          actionLabel: "看岸痕留下",
+          actionLabel: "查看岸边变化",
         },
       });
     }
@@ -848,8 +848,8 @@ function chapterNarrativesFor(
           title: "退潮留下了一种岸线倾向",
           name: "晒痕之后",
           description: shorelinePressureCopy(shorelineWitness.shorelineStrategy),
-          impact: "这次选择不会指定后来的物种，却会改变岸边更容易保住什么。",
-          advice: "让下一阵回潮把岸边变化重新接回浅水。",
+          impact: "这次选择不会直接产生新物种，但会影响岸边更容易保留哪类结构。",
+          advice: "等待回潮把岸边的碎屑和养分带回浅水。",
           icon: uiAssets.emblems.ecologyResonance,
           actionLabel: "等待回潮",
         },
@@ -863,13 +863,13 @@ function chapterNarrativesFor(
         priority: 35,
         seenHintId: "shoreline-witness-exchange",
         data: {
-          title: "岸边与浅水接上了往返",
+          title: "岸边与浅水开始往返",
           name: "第一次回流",
           description: "回潮把岸边碎屑带回池中，原有循环也把养分重新送向湿岩。",
           impact: "越过水线的生命没有离开自己的历史，两处栖位开始互相影响。",
-          advice: "潮池记忆会收下水线露出、第一次贴岸和第一次回流。",
+          advice: "潮池记忆已经记录水线露出、第一次贴岸和第一次回流。",
           icon: uiAssets.cards.tide,
-          actionLabel: "翻开潮池记忆",
+          actionLabel: "查看潮池记忆",
           targetPage: "logs",
         },
       });
@@ -921,13 +921,13 @@ function chapterNarrativesFor(
       priority: 70,
       seenHintId: "ecology-witness-resonance",
       data: {
-        title: "两处水痕接上了",
+        title: "两处生命开始互相影响",
         name: "第一次回应",
-        description: "沉下去的旧薄膜没有消失。它们被拆回材料，又被浅层的光接住。",
-        impact: "潮池像是第一次学会把昨日的残余送回今天。",
-        advice: "以后再有这样的牵动，只需看它让水更清、更盛，还是更会回收。",
+        description: "沉下去的旧薄膜没有消失。它们被拆回材料，又进入浅层生产膜。",
+        impact: "分解产生的材料重新进入生产薄膜，循环第一次变得可见。",
+        advice: "以后再出现类似互动，可以直接比较水体是否更清、增长是否过快、材料回收是否增加。",
         icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "让它留下",
+        actionLabel: "记录这次互动",
       },
     });
   }
@@ -941,11 +941,11 @@ function chapterNarrativesFor(
       data: {
         title: "水里开始互相喂养",
         name: "小循环",
-        description: "光、沉积和滤孔终于接成一阵缓慢的往复。潮池不再只靠外来的养分。",
-        impact: "越能延续的水，也越容易长得过满。",
-        advice: "接下来亲自选择潮池怎样承受自己的繁盛。",
+        description: "生产、分解和过滤开始互相提供材料。潮池不再只靠外来的养分。",
+        impact: "循环越稳定，过度繁盛的风险也越高。",
+        advice: "接下来选择怎样处理过度繁盛。",
         icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "看水势变化",
+        actionLabel: "查看循环变化",
       },
     });
   }
@@ -961,9 +961,9 @@ function chapterNarrativesFor(
         name: "繁盛的压力",
         description: "薄膜长得太快，清水、空隙和呼吸都曾被挤压。",
         impact: "潮池留下的不只是增长，还有它怎样处理过盛。",
-        advice: "现在可以把这段选择写进潮池记忆，让它成为这片水的性格。",
+        advice: "现在可以把处理结果记录到潮池记忆，作为长期生态倾向。",
         icon: uiAssets.emblems.system,
-        actionLabel: "留下这段水势",
+        actionLabel: "记录处理结果",
       },
     });
   }
@@ -975,13 +975,13 @@ function chapterNarrativesFor(
       priority: 5,
       seenHintId: "chapter-ecology-complete",
       data: {
-        title: "第一阵往复已经接上",
+        title: "第一组生态循环已经形成",
         name: "潮池性格",
         description: "这片潮池不只是有生命，而是形成了自己的生态循环。",
         impact: "生产、分解和过滤彼此接续；繁盛带来的压力，也被它用自己的方式承受下来。",
-        advice: "翻开潮池记忆，看看这片水怎样从追光走到自成循环。",
+        advice: "查看潮池记忆，回顾生产、分解和过滤怎样形成循环。",
         icon: uiAssets.emblems.ecologyResonance,
-        actionLabel: "翻开潮池记忆",
+        actionLabel: "查看潮池记忆",
         targetPage: "logs",
       },
     });

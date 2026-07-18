@@ -57,6 +57,8 @@ export class HomeScene extends Phaser.Scene {
   private ecologyStageGraphics!: Phaser.GameObjects.Graphics;
   private shorelineBaseGraphics!: Phaser.GameObjects.Graphics;
   private shorelineTraceGraphics!: Phaser.GameObjects.Graphics;
+  private shorelineBaseImage!: Phaser.GameObjects.Image;
+  private shorelineTraceImage!: Phaser.GameObjects.Image;
   private shoreGuide!: Phaser.GameObjects.Container;
   private shoreGuideDragging = false;
   private shoreGuideSubmitting = false;
@@ -106,6 +108,10 @@ export class HomeScene extends Phaser.Scene {
     this.load.image("hidden-trace-triple-current", phaserAssets.hiddenTraces.tripleCurrent);
     this.load.image("hidden-trace-neon-fault", phaserAssets.hiddenTraces.neonFault);
     this.load.image("hidden-trace-quiet-ripple", phaserAssets.hiddenTraces.quietRipple);
+    this.load.image("shoreline-wet-rock", phaserAssets.shoreline.wetRockOverlay);
+    this.load.image("shoreline-moisture-film", phaserAssets.shoreline.moistureFilm);
+    this.load.image("shoreline-rock-attachment", phaserAssets.shoreline.rockAttachment);
+    this.load.image("shoreline-tidal-dispersal", phaserAssets.shoreline.tidalDispersal);
   }
 
   create(): void {
@@ -1311,7 +1317,12 @@ export class HomeScene extends Phaser.Scene {
   }
 
   private createShorelineLayer(w: number, h: number): void {
-    // These code-native layers reserve the final wet-rock and shoreline-trace asset slots.
+    this.shorelineBaseImage = this.add.image(0, 0, "shoreline-wet-rock")
+      .setDepth(0.55)
+      .setVisible(false);
+    this.shorelineTraceImage = this.add.image(0, 0, "shoreline-moisture-film")
+      .setDepth(3.75)
+      .setVisible(false);
     this.shorelineBaseGraphics = this.add.graphics().setDepth(0.5);
     this.shorelineTraceGraphics = this.add.graphics().setDepth(3.8);
     const cx = w / 2;
@@ -1328,12 +1339,14 @@ export class HomeScene extends Phaser.Scene {
   }
 
   private updateShorelineLayer(): void {
-    if (!this.shorelineBaseGraphics || !this.shorelineTraceGraphics || !this.shoreGuide) return;
+    if (!this.shorelineBaseGraphics || !this.shorelineTraceGraphics || !this.shorelineBaseImage || !this.shorelineTraceImage || !this.shoreGuide) return;
     const save = useGameStore.getState().save;
     const progress = save?.chapterProgress;
     const witness = save?.chapterWitness?.shorelineDifferentiation;
     this.shorelineBaseGraphics.clear();
     this.shorelineTraceGraphics.clear();
+    this.shorelineBaseImage.setVisible(false);
+    this.shorelineTraceImage.setVisible(false);
 
     if (!save || progress?.chapter !== "shoreline_differentiation" || !witness?.waterlineExposed) {
       this.shoreGuide.setVisible(false);
@@ -1345,53 +1358,34 @@ export class HomeScene extends Phaser.Scene {
     const motion = this.reducedMotion ? 0 : Math.sin(this.poolPulseTime * 0.0011);
     const exchange = witness.shorelineExchangeWitnessed;
     const edgeX = cx + (exchange ? 102 : 112) + motion * (exchange ? 2 : 4);
+    const shorelineSize = Phaser.Math.Clamp(Math.min(this.cameras.main.width, this.cameras.main.height) * 0.46, 230, 330);
+    const shorelineX = cx + shorelineSize * 0.48;
+    const shorelineY = cy + shorelineSize * 0.18;
 
-    this.shorelineBaseGraphics.fillStyle(0x1D2B2B, 0.82);
+    this.shorelineBaseImage
+      .setVisible(true)
+      .setPosition(shorelineX, shorelineY)
+      .setDisplaySize(shorelineSize, shorelineSize)
+      .setAlpha(exchange ? 0.76 : 0.9);
+
+    this.shorelineBaseGraphics.fillStyle(0x1D2B2B, 0.22);
     this.shorelineBaseGraphics.fillEllipse(edgeX, cy + 70, 96, 66);
-    this.shorelineBaseGraphics.fillStyle(0x344A43, 0.72);
+    this.shorelineBaseGraphics.fillStyle(0x344A43, 0.16);
     this.shorelineBaseGraphics.fillEllipse(edgeX + 22, cy + 48, 58, 42);
     this.shorelineBaseGraphics.fillEllipse(edgeX - 20, cy + 84, 64, 38);
-    this.shorelineBaseGraphics.fillStyle(0x829187, 0.12);
-    this.shorelineBaseGraphics.fillEllipse(edgeX + 12, cy + 60, 52, 24);
 
     this.shorelineTraceGraphics.lineStyle(2, 0x7CE6C8, exchange ? 0.34 : 0.22);
     this.shorelineTraceGraphics.strokeEllipse(cx + 8, cy + 2, 278 + motion * 4, 232 + motion * 2);
-    for (let index = 0; index < 5; index++) {
-      const rockX = cx + 88 + index * 10;
-      const rockY = cy + 38 + index * 10;
-      this.shorelineTraceGraphics.fillStyle(0xA7B6A8, 0.1 + index * 0.018);
-      this.shorelineTraceGraphics.fillEllipse(rockX, rockY, 18 + index * 2, 8 + index);
-    }
 
     const previewStrategy = shorelineStrategyForOption(this.shorelinePreviewOption);
     const activeStrategy = previewStrategy ?? witness.shorelineStrategy;
-    const traceAlpha = previewStrategy ? 0.58 : 0.34;
     if (witness.shoreColonized || previewStrategy) {
-      if (activeStrategy === "rock_attachment") {
-        for (let index = 0; index < 7; index++) {
-          const x = cx + 92 + (index % 3) * 14;
-          const y = cy + 36 + Math.floor(index / 3) * 18;
-          this.shorelineTraceGraphics.fillStyle(index % 2 ? 0xD9E2D0 : 0xF5D078, traceAlpha);
-          this.shorelineTraceGraphics.fillTriangle(x, y + 7, x + 4, y - 5, x + 8, y + 7);
-        }
-      } else if (activeStrategy === "tidal_dispersal") {
-        for (let index = 0; index < 4; index++) {
-          const y = cy + 30 + index * 12;
-          this.shorelineTraceGraphics.lineStyle(1.5, 0x4FC3F7, traceAlpha - index * 0.06);
-          this.shorelineTraceGraphics.beginPath();
-          this.shorelineTraceGraphics.moveTo(cx + 132, y);
-          this.shorelineTraceGraphics.lineTo(cx + 88, y + 8 + motion * 3);
-          this.shorelineTraceGraphics.lineTo(cx + 48, y + 2);
-          this.shorelineTraceGraphics.strokePath();
-        }
-      } else {
-        this.shorelineTraceGraphics.fillStyle(0x7CE6C8, traceAlpha * 0.42);
-        this.shorelineTraceGraphics.fillEllipse(cx + 106, cy + 62, 76, 52);
-        this.shorelineTraceGraphics.lineStyle(2, 0x66BB6A, traceAlpha);
-        for (let index = 0; index < 5; index++) {
-          this.shorelineTraceGraphics.strokeEllipse(cx + 88 + index * 9, cy + 36 + index * 8, 22, 8);
-        }
-      }
+      this.shorelineTraceImage
+        .setTexture(shorelineTraceTextureFor(activeStrategy))
+        .setVisible(true)
+        .setPosition(shorelineX, shorelineY)
+        .setDisplaySize(shorelineSize, shorelineSize)
+        .setAlpha(previewStrategy ? 0.86 : exchange ? 0.36 : 0.62);
     }
 
     if (save.pendingEcologyEvent?.id === "ebb_dryness" && !previewStrategy) {
@@ -1603,4 +1597,10 @@ function shorelineStrategyForOption(optionId: string | null): "moisture_retentio
   if (optionId === "expose_wet_rock") return "rock_attachment";
   if (optionId === "return_to_shallows") return "tidal_dispersal";
   return null;
+}
+
+function shorelineTraceTextureFor(strategy: "moisture_retention" | "rock_attachment" | "tidal_dispersal" | undefined | null): string {
+  if (strategy === "rock_attachment") return "shoreline-rock-attachment";
+  if (strategy === "tidal_dispersal") return "shoreline-tidal-dispersal";
+  return "shoreline-moisture-film";
 }

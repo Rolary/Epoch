@@ -1,6 +1,6 @@
-# 第三章 UI 视觉资产审批清单
+# 第三章 UI 视觉资产交付清单
 
-> 状态：待用户审批。当前体验切片使用现有潮池资产与代码图层占位，尚未调用 ImageGen，尚未新增生成图片。
+> 状态：已于 2026-07-18 获用户批准并完成 ImageGen 生成。原图与压缩交付图均已入库，正式资产已经接入主潮池、事件弹层、潮池记忆与岸边谱系详情，并通过桌面、390px 移动端和 reduced-motion 截图验收。
 
 ## 1. 生成边界
 
@@ -9,25 +9,25 @@
 - 原图进入 `apps/web/src/assets/original-ui`，压缩交付图进入 `apps/web/src/assets/ui`。
 - 生成前需要用户批准资产用途、画面方向和数量；未批准项继续使用代码图层。
 
-## 2. 待审批资产
+## 2. 已交付资产
 
-| 优先级 | 资产插槽 | 用途与状态 | 原图建议 | 交付建议 | 当前占位 |
+| 优先级 | 资产插槽 | 用途与状态 | 原图交付 | 压缩交付 | 接入位置 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `shoreline/wet-rock-overlay.png` | 退潮后贴合潮池右下沿的湿岩、湿润沉积物和水线反光；透明背景，不包含完整潮池。 | 1254×1254 PNG | 720×720 PNG | Phaser `shorelineBaseGraphics` |
-| 2 | `shoreline/trace-moisture-film.png` | “护住薄水膜”后留下的半透明水膜与稳定附着斑。 | 1024×1024 PNG | 512×512 PNG | Phaser 青绿水膜图层 |
-| 2 | `shoreline/trace-rock-attachment.png` | “让湿岩见光”后的浅色矿物结面、盐晶和收缩附着斑。 | 1024×1024 PNG | 512×512 PNG | Phaser 结面三角痕 |
-| 2 | `shoreline/trace-tidal-dispersal.png` | “随回潮退回浅水”后的冲刷沟、回流水纹和变淡岸痕。 | 1024×1024 PNG | 512×512 PNG | Phaser 回流线条 |
-| 3 | `events/event-ebb-dryness.png` | “退潮晒痕”事件主图，明确表现浅水、湿岩、薄水膜和干燥光照。 | 1254×1254 PNG | 600×600 PNG | 弹层内 CSS 场景插槽 |
-| 4 | `species/shoreline-role-posture.png` | 同一早期生态角色在水下与湿岩边缘的两种姿态，不命名为新物种。 | 1024×1024 PNG | 512×512 PNG | Phaser 附着斑与现有角色图标 |
+| 1 | `shoreline/wet-rock-overlay.png` | 退潮后贴合潮池右下沿的湿岩、湿润沉积物和水线反光；透明背景，不包含完整潮池。 | 1254×1254 RGBA PNG | 720×720 RGBA PNG | Phaser 岸缘底层、潮池记忆 |
+| 2 | `shoreline/trace-moisture-film.png` | “护住薄水膜”后留下的半透明水膜与稳定附着斑。 | 1024×1024 RGBA PNG | 512×512 RGBA PNG | Phaser 策略状态、事件预览、潮池记忆 |
+| 2 | `shoreline/trace-rock-attachment.png` | “让湿岩见光”后的浅色矿物结面、盐晶和收缩附着斑。 | 1024×1024 RGBA PNG | 512×512 RGBA PNG | Phaser 策略状态、事件预览、潮池记忆 |
+| 2 | `shoreline/trace-tidal-dispersal.png` | “随回潮退回浅水”后的冲刷沟、回流水纹和变淡岸痕。 | 1024×1024 RGBA PNG | 512×512 RGBA PNG | Phaser 策略状态、事件预览、潮池记忆 |
+| 3 | `events/event-ebb-dryness.png` | “退潮晒痕”事件主图，明确表现浅水、湿岩、薄水膜和干燥光照。 | 1254×1254 RGB PNG | 600×600 RGB PNG | 退潮晒痕事件弹层 |
+| 4 | `species/shoreline-role-posture.png` | 同一早期生态角色在水下与湿岩边缘的两种姿态，不命名为新物种。 | 1024×1024 RGB PNG | 512×512 RGB PNG | 有贴岸历史的谱系详情 |
 
 ## 3. 已验证插槽
 
 - 桌面视口：930×930，水线位于主潮池右下沿，主潮池仍是视觉中心。
 - 移动视口：390×844，水线、目标栏和底部入口无横向溢出。
-- 事件图插槽：方形展示区；当前 CSS 占位已验证移动端滚动与三选一布局。
-- 潮池记忆三段带使用 CSS 小场景，不依赖本轮生图；正式资产可在后续评审中决定是否需要。
+- 事件图插槽：方形展示区；正式事件图与三种透明岸痕预览已经接入。
+- 潮池记忆三段带保留代码水面作为结构层，湿岩与岸痕改用正式资产，保持与主场景一致。
 
-## 4. 审批后顺序
+## 4. 接入与验收顺序
 
 ```text
 湿岩覆盖层

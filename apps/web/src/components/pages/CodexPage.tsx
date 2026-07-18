@@ -89,12 +89,18 @@ export function CodexDetailPage() {
     setPage("codex");
     return null;
   }
+  const hasShorelinePosture = (sp.historyTags ?? []).includes("shore_colonized")
+    || sp.habitats?.includes("intertidal_wet_rock");
 
   return (
     <div className="page codex-detail-page">
       <button className="btn-back" onClick={() => setPage("codex")}>← 图鉴</button>
-      <div className="detail-visual asset-detail">
-        <img src={speciesAssetFor(sp.ecologicalRole)} alt="" aria-hidden="true" />
+      <div className={`detail-visual asset-detail ${hasShorelinePosture ? "shoreline-posture-visual" : ""}`}>
+        <img
+          src={hasShorelinePosture ? uiAssets.species.shorelineRolePosture : speciesAssetFor(sp.ecologicalRole)}
+          alt=""
+          aria-hidden="true"
+        />
       </div>
       <h2 className="detail-name">{sp.name}</h2>
       <div className="detail-tags">
@@ -109,6 +115,7 @@ export function CodexDetailPage() {
         <DetailBlock label="脆弱点" value={sp.vulnerabilities.join("、") || "待观察"} />
         <DetailBlock label="生态影响" value={speciesEffectCopy(sp)} />
         <DetailBlock label="水中牵动" value={`${roleRelationCopy(sp.ecologicalRole)}${recentResonanceCopy(sp.ecologicalRole, save?.resonanceHistory ?? [])}`} />
+        {hasShorelinePosture && <DetailBlock label="跨水线姿态" value="水下时舒展交换，湿岩边缘则收拢并贴住薄水膜；这是同一支生命对干湿变化的回应。" />}
         {(sp.historyTags ?? []).length > 0 && <DetailBlock label="生命史倾向" value={(sp.historyTags ?? []).map(historyTagLabel).join("、")} />}
         <DetailBlock label="谱系" value={sp.lineageSummary} />
         {sp.legacyHint && <DetailBlock label="遗产可能" value={sp.legacyHint} />}
@@ -242,6 +249,12 @@ function historyTagLabel(tag: string): string {
     ecology_cycle: "生态循环",
     ecology_imbalance_faced: "经历失衡",
     ecological_personality: "潮池的样子",
+    producer_seed: "生产谱系",
+    decomposer_seed: "分解谱系",
+    filterer_seed: "滤食谱系",
+    edge_feeding: "潮孔摄食",
+    shore_colonized: "贴岸记录",
+    intertidal_attachment: "湿岩附着",
   };
   return labels[tag] ?? tag;
 }
@@ -262,7 +275,7 @@ function roleRelationCopy(role: string): string {
   const copy: Record<string, string> = {
     producer: "把光照转成能量；若有分解者回收残余物，会更容易形成循环。",
     decomposer: "把旧薄膜和碎片拆回材料；能喂养生产薄膜，也会缓解过度繁盛。",
-    filterer: "筛入潮汐颗粒并稳定水体；与生产者、分解者共同接上第一组小循环。",
+    filterer: "筛入潮汐颗粒并稳定水体；与生产者、分解者共同形成第一组小循环。",
     symbiont: "把不同谱系之间的养分接起来；潮池会更容易长出互相照应的水路。",
     extremophile: "在热盐或强扰动里维持生命；会把潮池推向极端适应。",
     catalyst: "加快矿物晶面上的反应；与耐受者组合时更容易保留大胆变化。",

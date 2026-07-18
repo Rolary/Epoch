@@ -85,7 +85,7 @@ export function CurrentObjective() {
   const mainline = chapterIndex === 2
     ? "主线：让生命越过水线"
     : chapterIndex === 1
-      ? "主线：让潮池接上第一阵往复"
+      ? "主线：让潮池形成第一组生态循环"
       : "主线：养出第一只生命";
 
   const toggleDetails = () => {
@@ -289,15 +289,15 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
     discover_waterline: {
       title: "让水线显现",
       action: "前往演化，让第一阵往复触到潮池边缘",
-      observation: "潮池已经接上循环，退潮正在寻找一条新的边界。",
+      observation: "潮池已有稳定循环，退潮正在露出新的边缘。",
       term: "水线",
       progressLabel: "水线见证",
       target: 1,
       progress: witness?.waterlineExposed ? 1 : 0,
     },
     attach_shore: {
-      title: "让一缕水势靠近湿岸",
-      action: save.unlockedNodes.includes("shore_attachment") ? "把水中的微光引向刚露出的湿岩" : "前往演化，让生命能够贴住湿痕",
+      title: "引导生命靠近湿岸",
+      action: save.unlockedNodes.includes("shore_attachment") ? "把水中的微光拖到刚露出的湿岩" : "前往演化，让生命能够贴住湿痕",
       observation: "已有生命在水线附近徘徊，但它们会自己决定是否留下。",
       term: "湿岸附着",
       progressLabel: "贴岸见证",
@@ -323,8 +323,8 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
       progress: witness?.dryWetPressureWitnessed ? 1 : 0,
     },
     reconnect_cycle: {
-      title: "把岸边重新接回浅水",
-      action: "前往演化，让下一阵回潮带回岸边变化",
+      title: "让回潮带回岸边变化",
+      action: "前往演化，形成岸边与浅水的第一次往返",
       observation: "越过水线不等于离开生态，岸边仍需要原有循环。",
       term: "岸线往返",
       progressLabel: "回流见证",
@@ -332,8 +332,8 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
       progress: witness?.shorelineExchangeWitnessed ? 1 : 0,
     },
     shoreline_memory: {
-      title: "第一阵岸线往返已经接上",
-      action: "翻开潮池记忆，回看水线露出、贴岸与回流",
+      title: "岸边与浅水已经形成往返",
+      action: "打开潮池记忆，回看水线露出、贴岸与回流",
       observation: "浅水和湿岩开始互相带回材料，潮池第一次拥有了边缘。",
       term: "岸线记忆",
       progressLabel: "岸线片段",
@@ -342,7 +342,7 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
     },
     complete: {
       title: "生命已经越过水线",
-      action: "翻开潮池记忆，回看这条岸线怎样形成",
+      action: "打开潮池记忆，回看这条岸线怎样形成",
       observation: "这片潮池不再只有中心，它开始记得自己的边界。",
       term: "海陆痕迹",
       progressLabel: "岸线记忆",
@@ -384,9 +384,9 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
       progress: countEarlyRoles(save),
     },
     form_cycle: {
-      title: "接上第一个小循环",
-      action: "让几处水痕开始互相接续",
-      observation: "光、沉积和滤孔已经靠近，潮池等着它们接成一阵往复。",
+      title: "形成第一个小循环",
+      action: "让生产、分解和过滤开始交换材料",
+      observation: "三种生态角色已经出现，下一步是让它们产生稳定互动。",
       term: "互养循环",
       progressLabel: "循环条件",
       target: 3,
@@ -395,7 +395,7 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     face_imbalance: {
       title: "面对繁盛后的失衡",
       action: save.pendingEcologyEvent
-        ? "打开水势选择，决定潮池怎样承受过盛"
+        ? "打开事件，决定怎样处理过度繁盛"
         : "继续照看潮池，让繁盛压力浮上水面",
       observation: "水面长得太满时，清水、空隙和呼吸都会被挤压。",
       term: "水势平衡",
@@ -406,16 +406,16 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     ecological_personality: {
       title: "留下潮池的样子",
       action: "前往演化，留下潮池性格",
-      observation: "反复出现的水势，正在沉成这片潮池的样子。",
+      observation: "反复出现的环境变化正在形成长期生态倾向。",
       term: "潮池性格",
       progressLabel: "记忆沉淀",
       target: 1,
       progress: save.unlockedNodes.includes("ecological_personality") ? 1 : 0,
     },
     complete: {
-      title: "第一阵往复已经接上",
-      action: "翻开潮池记忆，回看这段生态循环",
-      observation: "生命不再只是出现，而是开始彼此接续，让这片水有了自己的节奏。",
+      title: "第一组生态循环已经形成",
+      action: "打开潮池记忆，回看这段生态循环",
+      observation: "生产、分解和过滤已经形成稳定互动。",
       term: "潮池记忆",
       progressLabel: "潮池记忆",
       target: 1,
@@ -499,7 +499,7 @@ function actionForEcologyNode(nodeId: string) {
     early_producer_film: "记录受光生产者",
     decomposition_layer: "记录分解层",
     tidal_filter_pores: "记录滤食孔隙",
-    mutual_ecology_cycle: "接上这个小循环",
+    mutual_ecology_cycle: "形成这个小循环",
     ecological_personality: "留下潮池的样子",
   };
   return map[nodeId] ?? "记录这个生态变化";
@@ -579,8 +579,8 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
   if (nodeId === "mutual_ecology_cycle") {
     return {
       title: "形成第一个小循环",
-      action: "接上这个小循环",
-      observation: "光、沉积和滤孔开始互相接续，潮池接上了循环。",
+      action: "形成这个小循环",
+      observation: "生产、分解和过滤开始交换材料，循环正在形成。",
       term: "互养小循环",
       progressLabel: "循环条件",
     };
@@ -589,8 +589,8 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
   if (nodeId === "ecological_personality") {
     return {
       title: "留下潮池的样子",
-      action: "把这段水势写进记忆",
-      observation: "那些反复出现的水势，正在沉成这片潮池的样子。",
+      action: "记录当前生态倾向",
+      observation: "反复出现的环境变化正在形成长期生态倾向。",
       term: "潮池性格",
       progressLabel: "记忆沉淀",
     };
@@ -601,7 +601,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     action: "继续推动潮池变化",
     observation: fallbackDescription,
     term: fallbackName,
-    progressLabel: "水势进度",
+    progressLabel: "当前进度",
   };
 }
 

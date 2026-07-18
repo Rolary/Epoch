@@ -263,14 +263,14 @@ export const evolutionNodes: EvolutionNode[] = [
   {
     id: "mutual_ecology_cycle",
     name: "互养小循环",
-    description: "生产薄膜、分解层和滤食孔隙开始互相喂养，潮池第一次接上小生态循环。",
+    description: "生产薄膜、分解层和滤食孔隙开始交换材料，潮池形成第一个小生态循环。",
     cost: { organic: 360, energy: 280, stability: 64 },
     requires: ["tidal_filter_pores"]
   },
   {
     id: "ecological_personality",
     name: "潮池的样子",
-    description: "那些反复出现的水势沉进记忆里，这片潮池开始有了自己的样子。",
+    description: "反复出现的环境变化被记录下来，形成长期生态倾向。",
     cost: { biomass: 340, stability: 36, mutation: 72 },
     requires: ["mutual_ecology_cycle"]
   },
@@ -284,14 +284,14 @@ export const evolutionNodes: EvolutionNode[] = [
   {
     id: "shore_attachment",
     name: "湿岸附着",
-    description: "已有生命获得贴住短暂湿痕的机会，等待一缕水势把它们带向岸边。",
+    description: "已有生命可以尝试贴住短暂湿痕，玩家只能改变水流和附着条件。",
     cost: { organic: 360, minerals: 160, biomass: 220 },
     requires: ["waterline_exposure"]
   },
   {
     id: "shoreline_exchange",
     name: "岸线往返",
-    description: "回潮开始把岸边碎屑带回浅水，让水线两侧重新接成一阵循环。",
+    description: "回潮开始把岸边碎屑带回浅水，水线两侧逐渐交换材料。",
     cost: { organic: 420, energy: 280, biomass: 360, stability: 24 },
     requires: ["shore_attachment"]
   }
@@ -307,7 +307,7 @@ export const ecologyEvents: EcologyEvent[] = [
       {
         id: "approach_heat",
         title: "靠近热泉",
-        description: "接住高温带来的能量与矿物，让潮池记住这次灼热。",
+        description: "利用高温带来的能量与矿物，让后来的结构更耐热。",
         resourceEffect: { energy: 34, minerals: 18, stability: -10 },
         environmentEffect: { heat: 0.18, volatility: 0.08 },
         addHistoryTags: ["heat_tolerant", "volatile"],
@@ -376,7 +376,7 @@ export const ecologyEvents: EcologyEvent[] = [
     options: [
       {
         id: "catch_charge",
-        title: "接住电光",
+        title: "引导电光",
         description: "获得大量能量和突变点，但潮池会剧烈震荡。",
         resourceEffect: { energy: 58, mutation: 24, stability: -14 },
         environmentEffect: { light: 0.14, volatility: 0.12 },
@@ -390,7 +390,7 @@ export const ecologyEvents: EcologyEvent[] = [
         resourceEffect: { energy: 26, minerals: 20, stability: 4 },
         environmentEffect: { mineralFlow: 0.1 },
         addHistoryTags: ["mineral_catalyst"],
-        logMessage: "矿晶接住了电荷，后来的链体更容易贴着晶面反应。"
+        logMessage: "矿晶积累了电荷，后来的链体更容易贴着晶面反应。"
       },
       {
         id: "preserve_errors",
@@ -451,7 +451,7 @@ export const ecologyEvents: EcologyEvent[] = [
         resourceEffect: { stability: 16, biomass: -12, energy: 18 },
         environmentEffect: { light: 0.04, volatility: -0.06 },
         addHistoryTags: ["ecology_imbalance_faced", "stable_cycle"],
-        logMessage: "潮池削薄了过盛薄膜，光仍能被接住，下层生命也重新获得空间。"
+        logMessage: "潮池削薄了过盛薄膜，光重新照进浅层，下层生命也获得了空间。"
       },
       {
         id: "feed_decomposers",
@@ -584,7 +584,7 @@ export const ecologyResonances: EcologyResonance[] = [
   {
     id: "decomposer_feeds_producer",
     title: "分解层回喂受光薄膜",
-    description: "观察沉积层把旧薄膜拆回材料，再让浅光生产膜接住这些养分。",
+    description: "观察沉积层把旧薄膜拆回材料，再由浅光生产膜利用这些养分。",
     requiresRoles: ["producer", "decomposer"],
     resourceEffect: { organic: 28, energy: 18, stability: 4 },
     environmentEffect: { tide: 0.04 },
@@ -595,7 +595,7 @@ export const ecologyResonances: EcologyResonance[] = [
   {
     id: "filter_pores_clear_tide",
     title: "滤孔清理浑浊水体",
-    description: "让滤食孔隙接住潮水里的颗粒，给脆弱薄膜留出更清的水层。",
+    description: "让滤食孔隙过滤潮水里的颗粒，给脆弱薄膜留出更清的水层。",
     requiresRoles: ["producer", "filterer"],
     resourceEffect: { stability: 14, biomass: 10, organic: -6 },
     environmentEffect: { volatility: -0.06, tide: 0.03 },
@@ -2029,12 +2029,12 @@ function applyNodeHistoryEffects(state: GameState, nodeId: string) {
     mutual_ecology_cycle: () => {
       state.historyTags = addUniqueTags(state.historyTags ?? [], ["ecology_cycle"]);
       state.chapterWitness!.ecologyBurst.cycleWitnessed = true;
-      state.logs.unshift(createLog("event", "第一个小生态循环接上了：生产薄膜、分解层和滤食孔隙开始互相喂养。"));
+      state.logs.unshift(createLog("event", "第一个小生态循环形成了：生产薄膜、分解层和滤食孔隙开始交换材料。"));
     },
     ecological_personality: () => {
       state.historyTags = addUniqueTags(state.historyTags ?? [], ["ecological_personality"]);
       state.chapterWitness!.ecologyBurst.personalityWitnessed = true;
-      state.logs.unshift(createLog("era", `潮池留下自己的样子：${planetProfileLabel(calculatePlanetProfile(state))}。这片水已经有了反复出现的节奏。`));
+      state.logs.unshift(createLog("era", `长期生态倾向形成：${planetProfileLabel(calculatePlanetProfile(state))}。`));
     },
     waterline_exposure: () => {
       const witness = state.chapterWitness!.shorelineDifferentiation;
@@ -2047,14 +2047,14 @@ function applyNodeHistoryEffects(state: GameState, nodeId: string) {
     },
     shore_attachment: () => {
       state.historyTags = addUniqueTags(state.historyTags ?? [], ["shore_attachment_ready"]);
-      state.logs.unshift(createLog("event", "一缕水势正在潮池边缘聚拢，已有生命开始靠近刚刚露出的湿岩。"));
+      state.logs.unshift(createLog("event", "水流正在潮池边缘聚拢，已有生命开始靠近刚刚露出的湿岩。"));
     },
     shoreline_exchange: () => {
       const witness = state.chapterWitness!.shorelineDifferentiation;
       witness.shorelineExchangeWitnessed = true;
       state.historyTags = addUniqueTags(state.historyTags ?? [], ["shoreline_exchange"]);
       state.environment.tide = clamp(state.environment.tide + 0.08, 0.4, 3);
-      state.logs.unshift(createLog("event", "第一次岸线往返接上了：回潮把岸边碎屑带回浅水，原有循环也把养分送向湿岩。"));
+      state.logs.unshift(createLog("event", "岸边与浅水开始第一次往返：回潮把岸边碎屑带回浅水，原有循环也把养分送向湿岩。"));
     }
   };
   effects[nodeId]?.();
@@ -2103,7 +2103,7 @@ function maybeAssignEcologyEvent(state: GameState) {
 function guideShoreTide(state: GameState) {
   const witness = state.chapterWitness!.shorelineDifferentiation;
   if (state.chapterProgress?.chapter !== "shoreline_differentiation" || !state.unlockedNodes.includes("shore_attachment")) {
-    throw new Error("水线还没有准备好接住这缕水势");
+    throw new Error("当前还不能引导生命贴岸");
   }
   if (witness.shoreColonized) return;
 
@@ -2121,7 +2121,7 @@ function guideShoreTide(state: GameState) {
   witness.shoreColonized = true;
   witness.habitatsWitnessed = addUniqueHabitats(witness.habitatsWitnessed, ["shallow_water", "intertidal_wet_rock"]);
   state.historyTags = addUniqueTags(state.historyTags ?? [], ["shore_colonized"]);
-  state.logs.unshift(createLog("species", `${species.name}沿着这缕水势贴住了湿岩。潮池没有命令它上岸，只替它保留了一次尝试。`));
+  state.logs.unshift(createLog("species", `${species.name}随水流贴住了湿岩。玩家只改变了水流方向，是否停留由它自身的结构决定。`));
 }
 
 function applyEbbDrynessOutcome(state: GameState, optionId: string) {
@@ -2553,7 +2553,7 @@ function productionPreviewCopy(nodeId: string) {
     decomposition_layer: "分解者会提高有机质和矿物回流。",
     tidal_filter_pores: "滤食者会提高稳定和生物量效率。",
     mutual_ecology_cycle: "三类角色接成小循环后，全部基础产出大幅提升。",
-    ecological_personality: "这段水势会沉进记忆，之后的潮池会更像自己。",
+    ecological_personality: "这次选择会进入潮池记忆，并影响后续生态倾向。",
   };
   return map[nodeId] ?? "这道痕迹会提高潮池的长期产能。";
 }
@@ -2592,7 +2592,7 @@ function createFirstComboLog(state: GameState): EvolutionLog | null {
     return createLog("event", "生态组合显现：分解层正在喂养新的生产薄膜，潮池开始有自己的循环。");
   }
   if (roles.has("symbiont") && roles.has("filterer")) {
-    return createLog("event", "生态组合显现：滤食孔隙与互养网络接上了，潮池更容易维持稳定。");
+    return createLog("event", "生态组合显现：滤食孔隙与互养网络开始协作，潮池更容易维持稳定。");
   }
   if (roles.has("extremophile") && roles.has("catalyst")) {
     return createLog("event", "生态组合显现：耐受结构贴上催化晶面，变化开始被更大胆地保留。");
@@ -2717,11 +2717,11 @@ function shorelineStageMood(stage: ChapterProgress["stage"]): string {
 function shorelineStageHint(stage: ChapterProgress["stage"]): string {
   const map: Record<string, string> = {
     discover_waterline: "留意退潮后的边缘，湿岩会先于文字显现。",
-    attach_shore: "让一缕水势靠近湿岸，看看哪支生命会留下痕迹。",
+    attach_shore: "把引导光点拖到湿岩上，观察哪支生命会留下痕迹。",
     split_niches: "观察同一支生命在浅水与岸边怎样改变姿态。",
     endure_dry_wet: "退潮会留下选择：保住水膜、承担暴露，或退回浅水。",
     reconnect_cycle: "等待回潮把岸边的变化重新带回水中。",
-    shoreline_memory: "回到潮池记忆，收下水线露出、贴岸与回流。",
+    shoreline_memory: "打开潮池记忆，回看水线露出、贴岸与回流。",
     complete: "回看这片潮池怎样从一个中心长出自己的边界。",
   };
   return map[stage] ?? "继续观察水线。";
@@ -2736,9 +2736,9 @@ function ecologyStageMood(stage: ChapterProgress["stage"]) {
   const map: Record<string, string> = {
     pursue_light: "薄薄的生命靠近光，水面开始留住白昼。",
     differentiate_roles: "浅层、池底和潮孔各自有了动静。",
-    form_cycle: "旧膜沉下去，清水筛回来，光又被接住。",
+    form_cycle: "旧膜沉下去，清水筛回来，光重新照进浅层。",
     face_imbalance: "水面长得太满，呼吸开始变窄。",
-    ecological_personality: "反复出现的水势，正在沉成这片潮池的样子。",
+    ecological_personality: "反复出现的环境变化正在形成长期生态倾向。",
     complete: "这片潮池已经记住了自己的样子。",
   };
   return map[stage] ?? "潮池正在继续演化。";
@@ -2752,13 +2752,13 @@ function ecologyStageHint(stage: ChapterProgress["stage"], state: GameState) {
     return "看看哪两处痕迹正在互相牵动。";
   }
   if (stage === "form_cycle") {
-    return "让这几处水痕多回应一次，小循环会自己接上。";
+    return "再触发一次角色互动，小循环就能形成。";
   }
   if (stage === "face_imbalance") {
-    return "循环刚接上，接下来要看水面怎样处理过盛。";
+    return "循环刚形成，接下来要处理过度繁盛。";
   }
   if (stage === "ecological_personality") {
-    return "把这段水势写进记忆，潮池的样子就会留下。";
+    return "把处理结果写进潮池记忆，形成长期生态倾向。";
   }
   if (stage === "complete") {
     return "回到潮池记忆，看看它怎样从追光走到自成循环。";
@@ -2792,13 +2792,13 @@ function mainlineEchoForNode(nodeId: string): string {
     error_retention: "潮池开始拥有性格；很久以后，生命也会继承这种倾向。",
     fragment_budding: "潮池开始拥有性格；很久以后，生命也会继承这种倾向。",
     primitive_vesicle: "反应被边界轻轻包住，第一种生命的轮廓正在靠近。",
-    metabolic_loop: "简单循环接上能量，潮池第一次像是在为未来保存火种。",
+    metabolic_loop: "简单循环开始利用能量，潮池具备了持续反应的基础。",
     proto_cell: "第一种生命被记录下来。文明还很遥远，但历史已经开始。",
     photo_pigment: "生命开始追逐光，下一段生态爆发正在靠近。",
     early_producer_film: "追光的生命铺开薄膜，潮池第一次拥有了生产者的影子。",
     decomposition_layer: "旧薄膜没有消失，它们沉入池底，喂养了分解者的工作。",
     tidal_filter_pores: "潮汐孔隙筛入颗粒，第三类生态角色开始稳定出现。",
-    mutual_ecology_cycle: "第一个小循环接上了，潮池已经不只是有生命。",
+    mutual_ecology_cycle: "第一个小循环形成了，生命开始互相影响。",
     ecological_personality: "这片潮池留下了自己的样子，第一组小循环也沉进了记忆。",
     waterline_exposure: "潮水第一次退到小循环之外，生命史从一个中心长出了一条边界。",
     shore_attachment: "生命没有被指定去向，但湿岩上已经出现一次可以被回应的尝试。",

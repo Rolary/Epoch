@@ -52,10 +52,18 @@ export declare const uiAssets: {
         readonly extremophile: string;
         readonly filterer: string;
         readonly catalyst: string;
+        readonly shorelineRolePosture: string;
     };
     readonly events: {
         readonly hotSpring: string;
         readonly clearTide: string;
+        readonly ebbDryness: string;
+    };
+    readonly shoreline: {
+        readonly wetRockOverlay: string;
+        readonly moistureFilm: string;
+        readonly rockAttachment: string;
+        readonly tidalDispersal: string;
     };
     readonly hiddenTraces: {
         readonly emblem: string;
@@ -92,6 +100,12 @@ export declare const phaserAssets: {
         readonly pixelGlint: string;
         readonly quietRipple: string;
         readonly tripleCurrent: string;
+    };
+    readonly shoreline: {
+        readonly wetRockOverlay: string;
+        readonly moistureFilm: string;
+        readonly rockAttachment: string;
+        readonly tidalDispersal: string;
     };
 };
 export type UIAssetKey = keyof typeof uiAssets;

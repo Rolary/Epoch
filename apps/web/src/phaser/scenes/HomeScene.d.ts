@@ -20,6 +20,8 @@ export declare class HomeScene extends Phaser.Scene {
     private ecologyStageGraphics;
     private shorelineBaseGraphics;
     private shorelineTraceGraphics;
+    private shorelineBaseImage;
+    private shorelineTraceImage;
     private shoreGuide;
     private shoreGuideDragging;
     private shoreGuideSubmitting;

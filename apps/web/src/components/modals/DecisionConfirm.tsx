@@ -7,13 +7,13 @@ export function DecisionConfirm() {
   const hideModal = useUIStore((s) => s.hideModal);
   const [submitting, setSubmitting] = useState(false);
 
-  const title = (modalData.title as string) ?? "要顺着这阵水势走吗？";
+  const title = (modalData.title as string) ?? "确定采用这个选择吗？";
   const description = (modalData.description as string) ?? "";
   const gain = (modalData.gain as string) ?? "";
   const cost = (modalData.cost as string) ?? "";
-  const reminder = (modalData.reminder as string) ?? "这一次会留下痕迹，水面以后仍会长出别的路。";
-  const confirmLabel = (modalData.confirmLabel as string) ?? "顺着它走";
-  const cancelLabel = (modalData.cancelLabel as string) ?? "先放一放";
+  const reminder = (modalData.reminder as string) ?? "确认后，当前资源和环境会立即变化；后续仍可能出现其他方向。";
+  const confirmLabel = (modalData.confirmLabel as string) ?? "确认选择";
+  const cancelLabel = (modalData.cancelLabel as string) ?? "返回";
   const onConfirm = modalData.onConfirm as (() => void | Promise<void>) | undefined;
   const onCancel = modalData.onCancel as (() => void) | undefined;
   const previewOptionId = modalData.previewOptionId as string | undefined;
@@ -43,13 +43,13 @@ export function DecisionConfirm() {
         {description && <p className="decision-copy">{description}</p>}
         {gain && (
           <div className="decision-block">
-            <span className="decision-label">会留下的痕迹</span>
+            <span className="decision-label">选择结果</span>
             <strong>{gain}</strong>
           </div>
         )}
         {cost && (
           <div className="decision-block danger">
-            <span className="decision-label">水面要承受</span>
+            <span className="decision-label">短期代价</span>
             <strong>{cost}</strong>
           </div>
         )}

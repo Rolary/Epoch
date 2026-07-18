@@ -26,12 +26,12 @@ export function EcologyEventModal() {
     const option = event.options.find((item) => item.id === optionId);
     if (!option) return;
     useUIStore.getState().showModal("decision-confirm", {
-      title: "要让这阵水势落下去吗？",
+      title: `确定选择“${option.title}”吗？`,
       description: option.description,
       gain: option.title,
       cost: tradeoffCopy(option.resourceEffect, option.environmentEffect),
-      confirmLabel: "顺着它走",
-      cancelLabel: "先放一放",
+      confirmLabel: "确认选择",
+      cancelLabel: "返回事件",
       previewOptionId: event.id === "ebb_dryness" ? optionId : undefined,
       onCancel: () => {
         useUIStore.getState().showModal("ecology-event", narrativeId ? { narrativeId } : {});
@@ -67,10 +67,10 @@ export function EcologyEventModal() {
       <div className="ecology-event-modal">
         {event.id === "ebb_dryness" ? (
           <div className={`event-visual shoreline-event-visual preview-${previewOptionId ?? "idle"}`} aria-hidden="true">
-            <span className="shoreline-event-water" />
-            <span className="shoreline-event-rock" />
-            <span className="shoreline-event-film" />
-            <span className="shoreline-event-sun" />
+            <img className="shoreline-event-base" src={uiAssets.events.ebbDryness} alt="" />
+            {previewOptionId && (
+              <img className="shoreline-event-trace" src={shorelineTraceAsset(previewOptionId)} alt="" />
+            )}
           </div>
         ) : (
           <img className="event-visual" src={eventAssetFor(event)} alt="" aria-hidden="true" />
@@ -92,7 +92,7 @@ export function EcologyEventModal() {
               <span className="event-option-title">{option.title}</span>
               <span className="event-option-desc">{option.description}</span>
               <span className="event-option-effect">
-                {event.id === "ebb_dryness" ? shorelineEffectCopy(option.id) : `水势变化：${effectCopy(option.resourceEffect, option.environmentEffect)}`}
+                {event.id === "ebb_dryness" ? shorelineEffectCopy(option.id) : `环境变化：${effectCopy(option.resourceEffect, option.environmentEffect)}`}
               </span>
             </button>
           ))}
@@ -113,6 +113,12 @@ function shorelineEffectCopy(optionId: string) {
   if (optionId === "protect_moisture_film") return "会留下：薄水膜与稳定附着 · 会承压：更远岩面暂缓";
   if (optionId === "expose_wet_rock") return "会留下：矿物结面与大胆附着 · 会承压：水分与稳定";
   return "会留下：回流与播散倾向 · 会承压：岸边定居痕迹";
+}
+
+function shorelineTraceAsset(optionId: string) {
+  if (optionId === "expose_wet_rock") return uiAssets.shoreline.rockAttachment;
+  if (optionId === "return_to_shallows") return uiAssets.shoreline.tidalDispersal;
+  return uiAssets.shoreline.moistureFilm;
 }
 
 function eventAssetFor(event: EcologyEvent): string {
@@ -143,9 +149,9 @@ function tradeoffCopy(
     .filter(([, value]) => value < 0)
     .map(([key]) => `${resourceLabel(key)}会暂时回落`);
   if ((environment?.volatility ?? 0) > 0) pressures.push("水体会变得更不安定");
-  if ((environment?.light ?? 0) < 0) pressures.push("浅层能接住的光会减少");
+  if ((environment?.light ?? 0) < 0) pressures.push("浅层光照会减少");
   if ((environment?.tide ?? 0) < 0) pressures.push("潮汐带回材料的速度会放慢");
-  return pressures.join("；") || "这次选择会改变后续水势，并被潮池记住。";
+  return pressures.join("；") || "这个选择会改变后续环境，并记录在潮池记忆中。";
 }
 
 function resourceLabel(key: string) {
