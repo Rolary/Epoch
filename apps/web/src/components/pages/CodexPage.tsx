@@ -36,7 +36,7 @@ export function CodexPage() {
   return (
     <div className="page codex-page">
       <h2 className="page-title">物种图鉴</h2>
-      <p className="page-hint">已记录 {species.length} 个谱系。每个物种都在塑造这片潮池的生态。</p>
+      <p className="page-hint">已记录 {species.length} 个谱系。查看它们生活的位置、生态角色和当前影响。</p>
       <div className="codex-role-summary" aria-label="生态角色概览">
         {roleSummary(species).map((role) => (
           <div key={role.id} className={`codex-role-chip ${role.count > 0 ? "active" : ""}`}>
@@ -114,8 +114,8 @@ export function CodexDetailPage() {
         <DetailBlock label="特性" value={sp.traits.join("、") || "待观察"} />
         <DetailBlock label="脆弱点" value={sp.vulnerabilities.join("、") || "待观察"} />
         <DetailBlock label="生态影响" value={speciesEffectCopy(sp)} />
-        <DetailBlock label="水中牵动" value={`${roleRelationCopy(sp.ecologicalRole)}${recentResonanceCopy(sp.ecologicalRole, save?.resonanceHistory ?? [])}`} />
-        {hasShorelinePosture && <DetailBlock label="跨水线姿态" value="水下时舒展交换，湿岩边缘则收拢并贴住薄水膜；这是同一支生命对干湿变化的回应。" />}
+        <DetailBlock label="生态关系" value={`${roleRelationCopy(sp.ecologicalRole)}${recentResonanceCopy(sp.ecologicalRole, save?.resonanceHistory ?? [])}`} />
+        {hasShorelinePosture && <DetailBlock label="跨水线姿态" value="水下时结构舒展，抵达湿岩后缩成紧密薄膜并附着在岩面；这是同一支生命对干湿变化的适应。" />}
         {(sp.historyTags ?? []).length > 0 && <DetailBlock label="生命史倾向" value={(sp.historyTags ?? []).map(historyTagLabel).join("、")} />}
         <DetailBlock label="谱系" value={sp.lineageSummary} />
         {sp.legacyHint && <DetailBlock label="遗产可能" value={sp.legacyHint} />}
@@ -274,13 +274,13 @@ function roleLabel(role: string): string {
 function roleRelationCopy(role: string): string {
   const copy: Record<string, string> = {
     producer: "把光照转成能量；若有分解者回收残余物，会更容易形成循环。",
-    decomposer: "把旧薄膜和碎片拆回材料；能喂养生产薄膜，也会缓解过度繁盛。",
+    decomposer: "把旧薄膜和碎片拆回材料；能为生产薄膜补充材料，也会缓解过度繁盛。",
     filterer: "筛入潮汐颗粒并稳定水体；与生产者、分解者共同形成第一组小循环。",
-    symbiont: "把不同谱系之间的养分接起来；潮池会更容易长出互相照应的水路。",
+    symbiont: "在不同谱系之间交换养分；互养关系越多，生态循环越稳定。",
     extremophile: "在热盐或强扰动里维持生命；会把潮池推向极端适应。",
     catalyst: "加快矿物晶面上的反应；与耐受者组合时更容易保留大胆变化。",
   };
-  return copy[role] ?? "它会以自己的方式改变潮池里的资源流。";
+  return copy[role] ?? "它正在改变周围材料的流动方式。";
 }
 
 function statusLabel(status: string): string {

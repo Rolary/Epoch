@@ -14,7 +14,7 @@
 | 优先级 | 资产插槽 | 用途与状态 | 原图交付 | 压缩交付 | 接入位置 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `shoreline/wet-rock-overlay.png` | 退潮后贴合潮池右下沿的湿岩、湿润沉积物和水线反光；透明背景，不包含完整潮池。 | 1254×1254 RGBA PNG | 720×720 RGBA PNG | Phaser 岸缘底层、潮池记忆 |
-| 2 | `shoreline/trace-moisture-film.png` | “护住薄水膜”后留下的半透明水膜与稳定附着斑。 | 1024×1024 RGBA PNG | 512×512 RGBA PNG | Phaser 策略状态、事件预览、潮池记忆 |
+| 2 | `shoreline/trace-moisture-film.png` | “延缓薄水膜蒸发”后的半透明水膜与稳定附着斑。 | 1024×1024 RGBA PNG | 512×512 RGBA PNG | Phaser 策略状态、事件预览、潮池记忆 |
 | 2 | `shoreline/trace-rock-attachment.png` | “让湿岩见光”后的浅色矿物结面、盐晶和收缩附着斑。 | 1024×1024 RGBA PNG | 512×512 RGBA PNG | Phaser 策略状态、事件预览、潮池记忆 |
 | 2 | `shoreline/trace-tidal-dispersal.png` | “随回潮退回浅水”后的冲刷沟、回流水纹和变淡岸痕。 | 1024×1024 RGBA PNG | 512×512 RGBA PNG | Phaser 策略状态、事件预览、潮池记忆 |
 | 3 | `events/event-ebb-dryness.png` | “退潮晒痕”事件主图，明确表现浅水、湿岩、薄水膜和干燥光照。 | 1254×1254 RGB PNG | 600×600 RGB PNG | 退潮晒痕事件弹层 |

@@ -11,7 +11,7 @@ export function DecisionConfirm() {
   const description = (modalData.description as string) ?? "";
   const gain = (modalData.gain as string) ?? "";
   const cost = (modalData.cost as string) ?? "";
-  const reminder = (modalData.reminder as string) ?? "确认后，当前资源和环境会立即变化；后续仍可能出现其他方向。";
+  const reminder = (modalData.reminder as string) ?? "确认后，水体与现有积累会立即变化；后续仍可能出现其他方向。";
   const confirmLabel = (modalData.confirmLabel as string) ?? "确认选择";
   const cancelLabel = (modalData.cancelLabel as string) ?? "返回";
   const onConfirm = modalData.onConfirm as (() => void | Promise<void>) | undefined;

@@ -43,12 +43,12 @@ export function TalentAwakening() {
 
   return (
     <GameModal
-      title="源质印记觉醒"
+      title="新的源质印记"
       dismissible={false}
     >
       <div className="awakening-content">
         <p className="awakening-hint">
-          生态跃迁唤醒了新的长期倾向。选择一种源质印记，让这次变化真正沉入潮池。
+          一次关键演化带来了新的长期倾向。选择一种源质印记，它将持续影响这片潮池。
         </p>
         <div className="reroll-bar">
           <span className="reroll-hint">
@@ -75,7 +75,7 @@ export function TalentAwakening() {
               />
               <span className="talent-name">{t.name}</span>
               {t.consumable && (
-                <span className="talent-tag consumable" data-tooltip="选中后资源立刻到账，不进入永久天赋">
+                <span className="talent-tag consumable" data-tooltip="选中后立即获得所列材料，不形成长期印记">
                   潮涌
                 </span>
               )}

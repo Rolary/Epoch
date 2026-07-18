@@ -57,12 +57,12 @@ export function LeaderboardPage() {
   return (
     <div className="page leaderboard-page">
       <h2 className="page-title">生态排行</h2>
-      <p className="page-hint">全服匿名总榜会比较潮池的演化进度、物种记录、遗产沉淀和资源活性。</p>
+      <p className="page-hint">匿名排行会综合比较潮池的演化进度、物种数量、遗产和当前积累。</p>
 
       {loading && (
         <div className="empty-state leaderboard-loading">
           <img className="empty-icon asset-empty-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
-          <p className="empty-title">正在读取潮池回声</p>
+          <p className="empty-title">正在读取生态排行</p>
           <p className="empty-hint">榜单会隐藏游客印记，只保留生态名和成长摘要。</p>
         </div>
       )}
@@ -193,7 +193,7 @@ function ScoreBreakdown({ entry, compact = false }: { entry: LeaderboardEntry; c
 function entryLabel(entry: LeaderboardEntry) {
   const era = ERA_LABELS[entry.currentEra] ?? entry.currentEra;
   const profile = PROFILE_LABELS[entry.planetProfile] ?? entry.planetProfile;
-  return `${era} · ${profile} · 痕迹 ${entry.unlockedNodes} · 物种 ${entry.speciesCount}`;
+  return `${era} · ${profile} · 演化 ${entry.unlockedNodes} · 物种 ${entry.speciesCount}`;
 }
 
 function iconForRank(rank: number) {

@@ -102,7 +102,7 @@ export function CreateEcology() {
           <img className="create-pool-preview" src={uiAssets.scene.poolCenterpiece} alt="" aria-hidden="true" />
           <h1 className="create-title">命名你的生态</h1>
           <p className="create-subtitle">
-            从这片始源潮池开始，生命也许终有一天会望向群星。现在，先为它留下第一个名字。
+            一切从这片浅水开始。先给它一个名字，再看生命会在这里长成什么样。
           </p>
           <div className="input-group">
             <input
@@ -160,7 +160,7 @@ export function CreateEcology() {
       {step === "talent" && (
         <div className="create-section">
           <h2 className="create-title">选择源质印记</h2>
-          <p className="create-subtitle">这将是这颗星球最初始的长期倾向，永久生效。</p>
+          <p className="create-subtitle">这项起始倾向会持续影响潮池此后的生长。</p>
           <div className="reroll-bar">
             <span className="reroll-hint">
               刷新次数 {rollCount}/{MAX_ROLLS}
@@ -186,7 +186,7 @@ export function CreateEcology() {
                 />
                 <span className="talent-name">{t.name}</span>
                 {t.consumable && (
-                  <span className="talent-tag consumable" data-tooltip="选中后资源立刻到账，不进入永久天赋">
+                  <span className="talent-tag consumable" data-tooltip="选中后立即获得所列材料，不形成长期印记">
                     潮涌
                   </span>
                 )}

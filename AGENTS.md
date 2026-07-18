@@ -15,6 +15,8 @@
 - Avoid full resource tables, full environment parameter lists, giant persistent task panels, backend-style logs, and multiple parallel system panels on the main screen.
 - New entrances must appear progressively through world-state feedback, events, or reward modals. Do not silently add buttons without narrative or state context.
 - In-game copy should use world-facing language. Avoid labels like "system", "technical concept", "settings and save", or "log" when the player should experience "Archive", "Tide Pool Memory", "Ecology Dossier", "Codex", or "Legacy".
+- Keep player-facing copy grounded in the visible game scene. Prefer concrete descriptions of water color, habitat, organism behavior, material exchange, survival pressure, and observable change over abstract commentary or generic emotional conclusions.
+- Do not use AI-like poetic shorthand in place of gameplay meaning. Avoid vague phrases such as `接住`, `收住`, `托住`, `护住`, `留住`, `潮池记住自己`, `生命的影子`, or `反应窗口` unless they describe a literal, visible action. Name the actual result instead, such as attachment, filtration, material recovery, reduced evaporation, increased survival, or altered stability.
 - Animations and feedback matter: feeding, water reactions, node unlocks, modal transitions, and entrance reveals should feel responsive, while respecting reduced-motion settings.
 
 ## Chapter Two Scope

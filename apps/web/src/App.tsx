@@ -347,7 +347,7 @@ export function App() {
             useGameStore.getState().setSave(next);
             setToasts((prev) => [...prev, {
               id: Date.now(),
-              text: "一支生命沿着水光贴住了湿岸",
+              text: "一支生命随水流附着在湿岸",
               color: "#7CE6C8",
             }]);
           };
@@ -501,7 +501,7 @@ export function App() {
         } else if (next.outcome === "negative") {
           setToasts((prev) => [...prev, { id: next.id, text: "反应短暂失衡，潮池仍在调整", color: "#EF5350" }]);
         } else {
-          setToasts((prev) => [...prev, { id: next.id, text: "第一道生命痕迹正在靠近", color: "#FFD54F" }]);
+          setToasts((prev) => [...prev, { id: next.id, text: "水中出现了稳定结构", color: "#FFD54F" }]);
         }
 
         // Check species / talents
@@ -714,11 +714,11 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
   if (canAnyEvolutionNodeUnlock(save)) {
     hints.push({
       id: "evolution",
-      title: "生命痕迹可以查看了",
+      title: "水里出现了稳定结构",
       name: "演化",
-      description: "潮池里有一道新的痕迹浮上来了。",
-      impact: "点亮它以后，后来的生命会顺着这道水纹多走一段。",
-      advice: "不用急着选最强的路。每一道被留下的痕迹，都会让这片水少一点偶然。",
+      description: "刚刚形成的结构可以在演化页确认。",
+      impact: "确认后，它会成为后续生命的生长基础。",
+      advice: "先看清它改变了什么，再决定是否保留。",
       icon: uiAssets.resources.mutation,
       actionLabel: "前往查看",
       targetPage: "evolution",
@@ -727,11 +727,11 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
   if (save.unlockedNodes.length > 0) {
     hints.push({
       id: "strategy",
-      title: "生态干预开放了",
+      title: "可以改变潮池环境了",
       name: "生态干预",
-      description: "潮池开始回应更细的引导。光照、矿物、潮汐和温度都能被轻轻推向不同方向。",
-      impact: "干预会带来短期收益，也会给潮池留下长期压力。",
-      advice: "轻轻推一把就好，潮池记得住你的每一次用力。",
+      description: "你可以调节光照、矿物、潮汐或温度，让不同结构获得生长机会。",
+      impact: "每次干预都会立即改变水体，也可能累积新的环境压力。",
+      advice: "观察水色和生命反应，再决定是否继续推动。",
       icon: uiAssets.emblems.reward,
       actionLabel: "前往干预",
     });
@@ -741,9 +741,9 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
       id: "codex",
       title: "图鉴开放了",
       name: "图鉴",
-      description: "已发现的生命会被记录下来，它们也会影响后续生态。",
-      impact: "图鉴会帮你看懂物种角色、习性和它们正在改变什么。",
-      advice: "先看见它们怎样活着，再决定要把潮池推向哪里。",
+      description: "已发现的生命都收录在图鉴中。",
+      impact: "你可以查看它们的生态角色、习性和当前作用。",
+      advice: "留意它们生活的位置，以及它们让水体发生的变化。",
       icon: uiAssets.emblems.discovery,
       actionLabel: "前往查看",
       targetPage: "codex",
@@ -754,9 +754,9 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
       id: "fossils",
       title: "遗产开放了",
       name: "遗产",
-      description: "退出当前生态的生命不会消失，它们会沉淀成后续潮池的影响。",
-      impact: "有些退场不会消失，只会沉到更深处，成为后来生命脚下的地层。",
-      advice: "失去不总是终点，有些消失会成为后来生命脚下的地层。",
+      description: "退出生态的物种会留下化石、空位或警示。",
+      impact: "这些遗产会继续影响后来出现的生命。",
+      advice: "查看它为何消失，以及潮池因此改变了什么。",
       icon: uiAssets.cards.tide,
       actionLabel: "前往查看",
       targetPage: "fossils",
@@ -767,9 +767,9 @@ function unlockedHintsFor(save: NonNullable<ReturnType<typeof useGameStore.getSt
       id: "logs",
       title: "生命史开放了",
       name: "生命史",
-      description: "重复变化会被整理成潮池记忆，关键节点会单独留下。",
-      impact: "生命史会记录这颗星球怎样一步步变成现在的样子。",
-      advice: "当你回头看时，最小的波纹也可能已经改写了岸线。",
+      description: "生命史会合并重复现象，并单独记录关键变化。",
+      impact: "你可以从中看出这片潮池长期形成的生态倾向。",
+      advice: "回看几次重要转折，比较变化前后的水体与物种。",
       icon: uiAssets.emblems.system,
       actionLabel: "前往查看",
       targetPage: "logs",
@@ -827,11 +827,11 @@ function chapterNarrativesFor(
         priority: 80,
         seenHintId: "shoreline-witness-colonized",
         data: {
-          title: "有一支生命贴住了湿岸",
-          name: "第一次贴岸",
-          description: "它靠自身结构贴住了湿岩；玩家只改变了水流方向。",
+          title: "有一支生命附着在湿岸",
+          name: "第一次附着",
+          description: "水流把它带向湿岩，它靠自身结构停在了岩面上。",
           impact: "同一支生命在浅水中舒展，在湿岩上收拢。",
-          advice: "退潮很快会把这次尝试交给阳光、盐分和失水。",
+          advice: "下一次退潮会带来更强光照、盐分升高和失水压力。",
           icon: uiAssets.species.producer,
           actionLabel: "查看岸边变化",
         },
@@ -848,7 +848,7 @@ function chapterNarrativesFor(
           title: "退潮留下了一种岸线倾向",
           name: "晒痕之后",
           description: shorelinePressureCopy(shorelineWitness.shorelineStrategy),
-          impact: "这次选择不会直接产生新物种，但会影响岸边更容易保留哪类结构。",
+          impact: "这次选择不会直接产生新物种，却会改变岸边结构的存活机会。",
           advice: "等待回潮把岸边的碎屑和养分带回浅水。",
           icon: uiAssets.emblems.ecologyResonance,
           actionLabel: "等待回潮",
@@ -863,11 +863,11 @@ function chapterNarrativesFor(
         priority: 35,
         seenHintId: "shoreline-witness-exchange",
         data: {
-          title: "岸边与浅水开始往返",
+          title: "岸边与浅水形成往返",
           name: "第一次回流",
           description: "回潮把岸边碎屑带回池中，原有循环也把养分重新送向湿岩。",
-          impact: "越过水线的生命没有离开自己的历史，两处栖位开始互相影响。",
-          advice: "潮池记忆已经记录水线露出、第一次贴岸和第一次回流。",
+          impact: "湿岸上的生命仍依赖回潮，两处栖位由此交换材料。",
+          advice: "潮池记忆已经记录水线露出、第一次附着和第一次回流。",
           icon: uiAssets.cards.tide,
           actionLabel: "查看潮池记忆",
           targetPage: "logs",
@@ -888,9 +888,9 @@ function chapterNarrativesFor(
     data: {
       title: "水面有了新的层次",
       name: "追光之后",
-      description: "第一批生命没有停在原处。它们靠近光，也开始在浅层和池底留下不同的痕迹。",
-      impact: "有的把光留住，有的把旧薄膜拆回材料，有的在潮水里筛住细小颗粒。",
-      advice: "先看水里哪里变亮、哪里沉下、哪里开始清澈。潮池会自己说出下一步。",
+      description: "第一批生命靠近光照，也在浅层、池底和潮孔中呈现出不同形态。",
+      impact: "有的利用光照，有的把旧薄膜拆回材料，有的截留潮水中的细小颗粒。",
+      advice: "留意水面变亮、池底堆积和水体变清的位置。",
       icon: uiAssets.emblems.ecologyResonance,
       actionLabel: "回到水边",
     },
@@ -905,9 +905,9 @@ function chapterNarrativesFor(
       data: {
         title: "薄膜朝着光铺开",
         name: "追光的浅层",
-        description: "水面上浮起一层很薄的光。那些生命开始把白昼留在自己身上。",
-        impact: "潮池不再只是等待养分，它开始把外界的光变成自己的余温。",
-        advice: "池底很快也会有动静。旧薄膜沉下去时，新的工作会在那里开始。",
+        description: "受光薄膜在浅水中铺开，水面出现了持续的亮色。",
+        impact: "这些薄膜能把光转成可供生态循环使用的能量。",
+        advice: "继续观察沉入池底的旧薄膜。",
         icon: uiAssets.species.producer,
         actionLabel: "看向池底",
       },
@@ -921,11 +921,11 @@ function chapterNarrativesFor(
       priority: 70,
       seenHintId: "ecology-witness-resonance",
       data: {
-        title: "两处生命开始互相影响",
-        name: "第一次回应",
-        description: "沉下去的旧薄膜没有消失。它们被拆回材料，又进入浅层生产膜。",
+        title: "池底材料回到了浅层",
+        name: "第一次材料交换",
+        description: "池底分解层拆开旧薄膜，释放的材料又进入浅层生产膜。",
         impact: "分解产生的材料重新进入生产薄膜，循环第一次变得可见。",
-        advice: "以后再出现类似互动，可以直接比较水体是否更清、增长是否过快、材料回收是否增加。",
+        advice: "比较互动前后的水体清澈度、薄膜增长和材料回收。",
         icon: uiAssets.emblems.ecologyResonance,
         actionLabel: "记录这次互动",
       },
@@ -939,9 +939,9 @@ function chapterNarrativesFor(
       priority: 60,
       seenHintId: "ecology-witness-cycle",
       data: {
-        title: "水里开始互相喂养",
+        title: "三种生命接成了循环",
         name: "小循环",
-        description: "生产、分解和过滤开始互相提供材料。潮池不再只靠外来的养分。",
+        description: "生产薄膜、分解层和滤食孔隙开始循环利用水中的材料。",
         impact: "循环越稳定，过度繁盛的风险也越高。",
         advice: "接下来选择怎样处理过度繁盛。",
         icon: uiAssets.emblems.ecologyResonance,
@@ -960,8 +960,8 @@ function chapterNarrativesFor(
         title: "水面承受过繁盛",
         name: "繁盛的压力",
         description: "薄膜长得太快，清水、空隙和呼吸都曾被挤压。",
-        impact: "潮池留下的不只是增长，还有它怎样处理过盛。",
-        advice: "现在可以把处理结果记录到潮池记忆，作为长期生态倾向。",
+        impact: "这次处理会决定繁盛时哪些生命更容易存活。",
+        advice: "把处理结果记录进生命史，作为这片潮池的长期倾向。",
         icon: uiAssets.emblems.system,
         actionLabel: "记录处理结果",
       },
@@ -977,8 +977,8 @@ function chapterNarrativesFor(
       data: {
         title: "第一组生态循环已经形成",
         name: "潮池性格",
-        description: "这片潮池不只是有生命，而是形成了自己的生态循环。",
-        impact: "生产、分解和过滤彼此接续；繁盛带来的压力，也被它用自己的方式承受下来。",
+        description: "生产、分解和过滤已经能够彼此接续。",
+        impact: "这组循环经历过繁盛压力，并形成了稳定的应对倾向。",
         advice: "查看潮池记忆，回顾生产、分解和过滤怎样形成循环。",
         icon: uiAssets.emblems.ecologyResonance,
         actionLabel: "查看潮池记忆",
@@ -991,9 +991,9 @@ function chapterNarrativesFor(
 }
 
 function shorelinePressureCopy(strategy: string | undefined) {
-  if (strategy === "rock_attachment") return "湿岩完全见光，一部分薄膜收缩，仍有附着斑抓住了更粗糙的岩面。";
+  if (strategy === "rock_attachment") return "湿岩完全见光，一部分薄膜收缩，耐晒附着斑仍停留在粗糙岩面上。";
   if (strategy === "tidal_dispersal") return "岸痕随回潮变淡，碎屑退回浅水，扩散比定居更早成为这片水的选择。";
-  return "薄水膜多停留了一阵，第一处附着痕被保住，更远的岸面仍在等待。";
+  return "薄水膜延缓了失水，第一处附着斑得以存活，更远岸面暂未扩张。";
 }
 
 function isThirdChapterDebugPreview() {
@@ -1002,11 +1002,11 @@ function isThirdChapterDebugPreview() {
 
 function UnlockGuideOverlay({ target }: { target: string }) {
   const copy: Record<string, { title: string; desc: string }> = {
-    evolution: { title: "新的痕迹正在发亮", desc: "跟随亮起的入口，看看这道变化要不要留下。" },
-    codex: { title: "新的生命留下了名字", desc: "跟随亮起的入口，看看它如何被记录。" },
-    fossils: { title: "旧谱系正在沉淀", desc: "跟随亮起的入口，看看失去留下了什么。" },
-    logs: { title: "潮池开始记住自己", desc: "跟随亮起的入口，回看这些变化如何相连。" },
-    strategy: { title: "潮池愿意被轻轻推动", desc: "跟随亮起的入口，亲自尝试一次生态干预。" },
+    evolution: { title: "有一项演化可以确认", desc: "打开亮起的入口，查看它需要的材料和后续影响。" },
+    codex: { title: "图鉴收录了新生命", desc: "打开亮起的入口，查看它生活的位置和生态作用。" },
+    fossils: { title: "一段物种历史结束了", desc: "打开亮起的入口，查看它留给后来生命的影响。" },
+    logs: { title: "生命史新增了记录", desc: "打开亮起的入口，回看这次变化的前因后果。" },
+    strategy: { title: "可以进行生态干预", desc: "打开亮起的入口，选择一种环境变化并观察水体反应。" },
   };
   const current = copy[target] ?? { title: "新的入口正在发亮", desc: "跟随亮起的入口，亲自打开一次。" };
   return (

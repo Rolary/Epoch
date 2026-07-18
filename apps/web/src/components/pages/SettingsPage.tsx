@@ -99,7 +99,7 @@ export function SettingsPage() {
         <h2 className="page-title">生态档案</h2>
         <p className="page-hint">创建潮池后，这里会保存它的身份和成长记录。</p>
         <section className="archive-section">
-          <h3 className="archive-section-title">存档信息</h3>
+          <h3 className="archive-section-title">档案凭证</h3>
           <div className="archive-list">
             <ArchiveRow label="游客印记" value={getGuestKey()} mono action={<CopyKeyButton status={copyStatus} onCopy={copyGuestKey} />} />
             <ArchiveRow label="当前状态" value="尚未创建潮池" />
@@ -188,7 +188,7 @@ export function SettingsPage() {
       <section className="archive-section">
         <h3 className="archive-section-title">成长记录</h3>
         <div className="archive-stats">
-          <ArchiveStat label="演化痕迹" value={`${confirmedNodes}/${evolutionNodes.length}`} />
+          <ArchiveStat label="已确认演化" value={`${confirmedNodes}/${evolutionNodes.length}`} />
           <ArchiveStat label="物种记录" value={`${save.species?.length ?? 0}`} />
           <ArchiveStat label="遗产记录" value={`${save.legacies?.length ?? 0}`} />
           <ArchiveStat label="源质印记" value={`${save.talents?.length ?? 0}`} />
@@ -201,7 +201,7 @@ export function SettingsPage() {
           <img className="archive-link-icon" src={uiAssets.talents.typeCrystal} alt="" aria-hidden="true" />
           <span className="archive-link-copy">
             <span className="archive-link-title">查看已拥有印记</span>
-            <span className="archive-link-desc">只显示已经融入或已经回响过的源质印记。</span>
+            <span className="archive-link-desc">查看长期生效的印记，以及已经触发过的即时印记。</span>
           </span>
           <span className="archive-link-count">{(save.talents?.length ?? 0) + new Set(save.consumedTalents ?? []).size}</span>
         </button>
@@ -229,23 +229,23 @@ export function SettingsPage() {
       )}
 
       <section className="archive-section">
-        <h3 className="archive-section-title">存档信息</h3>
+        <h3 className="archive-section-title">档案凭证</h3>
         <div className="archive-list">
           <ArchiveRow label="游客印记" value={getGuestKey()} mono action={<CopyKeyButton status={copyStatus} onCopy={copyGuestKey} />} />
-          <ArchiveRow label="存档 ID" value={getSaveId().slice(0, 16)} mono />
+          <ArchiveRow label="档案编号" value={getSaveId().slice(0, 16)} mono />
           <ArchiveRow label="最近记录" value={formatDateTime(save.updatedAt)} />
         </div>
       </section>
 
       <section className="danger-zone">
-        <h3 className="archive-section-title danger-title">危险操作</h3>
+        <h3 className="archive-section-title danger-title">重新开始</h3>
         {!confirming ? (
           <button className="btn-danger" onClick={() => setConfirming(true)}>
-            重置这份本地生态档案
+            清除这片潮池
           </button>
         ) : (
           <div className="confirm-row">
-            <span className="confirm-text">这会删除本地潮池记录，并回到创建流程。</span>
+            <span className="confirm-text">这会删除当前潮池记录，并回到命名与起始印记选择。</span>
             <button
               className="btn-danger"
               onClick={() => {
@@ -291,7 +291,7 @@ function historyTagLabel(tag: string): string {
     producer_cycle: "浅层生产",
     decomposer_cycle: "池底回收",
     filterer_balance: "清潮过滤",
-    producer_decomposer_resonance: "浅层与池底回应",
+    producer_decomposer_resonance: "浅层与池底交换",
     ecology_cycle: "生态循环",
     ecology_imbalance_faced: "承受过盛",
     ecological_personality: "潮池性格",
@@ -301,32 +301,32 @@ function historyTagLabel(tag: string): string {
 
 function historyTagCopy(tag: string): string {
   const map: Record<string, string> = {
-    heat_tolerant: "高温事件收益略高，稳定结构更受考验。",
+    heat_tolerant: "高温下反应更活跃，但稳定结构更容易受损。",
     stable_membrane: "稳定性恢复更强，突变速度略慢。",
     tidal_rich: "回潮更容易带来有机富集。",
     mineral_catalyst: "矿物表面正在成为反应支点。",
     mutation_biased: "错误更容易被保留下来。",
-    volatile: "潮池更容易剧烈波动，也更容易打开异常窗口。",
+    volatile: "潮池更容易剧烈波动，异常反应也会更频繁。",
     crowded_soup: "富集层更厚，结构更容易互相挤压。",
     clear_tide: "清潮带来秩序，早期结构更容易稳定留下。",
     edge_feeding: "边缘薄膜更早获得养料，旁支更容易出现。",
-    sheltered: "庇护缝隙让脆弱结构多一次延续机会。",
-    symbiotic_seed: "互养关系更容易萌发，生命会更早学会交换。",
-    charged: "高能窗口更常塑造后续谱系。",
-    selection_pressure: "坏事也会沉淀成后来的遗产。",
-    branching: "旁支谱系更容易留下痕迹。",
+    sheltered: "庇护缝隙提高了脆弱结构的存活率。",
+    symbiotic_seed: "互养关系更容易形成，谱系间会更早交换材料。",
+    charged: "高能反应更频繁地影响后续谱系。",
+    selection_pressure: "经历压力后退出的物种更容易形成遗产。",
+    branching: "旁支谱系更容易稳定存活。",
     replication_fidelity: "复制更稳，但变化更谨慎。",
     error_retention: "突变更大胆，潮池更容易波动。",
     fragment_budding: "断裂也可能成为新的延续方式。",
-    producer_cycle: "受光薄膜开始把光留成潮池可以继续使用的能量。",
+    producer_cycle: "受光薄膜把光转成可供生态循环使用的能量。",
     decomposer_cycle: "池底分解层把旧薄膜拆回材料，并送回新的生长。",
     filterer_balance: "滤食孔隙筛去浑浊，让水体重新留出呼吸。",
     producer_decomposer_resonance: "浅层生产与池底回收已经互相接续。",
     ecology_cycle: "生产、分解和过滤接成了第一阵往复。",
-    ecology_imbalance_faced: "潮池经历过繁盛压力，并留下了自己的处理方式。",
-    ecological_personality: "反复出现的水势已经沉成这片潮池的性格。",
+    ecology_imbalance_faced: "潮池经历过繁盛压力，并形成了稳定的应对倾向。",
+    ecological_personality: "反复出现的环境变化已经形成长期生态倾向。",
   };
-  return map[tag] ?? "这类变化正在写入潮池性格。";
+  return map[tag] ?? "这类变化正在形成长期生态倾向。";
 }
 
 function ArchiveRow({

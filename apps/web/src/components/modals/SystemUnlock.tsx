@@ -11,8 +11,8 @@ export function SystemUnlock() {
   const setPage = useUIStore((s) => s.setPage);
   const [closing, setClosing] = useState(false);
   const name = (modalData.name as string) ?? "演化路径";
-  const title = (modalData.title as string) ?? "新的生命痕迹出现了";
-  const description = (modalData.description as string) ?? "新的痕迹已经浮上水面。";
+  const title = (modalData.title as string) ?? "潮池出现了新的变化";
+  const description = (modalData.description as string) ?? "水体与生命的状态已经改变。";
   const impact = modalData.impact as string | undefined;
   const advice = modalData.advice as string | undefined;
   const icon = (modalData.icon as string) ?? uiAssets.emblems.system;

@@ -27,16 +27,16 @@ export function SpeciesDiscovery() {
   const isEcologyRole = save?.chapterProgress?.chapter === "ecology_burst" && species.length > 1;
   const copy = isEcologyRole
     ? {
-        title: "新的生命工作出现了",
-        theme: `${roleLabel(sp.ecologicalRole)}在潮池里站稳了位置，水面、池底和潮孔开始各自有事可做。`,
-        science: "它不是孤零零出现的生命。它会在这片水里留下自己的工作，也会牵动旁边的生命痕迹。",
-        action: "看看这道痕迹",
+        title: "新的生态角色出现了",
+        theme: `${roleLabel(sp.ecologicalRole)}已经稳定生活在潮池中。`,
+        science: "它会改变周围的材料流动，并与已有生命形成新的关系。",
+        action: "查看这个物种",
       }
     : {
         title: "第一种生命出现了",
-        theme: "这片潮池不再只是水和矿物。它有了自己的第一段生命史。",
-        science: "文明还很遥远，但历史已经开始。这段生命会影响后续生态。",
-        action: "记录这段生命",
+        theme: "水和矿物之间，出现了能够维持自身活动的生命。",
+        science: "它的结构与习性会影响此后出现的生态角色。",
+        action: "收入图鉴",
       };
 
   return (

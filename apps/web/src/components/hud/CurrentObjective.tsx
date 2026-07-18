@@ -19,12 +19,12 @@ const RES_LABELS: Record<string, { asset: string; label: string }> = {
   biomass: { asset: uiAssets.resources.biomass, label: "生物量" },
 };
 
-const LIFE_BIRTH_STAGES = ["加入养料", "留下痕迹", "学会延续", "发现生命"] as const;
-const ECOLOGY_BURST_STAGES = ["追逐光照", "分化角色", "形成循环", "面对失衡", "留下性格"] as const;
-const SHORELINE_STAGES = ["发现水线", "贴住湿岸", "分出栖位", "承受干湿", "接回循环", "留下岸痕"] as const;
+const LIFE_BIRTH_STAGES = ["加入养料", "稳定结构", "复制延续", "发现生命"] as const;
+const ECOLOGY_BURST_STAGES = ["利用光照", "分化角色", "形成循环", "面对失衡", "形成倾向"] as const;
+const SHORELINE_STAGES = ["发现水线", "附着湿岸", "分出栖位", "承受干湿", "恢复往返", "形成岸线"] as const;
 const LIFE_HISTORY_CHAPTERS = [
   "生命诞生",
-  "水中回响",
+  "生态循环",
   "海陆分化",
   "复杂生命",
   "意识萌芽",
@@ -237,7 +237,7 @@ function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>
   const unlocked = save.unlockedNodes;
   let title = "让潮池活过来";
   let action = "把发光的养料拖进水里";
-  let observation = "水里开始出现生命材料。";
+  let observation = "水中已经聚集了一批有机分子和矿物颗粒。";
   let term = "生命材料";
   let progressLabel = "生命材料";
   let progress = 0;
@@ -258,7 +258,7 @@ function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>
       const copy = objectiveCopyForNode(nextNode.id, nextNode.name, nextNode.description);
       return {
         ...copy,
-        action: nextNode.id === "organic_richness" ? "点底部演化，记录生命痕迹" : "点底部演化，推进这次变化",
+        action: nextNode.id === "organic_richness" ? "打开演化，确认第一项稳定结构" : "打开演化，确认这次变化",
         progress,
         target,
         costEntries,
@@ -272,7 +272,7 @@ function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>
   } else {
     title = "让生命追逐光";
     action = "继续投入能量";
-    observation = "一些生命开始靠近光，水面正在露出新的层次。";
+    observation = "一些生命聚集在受光浅水，水面出现了持续亮色。";
     term = "感光色素";
     progressLabel = "光照准备";
     progress = save.resources.energy;
@@ -297,8 +297,8 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
     },
     attach_shore: {
       title: "引导生命靠近湿岸",
-      action: save.unlockedNodes.includes("shore_attachment") ? "把水中的微光拖到刚露出的湿岩" : "前往演化，让生命能够贴住湿痕",
-      observation: "已有生命在水线附近徘徊，但它们会自己决定是否留下。",
+      action: save.unlockedNodes.includes("shore_attachment") ? "把水中的微光拖到刚露出的湿岩" : "前往演化，让生命形成湿岩附着能力",
+      observation: "已有生命被水流带到水线附近，能否停留取决于它们的结构。",
       term: "湿岸附着",
       progressLabel: "贴岸见证",
       target: 1,
@@ -306,8 +306,8 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
     },
     split_niches: {
       title: "看见两处不同的生命姿态",
-      action: "观察浅水和湿岩怎样留下不同痕迹",
-      observation: "同一阵生命开始在水下与岸边用不同方式延续。",
+      action: "观察浅水与湿岩上的生命形态",
+      observation: "同一支生命在浅水中舒展，在湿岩上收拢。",
       term: "相连栖位",
       progressLabel: "已见证栖位",
       target: 2,
@@ -315,8 +315,8 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
     },
     endure_dry_wet: {
       title: "面对第一次退潮晒痕",
-      action: save.pendingEcologyEvent?.id === "ebb_dryness" ? "决定哪些岸痕会被留下" : "等待退潮把干湿压力推到岸边",
-      observation: "贴住湿岩只是开始，阳光、盐分和失水正在逼近。",
+      action: save.pendingEcologyEvent?.id === "ebb_dryness" ? "选择岸边生命如何应对失水" : "等待退潮把干湿压力推到岸边",
+      observation: "生命已经附着在湿岩上，接下来要面对阳光、盐分和失水。",
       term: "干湿压力",
       progressLabel: "岸线取舍",
       target: 1,
@@ -334,7 +334,7 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
     shoreline_memory: {
       title: "岸边与浅水已经形成往返",
       action: "打开潮池记忆，回看水线露出、贴岸与回流",
-      observation: "浅水和湿岩开始互相带回材料，潮池第一次拥有了边缘。",
+      observation: "回潮把岸边碎屑带回浅水，浅水中的养分也再次抵达湿岩。",
       term: "岸线记忆",
       progressLabel: "岸线片段",
       target: 3,
@@ -343,8 +343,8 @@ function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.
     complete: {
       title: "生命已经越过水线",
       action: "打开潮池记忆，回看这条岸线怎样形成",
-      observation: "这片潮池不再只有中心，它开始记得自己的边界。",
-      term: "海陆痕迹",
+      observation: "浅水与湿岸已经能够交换材料，一条稳定水线形成了。",
+      term: "岸线生态",
       progressLabel: "岸线记忆",
       target: 1,
       progress: 1,
@@ -368,14 +368,14 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     pursue_light: {
       title: "让生命追逐光",
       action: "继续积累能量和生物量，点亮受光薄膜",
-      observation: "已有生命开始靠近光照，水面正露出新的层次。",
+      observation: "已有生命聚集在受光浅水，水面出现了持续亮色。",
       term: "追逐光照",
       progressLabel: "光照准备",
       target: 3,
       progress: 1,
     },
     differentiate_roles: {
-      title: "让不同水痕显出来",
+      title: "看清三种生态角色",
       action: "在浅层、池底和潮孔里记录新的生命工作",
       observation: "潮池不再只有一种生命，分工正在变得可见。",
       term: "生态角色",
@@ -385,7 +385,7 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
     },
     form_cycle: {
       title: "形成第一个小循环",
-      action: "让生产、分解和过滤开始交换材料",
+      action: "让生产、分解和过滤交换材料",
       observation: "三种生态角色已经出现，下一步是让它们产生稳定互动。",
       term: "互养循环",
       progressLabel: "循环条件",
@@ -404,11 +404,11 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
       progress: (save.eventHistory ?? []).includes("bloom_pressure") ? 1 : 0,
     },
     ecological_personality: {
-      title: "留下潮池的样子",
-      action: "前往演化，留下潮池性格",
+      title: "形成长期生态倾向",
+      action: "前往演化，确认这片潮池的生态倾向",
       observation: "反复出现的环境变化正在形成长期生态倾向。",
       term: "潮池性格",
-      progressLabel: "记忆沉淀",
+      progressLabel: "倾向形成",
       target: 1,
       progress: save.unlockedNodes.includes("ecological_personality") ? 1 : 0,
     },
@@ -481,8 +481,8 @@ function getShorelineStageIndex(stage: string | undefined) {
 function shorelineActionForNode(nodeId: string) {
   const map: Record<string, string> = {
     waterline_exposure: "让水线显现",
-    shore_attachment: "留下贴岸的机会",
-    shoreline_exchange: "接回第一阵岸线往返",
+    shore_attachment: "形成湿岸附着能力",
+    shoreline_exchange: "恢复岸线往返",
   };
   return map[nodeId] ?? "记录这次岸线变化";
 }
@@ -500,7 +500,7 @@ function actionForEcologyNode(nodeId: string) {
     decomposition_layer: "记录分解层",
     tidal_filter_pores: "记录滤食孔隙",
     mutual_ecology_cycle: "形成这个小循环",
-    ecological_personality: "留下潮池的样子",
+    ecological_personality: "确认生态倾向",
   };
   return map[nodeId] ?? "记录这个生态变化";
 }
@@ -508,19 +508,19 @@ function actionForEcologyNode(nodeId: string) {
 function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDescription: string) {
   if (nodeId === "organic_richness") {
     return {
-      title: "发现第一道生命痕迹",
-      action: "记录第一道生命痕迹",
-      observation: "复杂分子开始稳定留下痕迹。",
+      title: "形成第一批稳定结构",
+      action: "确认有机富集",
+      observation: "复杂分子在蒸发与回潮之间稳定聚集。",
       term: "有机富集",
-      progressLabel: "生命痕迹",
+      progressLabel: "富集程度",
     };
   }
 
   if (nodeId === "replicating_chain") {
     return {
-      title: "让生命学会延续",
-      action: "让结构开始复制自己",
-      observation: "有些结构开始重复自己，生命有了延续的可能。",
+      title: "形成可延续的复制",
+      action: "确认自复制链",
+      observation: "部分链体已经能够复制自身结构。",
       term: "自复制链",
       progressLabel: "延续能力",
     };
@@ -540,7 +540,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     return {
       title: "让生命追逐光",
       action: "追逐第一缕光",
-      observation: "一些生命开始靠近光，水面正在露出新的层次。",
+      observation: "一些生命聚集在受光浅水，水面出现了持续亮色。",
       term: "感光色素",
       progressLabel: "光照准备",
     };
@@ -550,7 +550,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     return {
       title: "出现早期生产者",
       action: "记录受光生产者",
-      observation: "受光薄膜开始把光照变成潮池可以继续使用的能量。",
+      observation: "受光薄膜把光转成可供生态循环使用的能量。",
       term: "生产者",
       progressLabel: "分化条件",
     };
@@ -580,7 +580,7 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
     return {
       title: "形成第一个小循环",
       action: "形成这个小循环",
-      observation: "生产、分解和过滤开始交换材料，循环正在形成。",
+      observation: "生产、分解和过滤正在交换材料，第一组循环接近完整。",
       term: "互养小循环",
       progressLabel: "循环条件",
     };
@@ -588,11 +588,11 @@ function objectiveCopyForNode(nodeId: string, fallbackName: string, fallbackDesc
 
   if (nodeId === "ecological_personality") {
     return {
-      title: "留下潮池的样子",
+      title: "形成长期生态倾向",
       action: "记录当前生态倾向",
       observation: "反复出现的环境变化正在形成长期生态倾向。",
       term: "潮池性格",
-      progressLabel: "记忆沉淀",
+      progressLabel: "倾向形成",
     };
   }
 

@@ -21,7 +21,7 @@ export function FossilPage() {
         <div className="empty-state">
           <img className="empty-icon asset-empty-icon" src={uiAssets.emblems.reward} alt="" aria-hidden="true" />
           <p className="empty-title">等待第一个物种走完生命历程</p>
-          <p className="empty-hint">当物种在筛选事件中退出生态，它们会沉淀为永久遗产。</p>
+          <p className="empty-hint">当物种退出生态，它可能留下化石、生态空位或一段警示。</p>
           <button className="btn-secondary" onClick={() => setPage("home")}>
             返回潮池
           </button>
@@ -33,7 +33,7 @@ export function FossilPage() {
   return (
     <div className="page fossil-page">
       <h2 className="page-title">化石遗产</h2>
-      <p className="page-hint">每一次灭绝都是生命史重塑的契机，遗产将永久加成这颗星球。</p>
+      <p className="page-hint">离开的物种仍会影响后来生命。这里记录它们留下的结构、空位与环境教训。</p>
       <div className="fossil-list">
         {legacies.map((legacy) => (
           <div key={legacy.id} className="fossil-card">

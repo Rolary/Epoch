@@ -62,8 +62,8 @@ export function EvolutionPage() {
       <div className="page evolution-page">
         <div className="empty-state">
           <span className="empty-icon">生命</span>
-          <p className="empty-title">潮池还没有留下生命痕迹</p>
-          <p className="empty-hint">回到潮池，把发光的养料拖进水里。第一道痕迹出现后，这里会打开。</p>
+          <p className="empty-title">潮池里还没有稳定结构</p>
+          <p className="empty-hint">回到水边，把发光的养料拖进潮池。结构稳定后，演化页会开放。</p>
           <button className="btn-secondary" onClick={() => setPage("home")}>返回潮池</button>
         </div>
       </div>
@@ -109,11 +109,11 @@ export function EvolutionPage() {
 
   const confirmBranchUnlock = (node: EvolutionNode) => {
     showModal("decision-confirm", {
-      title: "要留下这道痕迹吗？",
+      title: "确认这项演化吗？",
       description: node.description,
       gain: `${node.name} 会在后来的生命里反复浮现。`,
-      cost: "同一处水势里的其他可能，会先沉到旁路里。",
-      confirmLabel: "让它留下",
+      cost: "确认后，同组的其他复制方式将关闭。",
+      confirmLabel: "确认演化",
       cancelLabel: "先放一放",
       onConfirm: () => handleUnlock(node.id),
     });
@@ -121,8 +121,8 @@ export function EvolutionPage() {
 
   return (
     <div className="page evolution-page">
-      <h2 className="page-title">生命痕迹</h2>
-      <p className="page-hint">潮池已经浮出来的痕迹会停在这里，等你决定哪些要被留下。</p>
+      <h2 className="page-title">生命演化</h2>
+      <p className="page-hint">查看已经具备条件的结构，决定潮池接下来保留哪种演化方向。</p>
       <div className="evolution-path chaptered">
         {visibleChapters.map((chapter) => {
           const { total, unlocked } = countChapterProgress(chapter, currentSave.unlockedNodes);
@@ -153,7 +153,7 @@ export function EvolutionPage() {
               </button>
               {collapsed ? (
                 <div className="evolution-chapter-summary">
-                  {completed ? "这一章的关键痕迹已被生命史记住。" : "继续积累资源后会出现新的可点亮痕迹。"}
+                  {completed ? "这一章的关键变化已经记录进生命史。" : "继续积累所需材料，新的演化会逐步开放。"}
                 </div>
               ) : (
                 <div className="evolution-chapter-body">
@@ -178,12 +178,12 @@ export function EvolutionPage() {
           {idx > 0 && <div className={`node-connector branch-entry ${groupUnlocked || groupAvailable ? "active" : ""}`} />}
           <div className="branch-fork-cap">
             <div className="branch-fork-copy">
-              <span className="branch-fork-label">只能留下一道</span>
+              <span className="branch-fork-label">只能选择一项</span>
               <span className="branch-fork-title">
-                {selectedBranch ? `已留下：${selectedBranch.name}` : "复制开始分岔"}
+                {selectedBranch ? `已选择：${selectedBranch.name}` : "复制方式出现分歧"}
               </span>
               <span className="branch-fork-desc">
-                {selectedBranch ? "其他可能暂时沉到旁路里，潮池继续沿着这道痕迹往前。" : "这里会先留下一种水势，后来的生命会顺着它多长一段。"}
+                {selectedBranch ? "其他复制方式暂时关闭，后续生命将继承当前倾向。" : "三种复制方式会带来不同的稳定性、突变和分化机会。"}
               </span>
             </div>
             {selectedBranch && (
@@ -261,7 +261,7 @@ export function EvolutionPage() {
             </span>
           )}
           {canUnlock && <span className="node-action">{actionFor(node.id)}</span>}
-          {unlocked && <span className="node-action confirmed">已留下痕迹</span>}
+          {unlocked && <span className="node-action confirmed">已确认</span>}
           {branchBlocked && <span className="node-action blocked">已沉到旁路</span>}
           {!unlocked && !canUnlock && !branchBlocked && <span className="node-action waiting">{lockReasonFor(currentSave, node)}</span>}
         </div>
@@ -341,11 +341,11 @@ function isBranchBlocked(node: EvolutionNode, unlocked: string[]) {
 
 function actionFor(nodeId: string): string {
   const map: Record<string, string> = {
-    organic_richness: "点亮这道痕迹",
+    organic_richness: "确认有机富集",
     replicating_chain: "让它延续",
     replication_fidelity: "保留稳定复制",
     error_retention: "保留一次错误",
-    fragment_budding: "允许旁支萌发",
+    fragment_budding: "增加旁支分化",
     primitive_vesicle: "包住这段反应",
     metabolic_loop: "形成能量循环",
     proto_cell: "记录这个跃迁",
@@ -354,7 +354,7 @@ function actionFor(nodeId: string): string {
     decomposition_layer: "记录分解层",
     tidal_filter_pores: "记录滤食孔隙",
     mutual_ecology_cycle: "形成小循环",
-    ecological_personality: "留下潮池的样子",
+    ecological_personality: "确认生态倾向",
   };
   return map[nodeId] ?? "记录这个变化";
 }
@@ -394,12 +394,12 @@ function labelFor(key: string): string {
 function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: string) {
   const map: Record<string, { title: string; description: string }> = {
     organic_richness: {
-      title: "第一道生命痕迹",
-      description: "复杂分子开始稳定留下痕迹。",
+      title: "第一批稳定结构",
+      description: "复杂分子在蒸发与回潮之间稳定聚集。",
     },
     replicating_chain: {
-      title: "让生命学会延续",
-      description: "有些结构开始重复自己，生命有了延续的可能。",
+      title: "形成可延续的复制",
+      description: "部分链体已经能够复制自身结构。",
     },
     primitive_vesicle: {
       title: "等待第一种生命成形",
@@ -418,16 +418,16 @@ function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: 
       description: "变化会更频繁，潮池也会更容易失衡。",
     },
     fragment_budding: {
-      title: "让旁支萌发",
+      title: "增加旁支分化",
       description: "断裂结构也能延续，后续谱系更容易分叉。",
     },
     metabolic_loop: {
       title: "让小生命获得能量",
-      description: "简单循环开始把外界能量变成更稳定的生命活动。",
+      description: "简单循环把外界能量转成能够持续的生命活动。",
     },
     photo_pigment: {
       title: "让生命追逐光",
-      description: "一些生命开始靠近光，新的生态爆发正在到来。",
+      description: "感光结构让生命聚集到浅水，新的生态角色即将出现。",
     },
     early_producer_film: {
       title: "出现早期生产者",
@@ -435,7 +435,7 @@ function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: 
     },
     decomposition_layer: {
       title: "出现分解者",
-      description: "旧结构沉入池底，被拆回有机质与矿物，循环开始有底层。",
+      description: "旧结构沉入池底，被拆回有机质与矿物，形成池底回收层。",
     },
     tidal_filter_pores: {
       title: "出现滤食者",
@@ -446,8 +446,8 @@ function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: 
       description: "光、沉积和滤孔彼此接续，潮池第一次形成可延续的往复。",
     },
     ecological_personality: {
-      title: "留下潮池的样子",
-      description: "这段反复出现的水势沉进记忆，潮池有了自己的样子。",
+      title: "形成生态倾向",
+      description: "反复出现的环境变化形成了稳定的生态偏向。",
     },
   };
   return map[nodeId] ?? { title: fallbackName, description: fallbackDescription };

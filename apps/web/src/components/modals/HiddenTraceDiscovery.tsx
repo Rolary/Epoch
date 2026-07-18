@@ -19,7 +19,7 @@ export function HiddenTraceDiscovery() {
   };
 
   return (
-    <GameModal title="水面留下了异常回响" onClose={close}>
+    <GameModal title="发现隐秘潮痕" onClose={close}>
       <div className={`hidden-trace-discovery trace-${record.rarity}`}>
         <span className="hidden-trace-emblem">
           <img src={uiAssets.hiddenTraces.emblem} alt="" aria-hidden="true" />

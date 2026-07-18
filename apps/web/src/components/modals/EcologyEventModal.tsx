@@ -110,9 +110,9 @@ function previewShorelineChoice(optionId: string | null) {
 }
 
 function shorelineEffectCopy(optionId: string) {
-  if (optionId === "protect_moisture_film") return "会留下：薄水膜与稳定附着 · 会承压：更远岩面暂缓";
-  if (optionId === "expose_wet_rock") return "会留下：矿物结面与大胆附着 · 会承压：水分与稳定";
-  return "会留下：回流与播散倾向 · 会承压：岸边定居痕迹";
+  if (optionId === "protect_moisture_film") return "更易存活：薄水膜与稳定附着 · 代价：暂缓向远处岩面扩张";
+  if (optionId === "expose_wet_rock") return "更易存活：耐晒结面与强附着 · 代价：水分和稳定性下降";
+  return "更易形成：回流与播散倾向 · 代价：岸边定居机会减少";
 }
 
 function shorelineTraceAsset(optionId: string) {
@@ -138,7 +138,7 @@ function effectCopy(
   const envCopy = Object.entries(environment ?? {})
     .map(([key, value]) => `${envLabel(key)} ${value > 0 ? "+" : ""}${value}`)
     .join(" · ");
-  return [resourceCopy, envCopy].filter(Boolean).join(" / ") || "潮池性格会被记录";
+  return [resourceCopy, envCopy].filter(Boolean).join(" / ") || "这次应对会形成长期生态倾向";
 }
 
 function tradeoffCopy(

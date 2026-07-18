@@ -43,7 +43,7 @@ export function LogPage() {
           <img className="empty-icon asset-empty-icon" src={uiAssets.emblems.system} alt="" aria-hidden="true" />
           <p className="empty-title">潮池记忆尚未开始</p>
           <p className="empty-hint">
-            若生命能留下第一道痕迹，这颗星球的故事就会有第一行。
+            第一批稳定结构出现后，这里会记录潮池的重要变化。
           </p>
           <button className="btn-secondary" onClick={() => setPage("home")}>
             返回潮池
@@ -56,7 +56,7 @@ export function LogPage() {
   return (
     <div className="page log-page memory-page">
       <h2 className="page-title">潮池记忆</h2>
-      <p className="page-hint">重复的细小反应会被合并成一段记忆，重要变化会单独留下。</p>
+      <p className="page-hint">重复现象会合并整理，物种出现、环境转折和生态互动会单独记录。</p>
       {save?.chapterProgress?.chapter === "shoreline_differentiation" && <ShorelineMemoryBand save={save} />}
       {save?.chapterProgress?.chapter === "ecology_burst" && save.chapterProgress.stage === "complete" && <ChapterTwoSummary save={save} />}
       {(save?.hiddenTraces?.records.length ?? 0) > 0 && <HiddenTraceMemories records={save!.hiddenTraces!.records} />}
@@ -94,10 +94,10 @@ function ShorelineMemoryBand({ save }: { save: NonNullable<ReturnType<typeof use
     },
     {
       id: "attachment",
-      title: "第一次贴岸",
+      title: "第一次附着",
       description: witness.dryWetPressureWitnessed
         ? shorelineStrategyMemory(witness.shorelineStrategy)
-        : "一支原有生命随水流贴住了湿岸。",
+        : "一支原有生命随水流附着在湿岸。",
       visible: witness.shoreColonized,
       traceAsset: shorelineMemoryTraceAsset(witness.shorelineStrategy),
     },
@@ -112,7 +112,7 @@ function ShorelineMemoryBand({ save }: { save: NonNullable<ReturnType<typeof use
   return (
     <section className="shoreline-memory-band" aria-labelledby="shoreline-memory-title">
       <div className="shoreline-memory-heading">
-        <span>海陆痕迹</span>
+        <span>岸线记录</span>
         <h3 id="shoreline-memory-title">水线怎样形成</h3>
       </div>
       <div className="shoreline-memory-moments">
@@ -133,9 +133,9 @@ function ShorelineMemoryBand({ save }: { save: NonNullable<ReturnType<typeof use
 }
 
 function shorelineStrategyMemory(strategy: string | undefined) {
-  if (strategy === "rock_attachment") return "湿岩见光后，仍有附着斑抓住岸面。";
-  if (strategy === "tidal_dispersal") return "第一次岸痕退回浅水，留下随潮播散的倾向。";
-  return "薄水膜被多留了一阵，护住了第一处附着痕。";
+  if (strategy === "rock_attachment") return "湿岩见光后，耐晒附着斑仍停留在岸面。";
+  if (strategy === "tidal_dispersal") return "附着斑随回潮退回浅水，播散比定居更占优势。";
+  return "薄水膜延缓了失水，第一处附着斑得以存活。";
 }
 
 function shorelineMemoryTraceAsset(strategy: string | undefined) {
@@ -194,10 +194,10 @@ function ChapterTwoSummary({ save }: { save: NonNullable<ReturnType<typeof useGa
       </div>
       <p>当前生态倾向：{planetProfileLabel(save.planetProfile)}。</p>
       <div className="chapter-summary-grid">
-        <span><strong>撑住水面的生命</strong>{roles.join(" / ") || "尚未记录"}</span>
+        <span><strong>维持循环的生命</strong>{roles.join(" / ") || "尚未记录"}</span>
         <span><strong>发生过的生态互动</strong>{resonances.slice(-2).join(" / ") || "生产、分解、滤食形成小循环"}</span>
         <span><strong>承受过的过盛</strong>{imbalances.join(" / ") || "繁盛压力"}</span>
-        <span><strong>留下的样子</strong>{planetProfileLabel(save.planetProfile)}</span>
+        <span><strong>形成的倾向</strong>{planetProfileLabel(save.planetProfile)}</span>
       </div>
     </section>
   );
@@ -249,27 +249,27 @@ function buildMemoryEntries(logs: EvolutionLog[]): MemoryEntry[] {
 
 function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   if (/水线露出来|水线显现/.test(log.message)) {
-    return keyMemory(log, "tide", "水线露出来了", "退潮第一次在浅水之外留下湿岩，潮池开始拥有自己的边缘。");
+    return keyMemory(log, "tide", "水线露出来了", "退潮第一次在浅水之外露出湿岩，浅水与岸面由此分开。");
   }
 
-  if (/贴住了湿岩|第一次贴岸/.test(log.message)) {
-    return keyMemory(log, "species", "有一支生命贴住湿岸", "玩家改变了水流方向，原有谱系靠自身结构留在湿岩上。");
+  if (/贴住了湿岩|第一次贴岸|随水流抵达湿岩|附着在湿岸/.test(log.message)) {
+    return keyMemory(log, "species", "有一支生命附着湿岸", "水流把原有谱系带向岸边，它靠自身结构附着在湿岩上。");
   }
 
   if (/岸线往返|岸边碎屑带回浅水/.test(log.message)) {
-    return keyMemory(log, "tide", "岸边与浅水开始往返", "回潮把岸边碎屑带回浅水，两个栖位开始交换材料。");
+    return keyMemory(log, "tide", "岸边与浅水形成往返", "回潮把岸边碎屑带回浅水，两个栖位由此交换材料。");
   }
 
   if (/生态共鸣|水中回响/.test(log.message)) {
-    return keyMemory(log, "species", "水中回响被看见", "两处生命痕迹开始彼此回应，后来的潮水也会被它轻轻改动。");
+    return keyMemory(log, "species", "第一次生态互动", "两个生态角色交换了材料，水体清澈度与生长速度随之改变。");
   }
 
   if (/第一个小生态循环|互养小循环|生态组合显现/.test(log.message)) {
-    return keyMemory(log, "species", "第一个小循环形成了", "生产、分解和过滤开始互相提供材料。");
+    return keyMemory(log, "species", "第一个小循环形成了", "生产、分解和过滤已经能够循环利用材料。");
   }
 
   if (/繁盛薄膜|生态失衡|过盛薄膜|经历失衡|水面太满|过盛/.test(log.message)) {
-    return keyMemory(log, "tide", "水面太满了", "潮池第一次承受自己的繁盛：有些地方继续生长，有些地方必须让出呼吸。");
+    return keyMemory(log, "tide", "水面太满了", "薄膜过度生长，清水、空隙和下层呼吸受到挤压。");
   }
 
   if (/生态性格|潮池留下自己的样子|稳定循环|突变爆发|共生网络|极端适应/.test(log.message)) {
@@ -282,21 +282,21 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
   }
 
   if (log.type === "era") {
-    return keyMemory(log, "era", "环境出现长期变化", "一次关键变化开始影响后续演化。");
+    return keyMemory(log, "era", "环境出现长期变化", "一次关键环境变化正在持续影响后续演化。");
   }
 
   if (log.type === "legacy") {
     const name = extractName(log.message);
-    return keyMemory(log, "legacy", "旧生命沉入遗产", name ? `${name}离开了当前生态，却把影响留在了后来的潮水里。` : "一段生命退出当下，沉淀成后续生态的遗产。");
+    return keyMemory(log, "legacy", "物种退出当前生态", name ? `${name}已经离开，它造成的结构、空位或警示仍会影响后来生命。` : "一个物种退出生态，并留下了持续影响。");
   }
 
   if (log.type === "system" && /印记|源质/.test(log.message)) {
     const name = extractLastQuotedName(log.message);
-    return keyMemory(log, "talent", "源质印记融入潮池", name ? `${name}改变了这片潮池后续成长的倾向。` : "新的源质印记融入潮池，改变了之后的成长倾向。");
+    return keyMemory(log, "talent", "获得源质印记", name ? `${name}开始长期影响这片潮池。` : "新的源质印记开始长期影响这片潮池。");
   }
 
   if (log.type === "system" && /演化节点|解锁|结构跃迁/.test(log.message)) {
-    return keyMemory(log, "era", "新的痕迹被留下", "潮池留住了一次重要变化，后来的生命会从这里接着长。");
+    return keyMemory(log, "era", "确认了一项演化", "这项结构变化已经生效，并成为后续生命的生长基础。");
   }
 
   return null;
@@ -348,9 +348,9 @@ function routineCopy(tone: MemoryTone, count = 1): Pick<MemoryEntry, "title" | "
       description: `${prefix}内部调整让潮池继续维持在可演化的边界上。`,
     },
     species: { title: "新生命被记住", description: "潮池里出现了新的生命分支。" },
-    legacy: { title: "旧生命沉入遗产", description: "一段生命沉淀成后续生态的遗产。" },
-    era: { title: "环境出现长期变化", description: "一次关键变化开始影响后续演化。" },
-    talent: { title: "源质印记融入潮池", description: "新的源质印记改变了之后的成长倾向。" },
+    legacy: { title: "物种退出当前生态", description: "它留下的结构、空位或警示仍会影响后来生命。" },
+    era: { title: "环境出现长期变化", description: "一次关键环境变化正在持续影响后续演化。" },
+    talent: { title: "获得源质印记", description: "新的源质印记开始长期影响这片潮池。" },
   };
   return map[tone];
 }

@@ -42,14 +42,14 @@ export function TalentArchivePage() {
     <div className="page talent-archive-page">
       <button className="btn-back" onClick={() => setPage("settings")}>← 档案</button>
       <h2 className="page-title">源质印记</h2>
-      <p className="page-hint">这里只记录已经融入潮池，或已经回响过的一次性印记。</p>
+      <p className="page-hint">这里记录长期生效的源质印记，以及已经触发过的即时印记。</p>
 
       <section className="archive-section">
         <h3 className="archive-section-title">收集进度</h3>
         <div className="talent-progress-grid">
-          <ProgressStat label="永久印记" value={`${permanentTalents.length}/${permanentTotal}`} />
-          <ProgressStat label="一次性种类" value={`${consumedTalents.length}/${consumableTotal}`} />
-          <ProgressStat label="全图鉴" value={`${collectedIds.size}/${talentCatalog.length}`} />
+          <ProgressStat label="长期印记" value={`${permanentTalents.length}/${permanentTotal}`} />
+          <ProgressStat label="即时印记" value={`${consumedTalents.length}/${consumableTotal}`} />
+          <ProgressStat label="全部印记" value={`${collectedIds.size}/${talentCatalog.length}`} />
         </div>
       </section>
 
@@ -57,17 +57,17 @@ export function TalentArchivePage() {
         <div className="empty-state">
           <img className="empty-icon asset-empty-icon" src={uiAssets.talents.typeTide} alt="" aria-hidden="true" />
           <p className="empty-title">还没有印记留下记录</p>
-          <p className="empty-hint">选择或唤醒源质印记后，这里会出现已解锁的卡片。</p>
+          <p className="empty-hint">选择或获得源质印记后，这里会出现对应卡片。</p>
           <button className="btn-secondary" onClick={() => setPage("home")}>返回潮池</button>
         </div>
       )}
 
       {permanentTalents.length > 0 && (
         <section className="talent-archive-section">
-          <h3 className="archive-section-title">已融入</h3>
+          <h3 className="archive-section-title">长期生效</h3>
           <div className="talent-cards archive">
             {permanentTalents.map((talent) => (
-              <TalentCard key={talent.id} talent={talent} statusLabel="已融入" />
+              <TalentCard key={talent.id} talent={talent} statusLabel="长期生效" />
             ))}
           </div>
         </section>
@@ -75,10 +75,10 @@ export function TalentArchivePage() {
 
       {consumedTalents.length > 0 && (
         <section className="talent-archive-section">
-          <h3 className="archive-section-title">已回响</h3>
+          <h3 className="archive-section-title">已触发</h3>
           <div className="talent-cards archive">
             {consumedTalents.map(({ talent, count }) => (
-              <TalentCard key={talent.id} talent={talent} statusLabel={`已回响 x${count}`} />
+              <TalentCard key={talent.id} talent={talent} statusLabel={`已触发 x${count}`} />
             ))}
           </div>
         </section>

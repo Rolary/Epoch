@@ -110,13 +110,13 @@ describe("roguelike life-history progression", () => {
       ...createInitialState("event-apply-test"),
       pendingEcologyEvent: {
         id: "hot_spring_pulse",
-        title: "鐑硥鐭殏鍠峰彂",
+        title: "热泉短暂喷发",
         description: "",
-        tendencyTag: "鑰愮儹鍊惧悜",
+        tendencyTag: "耐热倾向",
         options: [
           {
             id: "approach_heat",
-            title: "闈犺繎鐑硥",
+            title: "靠近热泉",
             description: "",
             resourceEffect: { energy: 34, stability: -10 },
             environmentEffect: { heat: 0.18 },
@@ -415,7 +415,7 @@ describe("roguelike life-history progression", () => {
 
     state = unlockEvolutionNode(state, "ecological_personality");
     expect(state.chapterProgress?.stage).toBe("complete");
-    expect(state.logs[0]?.message).toContain("留下了自己的样子");
+    expect(state.logs[0]?.message).toContain("形成了长期生态倾向");
   });
 
   it("records the first ecology combo only once during ticks", () => {
@@ -524,7 +524,7 @@ describe("roguelike life-history progression", () => {
     expect(guided.chapterWitness?.shorelineDifferentiation.shoreColonized).toBe(true);
     expect(guided.chapterProgress?.stage).toBe("endure_dry_wet");
     expect(guided.pendingEcologyEvent?.id).toBe("ebb_dryness");
-    expect(guidedAgain.logs.filter((log) => log.message.includes("贴住了湿岩"))).toHaveLength(1);
+    expect(guidedAgain.logs.filter((log) => log.message.includes("随水流抵达湿岩"))).toHaveLength(1);
   });
 
   it("records exactly one shoreline strategy after the ebb dryness choice", () => {

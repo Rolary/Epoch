@@ -28,7 +28,7 @@ export function OfflineReturn() {
         </p>
         {(poolEffect || observationTitle) && (
           <div className="offline-surprise">
-            <span className="offline-surprise-kicker">{poolEffect ? poolEffect.title : "潮池留下了新痕迹"}</span>
+            <span className="offline-surprise-kicker">{poolEffect ? poolEffect.title : "离开期间出现了新变化"}</span>
             <span>{poolEffect?.description ?? `你离开后，${observationTitle}被潮池记进了图鉴。`}</span>
             {poolEffect && (
               <span className={`offline-effect-label ${poolEffect.tone}`}>
