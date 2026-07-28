@@ -21,6 +21,7 @@ export function EcologyEventModal() {
     hideModal();
     return null;
   }
+  const shorelineEvent = isShorelineEvent(event.id);
 
   const choose = async (optionId: string) => {
     const option = event.options.find((item) => item.id === optionId);
@@ -32,7 +33,7 @@ export function EcologyEventModal() {
       cost: tradeoffCopy(option.resourceEffect, option.environmentEffect),
       confirmLabel: "确认选择",
       cancelLabel: "返回事件",
-      previewOptionId: event.id === "ebb_dryness" ? optionId : undefined,
+      previewOptionId: shorelineEvent ? optionId : undefined,
       onCancel: () => {
         useUIStore.getState().showModal("ecology-event", narrativeId ? { narrativeId } : {});
       },
@@ -65,17 +66,17 @@ export function EcologyEventModal() {
   return (
     <GameModal title={event.title} onClose={snooze}>
       <div className="ecology-event-modal">
-        {event.id === "ebb_dryness" ? (
-          <div className={`event-visual shoreline-event-visual preview-${previewOptionId ?? "idle"}`} aria-hidden="true">
+        {shorelineEvent ? (
+          <div className={`event-visual shoreline-event-visual event-${event.id} preview-${previewOptionId ?? "idle"}`} aria-hidden="true">
             <img className="shoreline-event-base" src={uiAssets.events.ebbDryness} alt="" />
-            {previewOptionId && (
-              <img className="shoreline-event-trace" src={shorelineTraceAsset(previewOptionId)} alt="" />
+            {(previewOptionId || event.id === "salt_crystal_rise") && (
+              <img className="shoreline-event-trace" src={shorelineTraceAsset(event.id, previewOptionId)} alt="" />
             )}
           </div>
         ) : (
           <img className="event-visual" src={eventAssetFor(event)} alt="" aria-hidden="true" />
         )}
-        <span className="event-choice-kicker">{event.id === "ebb_dryness" ? "岸线时刻" : "潮池时刻"} · 选择一项回应</span>
+        <span className="event-choice-kicker">{shorelineEvent ? "岸线时刻" : "潮池时刻"} · 选择一项回应</span>
         <p className="event-description">{event.description}</p>
         <span className="event-tendency">潮池正在显露：{event.tendencyTag}</span>
         <div className="event-options">
@@ -84,15 +85,15 @@ export function EcologyEventModal() {
               key={option.id}
               className="event-option"
               onClick={() => choose(option.id)}
-              onMouseEnter={() => event.id === "ebb_dryness" && preview(option.id)}
-              onMouseLeave={() => event.id === "ebb_dryness" && preview(null)}
-              onFocus={() => event.id === "ebb_dryness" && preview(option.id)}
-              onBlur={() => event.id === "ebb_dryness" && preview(null)}
+              onMouseEnter={() => shorelineEvent && preview(option.id)}
+              onMouseLeave={() => shorelineEvent && preview(null)}
+              onFocus={() => shorelineEvent && preview(option.id)}
+              onBlur={() => shorelineEvent && preview(null)}
             >
               <span className="event-option-title">{option.title}</span>
               <span className="event-option-desc">{option.description}</span>
               <span className="event-option-effect">
-                {event.id === "ebb_dryness" ? shorelineEffectCopy(option.id) : `环境变化：${effectCopy(option.resourceEffect, option.environmentEffect)}`}
+                {shorelineEvent ? shorelineEffectCopy(event.id, option.id) : `环境变化：${effectCopy(option.resourceEffect, option.environmentEffect)}`}
               </span>
             </button>
           ))}
@@ -109,13 +110,26 @@ function previewShorelineChoice(optionId: string | null) {
   window.dispatchEvent(new CustomEvent("shoreline-choice-preview", { detail: { optionId } }));
 }
 
-function shorelineEffectCopy(optionId: string) {
+function isShorelineEvent(eventId: string) {
+  return eventId === "ebb_dryness" || eventId === "salt_crystal_rise";
+}
+
+function shorelineEffectCopy(eventId: string, optionId: string) {
+  if (eventId === "salt_crystal_rise") {
+    if (optionId === "bind_salt_crust") return "更易形成：矿物结面与牢固附着 · 代价：岸缘生长暂时放慢";
+    if (optionId === "rinse_salt_crystals") return "更易恢复：薄水膜与浅水回流 · 代价：失去一部分矿物结面";
+    return "可能留下：耐盐结构与突变 · 代价：脆弱附着斑可能退化";
+  }
   if (optionId === "protect_moisture_film") return "更易存活：薄水膜与稳定附着 · 代价：暂缓向远处岩面扩张";
   if (optionId === "expose_wet_rock") return "更易存活：耐晒结面与强附着 · 代价：水分和稳定性下降";
   return "更易形成：回流与播散倾向 · 代价：岸边定居机会减少";
 }
 
-function shorelineTraceAsset(optionId: string) {
+function shorelineTraceAsset(eventId: string, optionId: string | null) {
+  if (eventId === "salt_crystal_rise") {
+    if (optionId === "rinse_salt_crystals") return uiAssets.shoreline.tidalDispersal;
+    return uiAssets.shoreline.rockAttachment;
+  }
   if (optionId === "expose_wet_rock") return uiAssets.shoreline.rockAttachment;
   if (optionId === "return_to_shallows") return uiAssets.shoreline.tidalDispersal;
   return uiAssets.shoreline.moistureFilm;

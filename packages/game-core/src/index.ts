@@ -584,6 +584,41 @@ export const ecologyEvents: EcologyEvent[] = [
         logMessage: "岸痕跟着回流水纹变淡，碎屑被带回池中，浅水循环先恢复了呼吸。"
       }
     ]
+  },
+  {
+    id: "salt_crystal_rise",
+    title: "盐晶爬上湿岩",
+    description: "连续蒸发把盐分推到湿岩表面，细小白晶沿着附着斑边缘生长。它们能成为支点，也会抽走薄膜里的水。",
+    tendencyTag: "矿盐压力",
+    options: [
+      {
+        id: "bind_salt_crust",
+        title: "借矿物结面",
+        description: "让附着结构沿晶面增厚，利用矿盐形成更牢固的岸面，但岸缘生长会暂时放慢。",
+        resourceEffect: { minerals: 32, stability: 8, biomass: -8 },
+        environmentEffect: { mineralFlow: 0.12, heat: 0.03, volatility: 0.03 },
+        addHistoryTags: ["salt_crystal_pressure", "salt_crust_attachment"],
+        logMessage: "附着斑沿着盐晶边缘增厚，浅色矿物结面留在湿岩上，岸缘生长暂时放慢。"
+      },
+      {
+        id: "rinse_salt_crystals",
+        title: "冲掉盐晶",
+        description: "引一阵浅水洗过湿岩，降低盐分压力，也把一部分岸边材料带回池中。",
+        resourceEffect: { organic: 22, minerals: -18, stability: 10, biomass: 8 },
+        environmentEffect: { tide: 0.12, mineralFlow: -0.08, volatility: -0.03 },
+        addHistoryTags: ["salt_crystal_pressure", "salt_rinsed", "shoreline_rinse"],
+        logMessage: "一阵浅水冲过湿岩，盐晶被带回池中，岸缘薄膜重新吸到水分。"
+      },
+      {
+        id: "test_salt_tolerance",
+        title: "让耐受谱系试一试",
+        description: "不清除盐晶，让已在岸边的生命自行承受浓盐；幸存结构可能留下耐盐特征。",
+        resourceEffect: { mutation: 24, biomass: -12, stability: -10 },
+        environmentEffect: { mineralFlow: 0.08, volatility: 0.1 },
+        addHistoryTags: ["salt_crystal_pressure", "salt_tolerance_trial", "selection_pressure"],
+        logMessage: "盐晶继续贴着附着斑生长，能承受浓盐的结构收紧薄膜，脆弱部分开始退缩。"
+      }
+    ]
   }
 ];
 
@@ -1286,6 +1321,11 @@ export function availableEcologyEvents(state: GameState): EcologyEvent[] {
         && (state.historyTags ?? []).includes("niche_split")
         && !witness.dryWetPressureWitnessed;
     }
+    if (event.id === "salt_crystal_rise") {
+      const witness = normalizeChapterWitness(state).shorelineDifferentiation;
+      return witness.shorelineExchangeWitnessed
+        && (state.eventHistory ?? []).includes("ebb_dryness");
+    }
     return true;
   });
 }
@@ -1307,7 +1347,12 @@ export function rollEcologyEvent(state: GameState): EcologyEvent | null {
       (event.id === "mineral_shelf_exposed" && talentIds.has("crystal_nursery")) ||
       (event.id === "bloom_pressure" && state.unlockedNodes.includes("mutual_ecology_cycle")) ||
       (event.id === "murky_low_oxygen" && state.historyTags.includes("filterer_balance")) ||
-      (event.id === "decomposer_layer_spread" && state.historyTags.includes("decomposer_cycle"))
+      (event.id === "decomposer_layer_spread" && state.historyTags.includes("decomposer_cycle")) ||
+      (event.id === "salt_crystal_rise"
+        && (talentIds.has("brine_cycle")
+          || talentIds.has("crystal_nursery")
+          || talentIds.has("lattice_memory")
+          || state.historyTags.includes("mineral_catalyst")))
         ? 2
         : 1;
     return Array.from({ length: weight }, () => event);
@@ -1338,6 +1383,9 @@ export function applyEcologyEventChoice(input: GameState, eventId: string, optio
   }
   if (event.id === "ebb_dryness") {
     applyEbbDrynessOutcome(next, option.id);
+  }
+  if (event.id === "salt_crystal_rise") {
+    applySaltCrystalOutcome(next, option.id);
   }
   const newTags = option.addHistoryTags ?? [];
   const hasEcho = newTags.some((tag) => (input.historyTags ?? []).includes(tag));
@@ -1539,7 +1587,7 @@ export function normalizeGameState(state: GameState): GameState {
   };
 }
 
-export type ThirdChapterDebugStage = "exposed" | "shore" | "niches" | "event" | "exchange";
+export type ThirdChapterDebugStage = "exposed" | "shore" | "niches" | "event" | "exchange" | "salt" | "salted";
 
 export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugStage = "exposed"): GameState {
   let save = createInitialState(id, "第三章验收潮池");
@@ -1584,7 +1632,7 @@ export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugS
   }
   save.pendingEcologyEvent = null;
 
-  if (["shore", "niches", "event", "exchange"].includes(stage)) {
+  if (["shore", "niches", "event", "exchange", "salt", "salted"].includes(stage)) {
     save = withDebugResources(save);
     if (canUnlockEvolutionNode(save, "shore_attachment")) {
       save = unlockEvolutionNode(save, "shore_attachment");
@@ -1594,7 +1642,7 @@ export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugS
     if (stage === "shore") save.pendingEcologyEvent = null;
   }
 
-  if (["niches", "event", "exchange"].includes(stage)) {
+  if (["niches", "event", "exchange", "salt", "salted"].includes(stage)) {
     save.pendingEcologyEvent = null;
     save = withDebugResources(save);
     if (canUnlockEvolutionNode(save, "niche_split")) {
@@ -1603,13 +1651,16 @@ export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugS
     if (stage === "niches") save.pendingEcologyEvent = null;
   }
 
-  if (stage === "exchange") {
+  if (["exchange", "salt", "salted"].includes(stage)) {
     save = applyEcologyEventChoice(save, "ebb_dryness", "protect_moisture_film");
     save = withDebugResources(save);
     if (canUnlockEvolutionNode(save, "shoreline_exchange")) {
       save = unlockEvolutionNode(save, "shoreline_exchange");
     }
-    save.pendingEcologyEvent = null;
+    if (stage === "exchange") save.pendingEcologyEvent = null;
+    if (stage === "salted") {
+      save = applyEcologyEventChoice(save, "salt_crystal_rise", "bind_salt_crust");
+    }
   }
 
   return normalizeGameState({
@@ -2131,6 +2182,16 @@ function maybeAssignEcologyEvent(state: GameState) {
       return;
     }
   }
+  if (shorelineWitness.shorelineExchangeWitnessed
+    && (state.eventHistory ?? []).includes("ebb_dryness")
+    && !(state.eventHistory ?? []).includes("salt_crystal_rise")) {
+    const saltCrystals = ecologyEvents.find((event) => event.id === "salt_crystal_rise");
+    if (saltCrystals) {
+      state.pendingEcologyEvent = saltCrystals;
+      addLog(state, "system", `岸线事件出现：${saltCrystals.title}`);
+      return;
+    }
+  }
   if (shorelineWitness.chapterStarted) return;
   const event = rollEcologyEvent(state);
   if (!event) return;
@@ -2183,6 +2244,96 @@ function applyEbbDrynessOutcome(state: GameState, optionId: string) {
       (shorelineSpecies.habitats ?? []).filter((habitat) => habitat !== "intertidal_wet_rock"),
       ["shallow_water"],
     );
+  }
+}
+
+function applySaltCrystalOutcome(state: GameState, optionId: string) {
+  const shorelineSpecies = state.species.find((species) =>
+    species.habitats?.some((habitat) => habitat === "intertidal_wet_rock" || habitat === "moist_shore")
+    && species.status !== "extinct"
+    && species.status !== "fossilized",
+  );
+  if (!shorelineSpecies) return;
+
+  const witness = state.chapterWitness!.shorelineDifferentiation;
+  const talentIds = new Set((state.talents ?? []).map((talent) => talent.id));
+  const hasMineralImprint = ["crystal_nursery", "deep_mineral", "exposed_rock_bed", "brine_cycle", "lattice_memory"]
+    .some((talentId) => talentIds.has(talentId));
+
+  shorelineSpecies.historyTags = addUniqueTags(shorelineSpecies.historyTags ?? [], ["salt_crystal_pressure"]);
+
+  if (optionId === "bind_salt_crust") {
+    shorelineSpecies.traits = addUniqueTags(shorelineSpecies.traits, ["矿盐结面"]);
+    shorelineSpecies.historyTags = addUniqueTags(shorelineSpecies.historyTags, ["salt_crust_attachment"]);
+    shorelineSpecies.numericEffects.minerals = (shorelineSpecies.numericEffects.minerals ?? 0) + 0.02;
+    if (hasMineralImprint) {
+      shorelineSpecies.numericEffects.stability = (shorelineSpecies.numericEffects.stability ?? 0) + 0.01;
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["mineral_imprint_recalled"]);
+      addLog(state, "event", "已有矿物源质印记让盐晶排列得更规整，附着斑沿晶面形成了更稳定的边缘。");
+    }
+    if (witness.shorelineStrategy === "rock_attachment") {
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["salt_crust_reinforced"]);
+    }
+    return;
+  }
+
+  if (optionId === "rinse_salt_crystals") {
+    shorelineSpecies.historyTags = addUniqueTags(shorelineSpecies.historyTags, ["salt_rinsed"]);
+    const hasLivingFilterer = state.species.some((species) =>
+      species.ecologicalRole === "filterer"
+      && (species.status === "living" || species.status === "flourishing"),
+    );
+    if (hasLivingFilterer) {
+      state.resources.stability = clamp(state.resources.stability + 4, 0, 100);
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["filterer_shoreline_rinse"]);
+      addLog(state, "event", "滤食孔隙截住了被冲回浅水的细小盐粒，水体更快恢复清澈。");
+    }
+    if (witness.shorelineStrategy === "tidal_dispersal") {
+      state.resources.organic = clamp(state.resources.organic + 8, 0, RESOURCE_CAP);
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["tidal_rinse_reinforced"]);
+    }
+    return;
+  }
+
+  if (optionId !== "test_salt_tolerance") return;
+  const speciesSupportsSalt = shorelineSpecies.ecologicalRole === "extremophile"
+    || shorelineSpecies.ecologicalRole === "catalyst"
+    || (shorelineSpecies.historyTags ?? []).some((tag) => tag === "mineral_catalyst" || tag === "heat_tolerant");
+  const strategyBuffersSalt = witness.shorelineStrategy === "moisture_retention"
+    || witness.shorelineStrategy === "rock_attachment";
+
+  if (hasMineralImprint || speciesSupportsSalt || strategyBuffersSalt) {
+    shorelineSpecies.traits = addUniqueTags(shorelineSpecies.traits, ["耐盐薄膜"]);
+    shorelineSpecies.historyTags = addUniqueTags(shorelineSpecies.historyTags, ["salt_tolerance_survived"]);
+    shorelineSpecies.numericEffects.mutation = (shorelineSpecies.numericEffects.mutation ?? 0) + 0.02;
+    state.historyTags = addUniqueTags(state.historyTags ?? [], ["salt_tolerance_survived"]);
+    addLog(state, "species", `${shorelineSpecies.name}收紧了岸边薄膜，盐晶之间留下了仍能活动的耐盐结构。`);
+    return;
+  }
+
+  shorelineSpecies.status = "endangered";
+  shorelineSpecies.vulnerabilities = addUniqueTags(
+    shorelineSpecies.vulnerabilities,
+    ["浓盐会抽走附着薄膜中的水分"],
+  );
+  shorelineSpecies.historyTags = addUniqueTags(shorelineSpecies.historyTags, ["salt_tolerance_warning"]);
+  state.historyTags = addUniqueTags(state.historyTags ?? [], ["salt_tolerance_warning"]);
+  const warningExists = state.legacies.some((legacy) =>
+    legacy.sourceSpeciesId === shorelineSpecies.id && legacy.tags?.includes("salt_tolerance_warning"),
+  );
+  if (!warningExists) {
+    state.legacies.push({
+      id: cryptoId("legacy"),
+      sourceSpeciesId: shorelineSpecies.id,
+      name: `${shorelineSpecies.name}的盐压警告`,
+      type: "warning",
+      description: `${shorelineSpecies.name}在浓盐中收缩，岸面留下了一圈缺水的空白附着位。`,
+      effect: "稳定性产出 +1%",
+      numericEffects: { stability: 0.01 },
+      tags: ["salt_crystal_pressure", "salt_tolerance_warning"],
+      createdAt: new Date().toISOString(),
+    });
+    addLog(state, "legacy", "浓盐筛掉了一部分脆弱薄膜，空出的岸位留下了以后应先恢复水分的警告。");
   }
 }
 

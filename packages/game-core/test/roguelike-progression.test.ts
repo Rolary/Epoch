@@ -580,6 +580,89 @@ describe("roguelike life-history progression", () => {
     expect(save.historyTags).toContain("shoreline_exchange");
   });
 
+  it("raises salt crystals only after the first shoreline exchange", () => {
+    const beforeExchange = buildThirdChapterDebugSave("chapter-three-before-salt", "event");
+    const saltSave = buildThirdChapterDebugSave("chapter-three-salt", "salt");
+
+    expect(availableEcologyEvents(beforeExchange).map((event) => event.id)).not.toContain("salt_crystal_rise");
+    expect(saltSave.pendingEcologyEvent?.id).toBe("salt_crystal_rise");
+    expect(saltSave.pendingEcologyEvent?.options.map((option) => option.id)).toEqual([
+      "bind_salt_crust",
+      "rinse_salt_crystals",
+      "test_salt_tolerance",
+    ]);
+    expect(saltSave.chapterProgress?.stage).toBe("shoreline_memory");
+  });
+
+  it("records one visible salt-crystal response and keeps the earlier shoreline strategy", () => {
+    const outcomes = [
+      ["bind_salt_crust", "salt_crust_attachment"],
+      ["rinse_salt_crystals", "salt_rinsed"],
+      ["test_salt_tolerance", "salt_tolerance_survived"],
+    ] as const;
+
+    for (const [optionId, outcomeTag] of outcomes) {
+      const saltSave = buildThirdChapterDebugSave(`chapter-three-salt-${optionId}`, "salt");
+      const originalStrategy = saltSave.chapterWitness?.shorelineDifferentiation.shorelineStrategy;
+      const next = applyEcologyEventChoice(saltSave, "salt_crystal_rise", optionId);
+
+      expect(next.pendingEcologyEvent).toBeNull();
+      expect(next.eventHistory).toContain("salt_crystal_rise");
+      expect(next.historyTags).toContain("salt_crystal_pressure");
+      expect(next.historyTags).toContain(outcomeTag);
+      expect(next.chapterWitness?.shorelineDifferentiation.shorelineStrategy).toBe(originalStrategy);
+      expect(outcomes
+        .filter(([, candidate]) => candidate !== outcomeTag)
+        .every(([, candidate]) => !next.historyTags.includes(candidate))).toBe(true);
+    }
+  });
+
+  it("lets mineral source imprints strengthen a salt crust without choosing a species directly", () => {
+    const saltSave = buildThirdChapterDebugSave("chapter-three-salt-imprint", "salt");
+    const brineCycle = talentCatalog.find((talent) => talent.id === "brine_cycle");
+    expect(brineCycle).toBeDefined();
+    saltSave.talents.push(brineCycle!);
+    const shorelineSpeciesId = saltSave.species.find((species) =>
+      species.habitats?.includes("intertidal_wet_rock"),
+    )?.id;
+
+    const next = applyEcologyEventChoice(saltSave, "salt_crystal_rise", "bind_salt_crust");
+    const shorelineSpecies = next.species.find((species) => species.id === shorelineSpeciesId);
+
+    expect(next.historyTags).toContain("mineral_imprint_recalled");
+    expect(shorelineSpecies?.traits).toContain("矿盐结面");
+    expect(shorelineSpecies?.numericEffects.minerals).toBeGreaterThan(0);
+  });
+
+  it("leaves a warning legacy when an unsupported shoreline lineage fails a salt trial", () => {
+    const saltSave = buildThirdChapterDebugSave("chapter-three-salt-warning", "salt");
+    saltSave.talents = [];
+    saltSave.chapterWitness!.shorelineDifferentiation.shorelineStrategy = undefined;
+    saltSave.historyTags = saltSave.historyTags.filter((tag) =>
+      !["moisture_retention", "rock_attachment", "tidal_dispersal"].includes(tag),
+    );
+    const shorelineSpecies = saltSave.species.find((species) =>
+      species.habitats?.includes("intertidal_wet_rock"),
+    );
+    expect(shorelineSpecies).toBeDefined();
+    shorelineSpecies!.ecologicalRole = "filterer";
+    shorelineSpecies!.historyTags = (shorelineSpecies!.historyTags ?? [])
+      .filter((tag) => tag !== "mineral_catalyst" && tag !== "heat_tolerant");
+
+    const next = applyEcologyEventChoice(saltSave, "salt_crystal_rise", "test_salt_tolerance");
+    const pressuredSpecies = next.species.find((species) => species.id === shorelineSpecies!.id);
+
+    expect(pressuredSpecies?.status).toBe("endangered");
+    expect(next.historyTags).toContain("salt_tolerance_warning");
+    expect(next.legacies).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceSpeciesId: shorelineSpecies!.id,
+        type: "warning",
+        tags: expect.arrayContaining(["salt_tolerance_warning"]),
+      }),
+    ]));
+  });
+
   it("requires second chapter roles and cooldown before ecology resonance", () => {
     const base = createInitialState("resonance-gate");
     expect(availableEcologyResonances(base)).toHaveLength(0);

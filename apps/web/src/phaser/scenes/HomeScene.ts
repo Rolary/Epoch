@@ -1377,22 +1377,60 @@ export class HomeScene extends Phaser.Scene {
     this.shorelineTraceGraphics.lineStyle(2, 0x7CE6C8, exchange ? 0.34 : 0.22);
     this.shorelineTraceGraphics.strokeEllipse(cx + 8, cy + 2, 278 + motion * 4, 232 + motion * 2);
 
-    const previewStrategy = shorelineStrategyForOption(this.shorelinePreviewOption);
-    const activeStrategy = previewStrategy ?? witness.shorelineStrategy;
+    const previewTexture = shorelineTraceTextureForOption(this.shorelinePreviewOption);
+    const saltOutcomeTexture = saltTraceTextureForTags(save.historyTags);
+    const activeTraceTexture = previewTexture
+      ?? saltOutcomeTexture
+      ?? shorelineTraceTextureFor(witness.shorelineStrategy);
+    const hasShorelinePreview = Boolean(previewTexture);
     const nichesSplit = save.historyTags.includes("niche_split") || witness.habitatsWitnessed.includes("moist_shore");
-    if (witness.shoreColonized || previewStrategy) {
+    if (witness.shoreColonized || hasShorelinePreview) {
       this.shorelineTraceImage
-        .setTexture(shorelineTraceTextureFor(activeStrategy))
+        .setTexture(activeTraceTexture)
         .setVisible(true)
         .setPosition(shorelineX, shorelineY)
         .setDisplaySize(shorelineSize, shorelineSize)
-        .setAlpha(previewStrategy ? 0.86 : exchange ? 0.36 : 0.62);
+        .setAlpha(hasShorelinePreview ? 0.86 : exchange ? 0.44 : 0.62);
     }
 
-    if (save.pendingEcologyEvent?.id === "ebb_dryness" && !previewStrategy) {
+    if (save.pendingEcologyEvent?.id === "ebb_dryness" && !hasShorelinePreview) {
       this.shorelineTraceGraphics.lineStyle(1, 0xF5D078, 0.22);
       for (let index = 0; index < 5; index++) {
         this.shorelineTraceGraphics.lineBetween(cx + 86 + index * 9, cy + 24, cx + 94 + index * 10, cy + 96);
+      }
+    }
+
+    if (save.pendingEcologyEvent?.id === "salt_crystal_rise" && !hasShorelinePreview) {
+      this.shorelineTraceGraphics.lineStyle(1.4, 0xF4F0D0, 0.5);
+      for (let index = 0; index < 6; index++) {
+        const crystalX = cx + 108 + index * 12;
+        const crystalY = cy + 44 + (index % 2) * 15;
+        this.shorelineTraceGraphics.lineBetween(crystalX - 4, crystalY, crystalX + 4, crystalY);
+        this.shorelineTraceGraphics.lineBetween(crystalX, crystalY - 6, crystalX, crystalY + 6);
+      }
+    }
+
+    if (save.historyTags.includes("salt_crust_attachment")) {
+      this.shorelineTraceGraphics.fillStyle(0xF4F0D0, 0.34);
+      for (let index = 0; index < 5; index++) {
+        this.shorelineTraceGraphics.fillTriangle(
+          cx + 116 + index * 11,
+          cy + 58 + (index % 2) * 10,
+          cx + 121 + index * 11,
+          cy + 50 + (index % 2) * 10,
+          cx + 126 + index * 11,
+          cy + 58 + (index % 2) * 10,
+        );
+      }
+    } else if (save.historyTags.includes("salt_rinsed")) {
+      this.shorelineTraceGraphics.lineStyle(1.5, 0x8BE8F7, 0.34);
+      for (let index = 0; index < 3; index++) {
+        this.shorelineTraceGraphics.lineBetween(cx + 174, cy + 50 + index * 10, cx + 92, cy + 72 + index * 8);
+      }
+    } else if (save.historyTags.includes("salt_tolerance_trial")) {
+      this.shorelineTraceGraphics.fillStyle(0xC89BE8, 0.32);
+      for (let index = 0; index < 5; index++) {
+        this.shorelineTraceGraphics.fillCircle(cx + 122 + index * 12, cy + 62 + (index % 2) * 13, 3);
       }
     }
 
@@ -1613,4 +1651,19 @@ function shorelineTraceTextureFor(strategy: "moisture_retention" | "rock_attachm
   if (strategy === "rock_attachment") return "shoreline-rock-attachment";
   if (strategy === "tidal_dispersal") return "shoreline-tidal-dispersal";
   return "shoreline-moisture-film";
+}
+
+function shorelineTraceTextureForOption(optionId: string | null): string | null {
+  if (optionId === "bind_salt_crust" || optionId === "test_salt_tolerance") return "shoreline-rock-attachment";
+  if (optionId === "rinse_salt_crystals") return "shoreline-tidal-dispersal";
+  const strategy = shorelineStrategyForOption(optionId);
+  return strategy ? shorelineTraceTextureFor(strategy) : null;
+}
+
+function saltTraceTextureForTags(historyTags: string[]): string | null {
+  if (historyTags.includes("salt_rinsed")) return "shoreline-tidal-dispersal";
+  if (historyTags.includes("salt_crust_attachment") || historyTags.includes("salt_tolerance_trial")) {
+    return "shoreline-rock-attachment";
+  }
+  return null;
 }

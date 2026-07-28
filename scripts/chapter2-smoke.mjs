@@ -26,12 +26,12 @@ async function request(path, options = {}) {
   return data;
 }
 
+const { guestKey } = await request("/auth/guest", { method: "POST" });
 const results = [];
 for (const stage of stages) {
   const contract = expected[stage];
   if (!contract) throw new Error(`Unknown smoke stage: ${stage}`);
 
-  const { guestKey } = await request("/auth/guest", { method: "POST" });
   const headers = {
     "content-type": "application/json",
     "x-guest-key": guestKey,

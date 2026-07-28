@@ -241,7 +241,7 @@
 
 ### 9.3 验证切片
 
-非生产环境的 `POST /debug/third-chapter-save` 与 `smoke:chapter3` 已覆盖 `exposed / shore / niches / event / exchange` 切片，其中 `niches` 明确验证湿岩之外的湿润岸缘姿态；后续逐步覆盖：
+非生产环境的 `POST /debug/third-chapter-save` 与 `smoke:chapter3` 已覆盖 `exposed / shore / niches / event / exchange / salt / salted` 切片，其中 `niches` 明确验证湿岩之外的湿润岸缘姿态，`salt / salted` 分别验证盐晶事件待选择与结果落地；后续逐步覆盖：
 
 - 章节开启但尚未露出水线。
 - 水线出现并有一处岸线痕迹。

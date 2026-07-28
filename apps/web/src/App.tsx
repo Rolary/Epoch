@@ -385,10 +385,10 @@ export function App() {
       const debugChapter = import.meta.env.DEV
         ? new URLSearchParams(window.location.search).get("debugChapter3")
         : null;
-      if (debugChapter && ["exposed", "shore", "niches", "event", "exchange"].includes(debugChapter)) {
+      if (debugChapter && ["exposed", "shore", "niches", "event", "exchange", "salt", "salted"].includes(debugChapter)) {
         try {
           await ensureGuest();
-          const debugSave = await createThirdChapterDebugSave(debugChapter as "exposed" | "shore" | "niches" | "event" | "exchange");
+          const debugSave = await createThirdChapterDebugSave(debugChapter as "exposed" | "shore" | "niches" | "event" | "exchange" | "salt" | "salted");
           setSave(debugSave);
           setSaveId(debugSave.id);
           hydrateScopedUIState();
@@ -799,7 +799,7 @@ function chapterNarrativesFor(
     prompts.push({
       id: `ecology-event:${save.pendingEcologyEvent.id}`,
       type: "ecology-event",
-      priority: save.pendingEcologyEvent.id === "ebb_dryness" ? 65 : 100,
+      priority: ["ebb_dryness", "salt_crystal_rise"].includes(save.pendingEcologyEvent.id) ? 65 : 100,
     });
   }
 
@@ -869,6 +869,25 @@ function chapterNarrativesFor(
           impact: "湿岸上的生命仍依赖回潮，两处栖位由此交换材料。",
           advice: "潮池记忆已经记录水线露出、第一次附着和第一次回流。",
           icon: uiAssets.cards.tide,
+          actionLabel: "查看潮池记忆",
+          targetPage: "logs",
+        },
+      });
+    }
+
+    if ((save.eventHistory ?? []).includes("salt_crystal_rise")) {
+      prompts.push({
+        id: "shoreline-witness-salt-crystals",
+        type: "system-unlock",
+        priority: 30,
+        seenHintId: "shoreline-witness-salt-crystals",
+        data: {
+          title: "盐晶在岸边留下了结果",
+          name: "盐晶之后",
+          description: saltCrystalOutcomeCopy(save),
+          impact: "已有岸线倾向、生态角色和源质印记改变了附着斑承受矿盐的方式。",
+          advice: "查看潮池记忆，回看这次矿盐压力怎样改变湿岩与浅水的联系。",
+          icon: uiAssets.resources.minerals,
           actionLabel: "查看潮池记忆",
           targetPage: "logs",
         },
@@ -994,6 +1013,23 @@ function shorelinePressureCopy(strategy: string | undefined) {
   if (strategy === "rock_attachment") return "湿岩完全见光，一部分薄膜收缩，耐晒附着斑仍停留在粗糙岩面上。";
   if (strategy === "tidal_dispersal") return "岸痕随回潮变淡，碎屑退回浅水，扩散比定居更早成为这片水的选择。";
   return "薄水膜延缓了失水，第一处附着斑得以存活，更远岸面暂未扩张。";
+}
+
+function saltCrystalOutcomeCopy(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
+  if (save.historyTags.includes("salt_crust_attachment")) {
+    return save.historyTags.includes("mineral_imprint_recalled")
+      ? "矿物源质印记让盐晶排列成更稳定的结面，附着斑沿晶面增厚。"
+      : "附着斑沿盐晶边缘增厚，浅色矿物结面留在了湿岩上。";
+  }
+  if (save.historyTags.includes("salt_rinsed")) {
+    return save.historyTags.includes("filterer_shoreline_rinse")
+      ? "浅水冲掉盐晶，滤食孔隙截住细小盐粒，岸边薄膜重新吸到水分。"
+      : "一阵浅水洗过湿岩，盐晶和岸边碎屑一起回到原有循环。";
+  }
+  if (save.historyTags.includes("salt_tolerance_warning")) {
+    return "浓盐让脆弱薄膜退缩，空出的岸位留下了以后应先恢复水分的警告。";
+  }
+  return "能承受浓盐的结构收紧薄膜，盐晶之间仍留下了活动痕迹。";
 }
 
 function isThirdChapterDebugPreview() {

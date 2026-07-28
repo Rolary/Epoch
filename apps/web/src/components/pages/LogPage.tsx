@@ -209,6 +209,7 @@ function buildMemoryEntries(logs: EvolutionLog[]): MemoryEntry[] {
   const entries: MemoryEntry[] = [];
 
   for (const log of logs.slice(0, 50)) {
+    if (/^(潮池|岸线)事件出现：/.test(log.message)) continue;
     const keyMemory = createKeyMemory(log);
     if (keyMemory) {
       const groupKey = `${keyMemory.tone}:${keyMemory.title}:${keyMemory.description}`;
@@ -258,6 +259,20 @@ function createKeyMemory(log: EvolutionLog): MemoryEntry | null {
 
   if (/岸线往返|岸边碎屑带回浅水/.test(log.message)) {
     return keyMemory(log, "tide", "岸边与浅水形成往返", "回潮把岸边碎屑带回浅水，两个栖位由此交换材料。");
+  }
+
+  if (/沿着盐晶边缘增厚|盐晶排列得更规整|浅色矿物结面/.test(log.message)) {
+    return keyMemory(log, "mineral", "盐晶成为岸面支点", "附着斑沿矿物晶面增厚，湿岩上留下了更牢固的浅色结面。");
+  }
+
+  if (/盐晶被带回池中|冲掉盐晶|洗过湿岩|截住了.*盐粒/.test(log.message)) {
+    return keyMemory(log, "tide", "浅水洗过盐晶", "回水降低了岸边盐分压力，并把盐粒和碎屑带回原有循环。");
+  }
+
+  if (/耐盐结构|承受浓盐|浓盐筛掉|盐晶继续贴着附着斑/.test(log.message)) {
+    return log.type === "legacy"
+      ? keyMemory(log, "legacy", "浓盐留下空出的岸位", "脆弱薄膜在浓盐中退缩，空位留下了以后应先恢复水分的警告。")
+      : keyMemory(log, "species", "岸边出现耐盐尝试", "附着斑在浓盐中收紧薄膜，幸存结构与退缩痕迹都留在湿岩上。");
   }
 
   if (/生态共鸣|水中回响/.test(log.message)) {

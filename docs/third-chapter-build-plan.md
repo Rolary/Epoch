@@ -1,6 +1,6 @@
 # 《生态纪元》第三章开发规划
 
-> 版本：体验切片通过首轮视觉验收，正式资产已生成并接入；阶段 7 的 `niche_split` 与第二岸线栖位反馈已完成，下一项为岸线事件扩展。
+> 版本：体验切片通过首轮视觉验收，正式资产已生成并接入；阶段 7 的 `niche_split` 与“盐晶爬上湿岩”事件已完成，下一项为“骤雨冲岸”。
 
 ## 1. 计划目标
 
@@ -228,8 +228,8 @@
 
 **扩展顺序**：
 
-1. 补齐 `niche_split` 和第二个岸线栖位反馈。
-2. 补齐 `salt_crystal_rise`、`rain_runoff` 两个岸线事件。
+1. 补齐 `niche_split` 和第二个岸线栖位反馈。（已完成）
+2. 补齐 `salt_crystal_rise`、`rain_runoff` 两个岸线事件。（`salt_crystal_rise` 已完成，`rain_runoff` 为下一项）
 3. 完成三条等条件互斥的岸线倾向：延缓水膜蒸发、强化湿岩附着、随潮播散。
 4. 增加岸线角色与既有源质印记、物种组合、遗产效果的连接。
 5. 完成跨栖位循环的产出、压力和失衡平衡。
@@ -287,8 +287,9 @@ corepack pnpm run smoke:chapter3
 - `waterline_exposure`、`shore_attachment`、`shoreline_exchange` 已进入共享演化规则。
 - 一次性 `guide_shore_tide` 引潮动作只引导环境，由现有谱系自行贴岸；重复请求不会重复生成物种或见证。
 - `ebb_dryness` 三项选择共享同一事件前置条件，并写入互斥岸线倾向。
-- `POST /debug/third-chapter-save` 已覆盖 `exposed / shore / niches / event / exchange`，并提供非持久化浏览器预览。
+- `POST /debug/third-chapter-save` 已覆盖 `exposed / shore / niches / event / exchange / salt / salted`，并提供非持久化浏览器预览。
 - Phaser 已表现水线、岸痕预示和回流；React 已接入第三章主目标、叙事队列和三段潮池记忆。
+- `salt_crystal_rise` 已在第一次岸线往返后出现；矿盐结面、浅水洗盐和耐盐尝试分别改变岸面反馈、已有谱系、历史标签或警告遗产，已有岸线倾向、滤食角色和矿物源质印记会影响结果。
 - 正式资产清单见 `docs/third-chapter-ui-asset-backlog.md`，首批资产已获批准、生成、接入并完成截图验收。
 
 ## 7. 完成定义

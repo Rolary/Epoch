@@ -60,6 +60,7 @@ function StrategySheetContent() {
   const save = useGameStore((s) => s.save);
   const setSave = useGameStore((s) => s.setSave);
   const showModal = useUIStore((s) => s.showModal);
+  const snoozeEcologyEvent = useUIStore((s) => s.snoozeEcologyEvent);
   const cooldownUntil = useUIStore((s) => s.strategyCooldownUntil);
   const setStrategyCooldown = useUIStore((s) => s.setStrategyCooldown);
   const [activeChapter, setActiveChapter] = useState<StrategyChapter>("life_birth");
@@ -168,6 +169,12 @@ function StrategySheetContent() {
     });
   };
 
+  const reopenPendingEvent = () => {
+    snoozeEcologyEvent(null);
+    closeSheet();
+    showModal("ecology-event");
+  };
+
   const chapterTabs = useMemo(() => [
     { id: "life_birth" as const, label: "生命诞生", disabled: false },
     ...(chapterTwoUnlocked
@@ -186,6 +193,21 @@ function StrategySheetContent() {
           </p>
         </div>
       </div>
+
+      {save?.pendingEcologyEvent && (
+        <button
+          className="pending-ecology-event"
+          type="button"
+          onClick={reopenPendingEvent}
+        >
+          <span className="pending-ecology-event-kicker">
+            {save.chapterProgress?.chapter === "shoreline_differentiation" ? "岸线现象" : "潮池现象"}
+          </span>
+          <strong>{save.pendingEcologyEvent.title}</strong>
+          <span>{save.pendingEcologyEvent.description}</span>
+          <small>继续选择回应</small>
+        </button>
+      )}
 
       <div className="strategy-tabs" role="tablist" aria-label="干预章节">
         {chapterTabs.map((tab) => (

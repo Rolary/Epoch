@@ -325,6 +325,17 @@ function historyTagLabel(tag: string): string {
     shallow_cycle_recovered: "浅水回流",
     shoreline_exchange: "岸线往返",
     shoreline_memory: "岸线记忆",
+    salt_crystal_pressure: "矿盐压力",
+    salt_crust_attachment: "盐晶结面",
+    salt_rinsed: "浅水洗盐",
+    shoreline_rinse: "岸线冲洗",
+    salt_tolerance_trial: "耐盐尝试",
+    mineral_imprint_recalled: "矿物印记回应",
+    salt_crust_reinforced: "矿面加固",
+    filterer_shoreline_rinse: "滤孔截盐",
+    tidal_rinse_reinforced: "回潮洗盐",
+    salt_tolerance_survived: "耐盐薄膜",
+    salt_tolerance_warning: "盐压警告",
   };
   return map[tag] ?? "新的生态倾向";
 }
@@ -385,6 +396,17 @@ function historyTagCopy(tag: string): string {
     shallow_cycle_recovered: "回潮把岸边材料带回原有浅水循环。",
     shoreline_exchange: "浅水与岸边已经开始互相带回材料。",
     shoreline_memory: "潮池已经留下第一段可回看的水线变化。",
+    salt_crystal_pressure: "连续蒸发让盐晶沿着湿岩附着斑生长。",
+    salt_crust_attachment: "附着斑利用矿盐形成了更牢固的岸面结层。",
+    salt_rinsed: "浅水洗过湿岩，盐晶与碎屑被带回原有循环。",
+    shoreline_rinse: "一阵回水降低了岸边薄膜承受的盐分压力。",
+    salt_tolerance_trial: "岸边生命曾在不清除盐晶的情况下承受浓盐。",
+    mineral_imprint_recalled: "已有矿物源质印记让盐晶排列得更规整。",
+    salt_crust_reinforced: "原有矿面附着倾向让盐晶结面更加牢固。",
+    filterer_shoreline_rinse: "滤食孔隙截住了被冲回浅水的细小盐粒。",
+    tidal_rinse_reinforced: "随潮播散倾向让洗落的材料更快回到浅水。",
+    salt_tolerance_survived: "幸存结构收紧薄膜，在盐晶之间保持活动。",
+    salt_tolerance_warning: "脆弱薄膜在浓盐中退缩，留下了需要恢复水分的空位。",
   };
   return map[tag] ?? "这类变化正在形成长期生态倾向。";
 }

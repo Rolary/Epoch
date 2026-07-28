@@ -286,6 +286,18 @@ function getObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>
 function getShorelineObjective(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, nextNode: typeof evolutionNodes[number] | undefined) {
   const stage = save.chapterProgress?.stage ?? "discover_waterline";
   const witness = save.chapterWitness?.shorelineDifferentiation;
+  if (save.pendingEcologyEvent?.id === "salt_crystal_rise") {
+    return {
+      title: "处理爬上湿岩的盐晶",
+      action: "打开生态干预，选择怎样回应矿盐压力",
+      observation: "细小白晶正沿着岸边附着斑生长，既能成为支点，也会抽走薄膜里的水。",
+      term: "矿盐压力",
+      progressLabel: "盐晶回应",
+      target: 1,
+      progress: 0,
+      costEntries: [],
+    };
+  }
   const stageCopy: Record<string, { title: string; action: string; observation: string; term: string; progressLabel: string; target: number; progress: number }> = {
     discover_waterline: {
       title: "让水线显现",

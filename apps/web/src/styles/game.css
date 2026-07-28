@@ -838,6 +838,14 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .shoreline-event-visual.preview-expose_wet_rock .shoreline-event-trace { transform: translate(4%, 1%) scale(1.03); filter: drop-shadow(0 0 13px rgba(245,208,120,0.25)); }
 .shoreline-event-visual.preview-return_to_shallows .shoreline-event-base { filter: saturate(1.04) brightness(0.9); transform: translateX(-1%); }
 .shoreline-event-visual.preview-return_to_shallows .shoreline-event-trace { transform: translate(-6%, 2%) scale(1.08); opacity: 0.8; }
+.shoreline-event-visual.event-salt_crystal_rise.preview-idle .shoreline-event-base { filter: saturate(0.86) brightness(1.04) contrast(1.05); }
+.shoreline-event-visual.event-salt_crystal_rise.preview-idle .shoreline-event-trace { transform: translate(3%, 1%) scale(1.04); opacity: 0.72; filter: drop-shadow(0 0 14px rgba(244,240,208,0.32)); }
+.shoreline-event-visual.preview-bind_salt_crust .shoreline-event-base { filter: saturate(0.88) brightness(1.08) contrast(1.06); }
+.shoreline-event-visual.preview-bind_salt_crust .shoreline-event-trace { transform: translate(4%, 1%) scale(1.04); filter: drop-shadow(0 0 16px rgba(244,240,208,0.42)); }
+.shoreline-event-visual.preview-rinse_salt_crystals .shoreline-event-base { filter: saturate(1.08) brightness(0.92); transform: translateX(-1%); }
+.shoreline-event-visual.preview-rinse_salt_crystals .shoreline-event-trace { transform: translate(-6%, 2%) scale(1.08); opacity: 0.82; filter: drop-shadow(0 0 14px rgba(139,232,247,0.3)); }
+.shoreline-event-visual.preview-test_salt_tolerance .shoreline-event-base { filter: saturate(0.94) brightness(1.02) contrast(1.08); }
+.shoreline-event-visual.preview-test_salt_tolerance .shoreline-event-trace { transform: translate(4%, 1%) scale(1.04); filter: hue-rotate(24deg) drop-shadow(0 0 15px rgba(200,155,232,0.34)); }
 @keyframes shorelineTraceReveal {
   from { opacity: 0; transform: scale(0.97); }
   to { opacity: 0.86; }
@@ -933,6 +941,8 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
   .event-option,
   .event-option::before,
   .event-option::after,
+  .shoreline-event-base,
+  .shoreline-event-trace,
   .sheet-backdrop,
   .sheet-backdrop.closing,
   .bottom-sheet,
@@ -949,7 +959,9 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
   .resource-item,
   .resource-label,
   .pool-effect-status,
-  .pool-effect-copy {
+  .pool-effect-copy,
+  .shoreline-event-base,
+  .pending-ecology-event {
     transition-duration: 0.01ms;
   }
 }
@@ -974,6 +986,13 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0D
 .sheet-drawer .sheet-handle { margin-top: 2px; background: rgba(245,208,120,0.28); }
 .sheet-title { font-size: 17px; font-weight: 700; color: #4FC3F7; margin-bottom: 4px; }
 .sheet-hint { font-size: 11px; color: rgba(255,255,255,0.48); margin-bottom: 12px; line-height: 1.5; }
+.pending-ecology-event { width: 100%; margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(245,208,120,0.34); background: linear-gradient(135deg, rgba(245,208,120,0.12), rgba(79,195,247,0.07)); color: #fff; font-family: inherit; text-align: left; display: flex; flex-direction: column; gap: 4px; cursor: pointer; box-shadow: inset 0 0 18px rgba(245,208,120,0.04); transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease; }
+.pending-ecology-event:hover { transform: translateY(-1px); border-color: rgba(245,208,120,0.56); box-shadow: 0 0 16px rgba(245,208,120,0.1), inset 0 0 18px rgba(245,208,120,0.05); }
+.pending-ecology-event:active { transform: translateY(0) scale(0.99); }
+.pending-ecology-event-kicker { color: #F5D078; font-size: 9px; font-weight: 900; letter-spacing: 0.08em; }
+.pending-ecology-event strong { color: rgba(255,255,255,0.94); font-size: 13px; }
+.pending-ecology-event > span:not(.pending-ecology-event-kicker) { color: rgba(255,255,255,0.58); font-size: 10px; line-height: 1.45; }
+.pending-ecology-event small { color: #7CE6C8; font-size: 10px; font-weight: 800; }
 .strategy-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 3px; margin-bottom: 12px; border-radius: 12px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.07); }
 .strategy-tab { min-height: 34px; border: 0; border-radius: 9px; background: transparent; color: rgba(255,255,255,0.48); font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease; }
 .strategy-tab.active { color: #F5D078; background: rgba(245,208,120,0.13); box-shadow: inset 0 0 14px rgba(245,208,120,0.05), 0 0 14px rgba(245,208,120,0.08); }

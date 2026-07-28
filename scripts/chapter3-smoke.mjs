@@ -2,14 +2,16 @@ const apiBase = process.env.API_BASE ?? "http://127.0.0.1:8787/api";
 const webBase = process.env.WEB_BASE ?? "http://127.0.0.1:5174";
 const requestedStage = process.env.CHAPTER3_STAGE;
 const persistDebugSave = process.env.CHAPTER3_PERSIST === "true";
-const stages = requestedStage ? [requestedStage] : ["exposed", "shore", "niches", "event", "exchange"];
+const stages = requestedStage ? [requestedStage] : ["exposed", "shore", "niches", "event", "exchange", "salt", "salted"];
 
 const expected = {
-  exposed: { stage: "attach_shore", shore: false, niches: false, pressure: false, exchange: false, event: false },
-  shore: { stage: "split_niches", shore: true, niches: false, pressure: false, exchange: false, event: false },
-  niches: { stage: "endure_dry_wet", shore: true, niches: true, pressure: false, exchange: false, event: false },
-  event: { stage: "endure_dry_wet", shore: true, niches: true, pressure: false, exchange: false, event: true },
-  exchange: { stage: "shoreline_memory", shore: true, niches: true, pressure: true, exchange: true, event: false },
+  exposed: { stage: "attach_shore", shore: false, niches: false, pressure: false, exchange: false, event: false, saltEvent: false, saltOutcome: false },
+  shore: { stage: "split_niches", shore: true, niches: false, pressure: false, exchange: false, event: false, saltEvent: false, saltOutcome: false },
+  niches: { stage: "endure_dry_wet", shore: true, niches: true, pressure: false, exchange: false, event: false, saltEvent: false, saltOutcome: false },
+  event: { stage: "endure_dry_wet", shore: true, niches: true, pressure: false, exchange: false, event: true, saltEvent: false, saltOutcome: false },
+  exchange: { stage: "shoreline_memory", shore: true, niches: true, pressure: true, exchange: true, event: false, saltEvent: false, saltOutcome: false },
+  salt: { stage: "shoreline_memory", shore: true, niches: true, pressure: true, exchange: true, event: false, saltEvent: true, saltOutcome: false },
+  salted: { stage: "shoreline_memory", shore: true, niches: true, pressure: true, exchange: true, event: false, saltEvent: false, saltOutcome: true },
 };
 
 async function request(path, options = {}) {
@@ -22,11 +24,11 @@ async function request(path, options = {}) {
   return data;
 }
 
+const { guestKey } = await request("/auth/guest", { method: "POST" });
 const results = [];
 for (const stage of stages) {
   const contract = expected[stage];
   if (!contract) throw new Error(`Unknown smoke stage: ${stage}`);
-  const { guestKey } = await request("/auth/guest", { method: "POST" });
   const { save } = await request(`/debug/third-chapter-save?persist=${persistDebugSave}`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-guest-key": guestKey },
@@ -45,6 +47,8 @@ for (const stage of stages) {
   if (Boolean(witness.dryWetPressureWitnessed) !== contract.pressure) throw new Error(`${stage}: pressure witness mismatch`);
   if (Boolean(witness.shorelineExchangeWitnessed) !== contract.exchange) throw new Error(`${stage}: exchange witness mismatch`);
   if (Boolean(save.pendingEcologyEvent?.id === "ebb_dryness") !== contract.event) throw new Error(`${stage}: pending event mismatch`);
+  if (Boolean(save.pendingEcologyEvent?.id === "salt_crystal_rise") !== contract.saltEvent) throw new Error(`${stage}: pending salt event mismatch`);
+  if (Boolean(save.historyTags?.includes("salt_crust_attachment")) !== contract.saltOutcome) throw new Error(`${stage}: salt outcome mismatch`);
   results.push({ stage, saveId: save.id, chapterStage: save.chapterProgress.stage });
 }
 
