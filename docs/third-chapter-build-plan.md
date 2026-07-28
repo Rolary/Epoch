@@ -1,6 +1,6 @@
 # 《生态纪元》第三章开发规划
 
-> 版本：体验切片开发阶段。阶段 0/1/2 已完成首轮落地，阶段 3/4 已接入代码视觉、主目标、叙事队列和潮池记忆，正式生图资产等待用户审批。
+> 版本：体验切片通过首轮视觉验收，正式资产已生成并接入；阶段 7 的 `niche_split` 与第二岸线栖位反馈已完成，下一项为岸线事件扩展。
 
 ## 1. 计划目标
 
@@ -287,9 +287,9 @@ corepack pnpm run smoke:chapter3
 - `waterline_exposure`、`shore_attachment`、`shoreline_exchange` 已进入共享演化规则。
 - 一次性 `guide_shore_tide` 引潮动作只引导环境，由现有谱系自行贴岸；重复请求不会重复生成物种或见证。
 - `ebb_dryness` 三项选择共享同一事件前置条件，并写入互斥岸线倾向。
-- `POST /debug/third-chapter-save` 已覆盖 `exposed / shore / event / exchange`，并提供非持久化浏览器预览。
+- `POST /debug/third-chapter-save` 已覆盖 `exposed / shore / niches / event / exchange`，并提供非持久化浏览器预览。
 - Phaser 已表现水线、岸痕预示和回流；React 已接入第三章主目标、叙事队列和三段潮池记忆。
-- 正式资产清单见 `docs/third-chapter-ui-asset-backlog.md`，全部处于待审批状态。
+- 正式资产清单见 `docs/third-chapter-ui-asset-backlog.md`，首批资产已获批准、生成、接入并完成截图验收。
 
 ## 7. 完成定义
 

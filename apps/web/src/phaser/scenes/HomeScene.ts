@@ -1379,6 +1379,7 @@ export class HomeScene extends Phaser.Scene {
 
     const previewStrategy = shorelineStrategyForOption(this.shorelinePreviewOption);
     const activeStrategy = previewStrategy ?? witness.shorelineStrategy;
+    const nichesSplit = save.historyTags.includes("niche_split") || witness.habitatsWitnessed.includes("moist_shore");
     if (witness.shoreColonized || previewStrategy) {
       this.shorelineTraceImage
         .setTexture(shorelineTraceTextureFor(activeStrategy))
@@ -1393,6 +1394,15 @@ export class HomeScene extends Phaser.Scene {
       for (let index = 0; index < 5; index++) {
         this.shorelineTraceGraphics.lineBetween(cx + 86 + index * 9, cy + 24, cx + 94 + index * 10, cy + 96);
       }
+    }
+
+    if (nichesSplit) {
+      this.shorelineTraceGraphics.fillStyle(0x7CE6C8, 0.2);
+      this.shorelineTraceGraphics.fillEllipse(cx + 150, cy + 84, 34, 14);
+      this.shorelineTraceGraphics.fillStyle(0xD5F3C8, 0.14);
+      this.shorelineTraceGraphics.fillEllipse(cx + 168, cy + 66, 24, 10);
+      this.shorelineTraceGraphics.lineStyle(1.5, 0xA8E6CF, 0.28);
+      this.shorelineTraceGraphics.lineBetween(cx + 126, cy + 70, cx + 174, cy + 62 + motion * 2);
     }
 
     if (exchange) {

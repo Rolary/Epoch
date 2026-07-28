@@ -385,10 +385,10 @@ export function App() {
       const debugChapter = import.meta.env.DEV
         ? new URLSearchParams(window.location.search).get("debugChapter3")
         : null;
-      if (debugChapter && ["exposed", "shore", "event", "exchange"].includes(debugChapter)) {
+      if (debugChapter && ["exposed", "shore", "niches", "event", "exchange"].includes(debugChapter)) {
         try {
           await ensureGuest();
-          const debugSave = await createThirdChapterDebugSave(debugChapter as "exposed" | "shore" | "event" | "exchange");
+          const debugSave = await createThirdChapterDebugSave(debugChapter as "exposed" | "shore" | "niches" | "event" | "exchange");
           setSave(debugSave);
           setSaveId(debugSave.id);
           hydrateScopedUIState();

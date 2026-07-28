@@ -176,7 +176,7 @@ corepack pnpm run build
 
 ## 10. 第三章开发启动技术约束
 
-第三章的设计基线见 `docs/third-chapter-progression.md`，阶段执行顺序见 `docs/third-chapter-build-plan.md`。当前已实现共享章节/栖位类型、第三章见证与派生进度、首批节点和事件，并提供非生产环境 `POST /debug/third-chapter-save` 的 `exposed / shore / event / exchange` 切片；开发模式可用 `?debugChapter3=event` 等查询参数进行非持久化视觉验收。其余技术边界保持如下：
+第三章的设计基线见 `docs/third-chapter-progression.md`，阶段执行顺序见 `docs/third-chapter-build-plan.md`。当前已实现共享章节/栖位类型、第三章见证与派生进度、水线显现、湿岸附着、水分分栖、退潮事件和首次回流，并提供非生产环境 `POST /debug/third-chapter-save` 的 `exposed / shore / niches / event / exchange` 切片；开发模式可用 `?debugChapter3=niches` 等查询参数进行非持久化视觉验收。其余技术边界保持如下：
 
 - 继续使用单一 `GameState` JSON 快照，不为浅水、潮间湿岩和湿润岸缘创建独立存储表或独立存档。
 - 在 `packages/shared` 增加第三章章节标识、阶段和见证结构；`normalizeGameState` 为旧第一章、第二章存档补齐缺失字段，不自动生成岸线物种或岸线历史。
@@ -186,7 +186,7 @@ corepack pnpm run build
 - 所有概率、成本、惩罚、解锁条件和谱系生成都由 `packages/game-core` 的纯函数决定。AI 或本地生成器只能包装已经确定的物种和生命史事实。
 - 第三章必须有独立的 `smoke:chapter3` 调试切片，且 `smoke:chapter2` 不依赖第三章字段或阶段。
 
-第三章继续按“共享类型和归一化 -> 核心规则和测试 -> Phaser 水线反馈 -> React 主线与生命史 -> 浏览器和移动端验收”的顺序推进。当前只完成第一步和首个调试切片，不把尚未实现的场景、事件或完整章节标记为完成。
+第三章继续按“共享类型和归一化 -> 核心规则和测试 -> Phaser 水线反馈 -> React 主线与生命史 -> 浏览器和移动端验收”的顺序推进。首条体验切片和 `niche_split` 已完成，后续仍需补充更多岸线事件、分支平衡、章节总结与完整发布验收，不把当前扩展误标为完整章节完成。
 
 ## 11. 已接入技术方向：隐秘潮痕
 

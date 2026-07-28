@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { getGuestKey, getSaveId } from "../../api.js";
+import { countEarlyRoles } from "./objectiveProgress.js";
 
 const DETAILS_STORAGE_NAME = "objective-details-open";
 const AUTO_MINIMIZE_DELAY = 5400;
@@ -485,13 +486,6 @@ function shorelineActionForNode(nodeId: string) {
     shoreline_exchange: "恢复岸线往返",
   };
   return map[nodeId] ?? "记录这次岸线变化";
-}
-
-function countEarlyRoles(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
-  const roles = new Set(save.species
-    .filter((item) => item.status === "living" || item.status === "flourishing")
-    .map((item) => item.ecologicalRole));
-  return ["producer", "decomposer", "filterer"].filter((role) => roles.has(role as never)).length;
 }
 
 function actionForEcologyNode(nodeId: string) {

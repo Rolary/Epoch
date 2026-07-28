@@ -192,7 +192,7 @@ export async function getTalentChoices() {
   return data.choices;
 }
 
-export async function createThirdChapterDebugSave(stage: "exposed" | "shore" | "event" | "exchange") {
+export async function createThirdChapterDebugSave(stage: "exposed" | "shore" | "niches" | "event" | "exchange") {
   const data = await fetchJson<{ save: import("@eco-era/shared").GameState }>(
     "/debug/third-chapter-save?persist=false",
     { method: "POST", body: JSON.stringify({ stage }) },

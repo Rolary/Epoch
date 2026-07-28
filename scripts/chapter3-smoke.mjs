@@ -2,13 +2,14 @@ const apiBase = process.env.API_BASE ?? "http://127.0.0.1:8787/api";
 const webBase = process.env.WEB_BASE ?? "http://127.0.0.1:5174";
 const requestedStage = process.env.CHAPTER3_STAGE;
 const persistDebugSave = process.env.CHAPTER3_PERSIST === "true";
-const stages = requestedStage ? [requestedStage] : ["exposed", "shore", "event", "exchange"];
+const stages = requestedStage ? [requestedStage] : ["exposed", "shore", "niches", "event", "exchange"];
 
 const expected = {
-  exposed: { stage: "attach_shore", shore: false, pressure: false, exchange: false, event: false },
-  shore: { stage: "endure_dry_wet", shore: true, pressure: false, exchange: false, event: false },
-  event: { stage: "endure_dry_wet", shore: true, pressure: false, exchange: false, event: true },
-  exchange: { stage: "shoreline_memory", shore: true, pressure: true, exchange: true, event: false },
+  exposed: { stage: "attach_shore", shore: false, niches: false, pressure: false, exchange: false, event: false },
+  shore: { stage: "split_niches", shore: true, niches: false, pressure: false, exchange: false, event: false },
+  niches: { stage: "endure_dry_wet", shore: true, niches: true, pressure: false, exchange: false, event: false },
+  event: { stage: "endure_dry_wet", shore: true, niches: true, pressure: false, exchange: false, event: true },
+  exchange: { stage: "shoreline_memory", shore: true, niches: true, pressure: true, exchange: true, event: false },
 };
 
 async function request(path, options = {}) {
@@ -40,6 +41,7 @@ for (const stage of stages) {
   }
   if (!witness?.waterlineExposed) throw new Error(`${stage}: waterline was not exposed`);
   if (Boolean(witness.shoreColonized) !== contract.shore) throw new Error(`${stage}: shore witness mismatch`);
+  if (Boolean(save.historyTags?.includes("niche_split")) !== contract.niches) throw new Error(`${stage}: niche split mismatch`);
   if (Boolean(witness.dryWetPressureWitnessed) !== contract.pressure) throw new Error(`${stage}: pressure witness mismatch`);
   if (Boolean(witness.shorelineExchangeWitnessed) !== contract.exchange) throw new Error(`${stage}: exchange witness mismatch`);
   if (Boolean(save.pendingEcologyEvent?.id === "ebb_dryness") !== contract.event) throw new Error(`${stage}: pending event mismatch`);

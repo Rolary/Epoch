@@ -522,9 +522,25 @@ describe("roguelike life-history progression", () => {
     expect(guided.species).toHaveLength(speciesCount);
     expect(attached?.habitats).toEqual(expect.arrayContaining(["shallow_water", "intertidal_wet_rock"]));
     expect(guided.chapterWitness?.shorelineDifferentiation.shoreColonized).toBe(true);
-    expect(guided.chapterProgress?.stage).toBe("endure_dry_wet");
-    expect(guided.pendingEcologyEvent?.id).toBe("ebb_dryness");
+    expect(guided.chapterProgress?.stage).toBe("split_niches");
+    expect(guided.pendingEcologyEvent).toBeNull();
+    expect(canUnlockEvolutionNode(guided, "niche_split")).toBe(true);
     expect(guidedAgain.logs.filter((log) => log.message.includes("随水流抵达湿岩"))).toHaveLength(1);
+  });
+
+  it("records a distinct moist-shore niche before dry-wet pressure begins", () => {
+    const save = buildThirdChapterDebugSave("chapter-three-niches", "niches");
+    const shorelineSpecies = save.species.find((species) => species.habitats?.includes("moist_shore"));
+
+    expect(save.unlockedNodes).toContain("niche_split");
+    expect(save.historyTags).toContain("niche_split");
+    expect(save.chapterProgress?.stage).toBe("endure_dry_wet");
+    expect(save.chapterProgress?.connectedHabitats).toEqual(expect.arrayContaining([
+      "shallow_water",
+      "intertidal_wet_rock",
+      "moist_shore",
+    ]));
+    expect(shorelineSpecies?.historyTags).toContain("moist_shore_posture");
   });
 
   it("records exactly one shoreline strategy after the ebb dryness choice", () => {

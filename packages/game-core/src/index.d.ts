@@ -23,7 +23,7 @@ export declare function selectTalent(input: GameState, talentId: string): GameSt
 export declare function applyInstantEffect(state: GameState, talent: Talent): GameState;
 export declare function rollTalentChoices(state?: GameState, count?: number): Talent[];
 export declare function normalizeGameState(state: GameState): GameState;
-export type ThirdChapterDebugStage = "exposed" | "shore" | "event" | "exchange";
+export type ThirdChapterDebugStage = "exposed" | "shore" | "niches" | "event" | "exchange";
 export declare function buildThirdChapterDebugSave(id: string, stage?: ThirdChapterDebugStage): GameState;
 export declare function evaluateHiddenTraces(input: GameState, now?: Date): GameState;
 export declare function canUnlockEvolutionNode(state: GameState, nodeId: string): boolean;

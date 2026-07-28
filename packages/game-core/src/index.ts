@@ -289,11 +289,18 @@ export const evolutionNodes: EvolutionNode[] = [
     requires: ["waterline_exposure"]
   },
   {
+    id: "niche_split",
+    name: "水分分栖",
+    description: "同一支生命在浅水、湿岩和更外侧的湿润岸缘形成不同姿态。",
+    cost: { organic: 390, minerals: 220, biomass: 280, mutation: 54 },
+    requires: ["shore_attachment"]
+  },
+  {
     id: "shoreline_exchange",
     name: "岸线往返",
     description: "回潮开始把岸边碎屑带回浅水，水线两侧逐渐交换材料。",
     cost: { organic: 420, energy: 280, biomass: 360, stability: 24 },
-    requires: ["shore_attachment"]
+    requires: ["niche_split"]
   }
 ];
 
@@ -1274,7 +1281,10 @@ export function availableEcologyEvents(state: GameState): EcologyEvent[] {
     if (event.id === "decomposer_layer_spread") return state.unlockedNodes.includes("decomposition_layer") && tags.has("decomposer_seed");
     if (event.id === "ebb_dryness") {
       const witness = normalizeChapterWitness(state).shorelineDifferentiation;
-      return witness.chapterStarted && witness.shoreColonized && !witness.dryWetPressureWitnessed;
+      return witness.chapterStarted
+        && witness.shoreColonized
+        && (state.historyTags ?? []).includes("niche_split")
+        && !witness.dryWetPressureWitnessed;
     }
     return true;
   });
@@ -1529,7 +1539,7 @@ export function normalizeGameState(state: GameState): GameState {
   };
 }
 
-export type ThirdChapterDebugStage = "exposed" | "shore" | "event" | "exchange";
+export type ThirdChapterDebugStage = "exposed" | "shore" | "niches" | "event" | "exchange";
 
 export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugStage = "exposed"): GameState {
   let save = createInitialState(id, "第三章验收潮池");
@@ -1555,7 +1565,9 @@ export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugS
     if (canUnlockEvolutionNode(save, nodeId)) save = unlockEvolutionNode(save, nodeId);
   }
 
-  if (save.pendingEcologyEvent?.id === "bloom_pressure") {
+  const bloomPressure = ecologyEvents.find((event) => event.id === "bloom_pressure");
+  if (bloomPressure) {
+    save.pendingEcologyEvent = bloomPressure;
     save = applyEcologyEventChoice(save, "bloom_pressure", "thin_bloom");
   }
   save = {
@@ -1572,7 +1584,7 @@ export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugS
   }
   save.pendingEcologyEvent = null;
 
-  if (["shore", "event", "exchange"].includes(stage)) {
+  if (["shore", "niches", "event", "exchange"].includes(stage)) {
     save = withDebugResources(save);
     if (canUnlockEvolutionNode(save, "shore_attachment")) {
       save = unlockEvolutionNode(save, "shore_attachment");
@@ -1580,6 +1592,15 @@ export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugS
     save.pendingEcologyEvent = null;
     save = applyEnvironmentAction(save, "guide_shore_tide");
     if (stage === "shore") save.pendingEcologyEvent = null;
+  }
+
+  if (["niches", "event", "exchange"].includes(stage)) {
+    save.pendingEcologyEvent = null;
+    save = withDebugResources(save);
+    if (canUnlockEvolutionNode(save, "niche_split")) {
+      save = unlockEvolutionNode(save, "niche_split");
+    }
+    if (stage === "niches") save.pendingEcologyEvent = null;
   }
 
   if (stage === "exchange") {
@@ -1771,6 +1792,9 @@ export function canUnlockEvolutionNode(state: GameState, nodeId: string): boolea
     return false;
   }
   if (nodeId === "shore_attachment" && !normalizeChapterWitness(state).shorelineDifferentiation.waterlineExposed) {
+    return false;
+  }
+  if (nodeId === "niche_split" && !normalizeChapterWitness(state).shorelineDifferentiation.shoreColonized) {
     return false;
   }
   if (nodeId === "shoreline_exchange" && !normalizeChapterWitness(state).shorelineDifferentiation.dryWetPressureWitnessed) {
@@ -2049,6 +2073,17 @@ function applyNodeHistoryEffects(state: GameState, nodeId: string) {
       state.historyTags = addUniqueTags(state.historyTags ?? [], ["shore_attachment_ready"]);
       state.logs.unshift(createLog("event", "水流正在潮池边缘聚拢，已有生命开始靠近刚刚露出的湿岩。"));
     },
+    niche_split: () => {
+      const witness = state.chapterWitness!.shorelineDifferentiation;
+      const shorelineSpecies = state.species.find((species) => species.habitats?.includes("intertidal_wet_rock"));
+      if (shorelineSpecies) {
+        shorelineSpecies.habitats = addUniqueHabitats(shorelineSpecies.habitats ?? [], ["moist_shore"]);
+        shorelineSpecies.historyTags = addUniqueTags(shorelineSpecies.historyTags ?? [], ["niche_split", "moist_shore_posture"]);
+      }
+      witness.habitatsWitnessed = addUniqueHabitats(witness.habitatsWitnessed, ["moist_shore"]);
+      state.historyTags = addUniqueTags(state.historyTags ?? [], ["niche_split"]);
+      state.logs.unshift(createLog("species", `${shorelineSpecies?.name ?? "贴岸谱系"}沿着湿岩外侧形成了更紧密的岸缘姿态。`));
+    },
     shoreline_exchange: () => {
       const witness = state.chapterWitness!.shorelineDifferentiation;
       witness.shorelineExchangeWitnessed = true;
@@ -2085,7 +2120,10 @@ function maybeAssignEcologyEvent(state: GameState) {
     }
   }
   const shorelineWitness = normalizeChapterWitness(state).shorelineDifferentiation;
-  if (shorelineWitness.shoreColonized && !shorelineWitness.dryWetPressureWitnessed && !(state.eventHistory ?? []).includes("ebb_dryness")) {
+  if (shorelineWitness.shoreColonized
+    && (state.historyTags ?? []).includes("niche_split")
+    && !shorelineWitness.dryWetPressureWitnessed
+    && !(state.eventHistory ?? []).includes("ebb_dryness")) {
     const dryness = ecologyEvents.find((event) => event.id === "ebb_dryness");
     if (dryness) {
       state.pendingEcologyEvent = dryness;
@@ -2662,6 +2700,10 @@ function deriveShorelineProgress(
   const completedStages: string[] = [];
   let stage: ChapterProgress["stage"] = "discover_waterline";
   const habitats = normalizeHabitats(witness.habitatsWitnessed);
+  const nichesWitnessed = (state.historyTags ?? []).includes("niche_split")
+    || habitats.includes("moist_shore")
+    || witness.dryWetPressureWitnessed
+    || witness.shorelineExchangeWitnessed;
 
   if (witness.waterlineExposed) {
     completedStages.push("discover_waterline");
@@ -2671,7 +2713,7 @@ function deriveShorelineProgress(
     completedStages.push("attach_shore");
     stage = "split_niches";
   }
-  if (habitats.length >= 2) {
+  if (nichesWitnessed) {
     completedStages.push("split_niches");
     stage = "endure_dry_wet";
   }
@@ -2802,6 +2844,7 @@ function mainlineEchoForNode(nodeId: string): string {
     ecological_personality: "反复出现的环境变化形成了长期生态倾向。",
     waterline_exposure: "潮水第一次退到小循环之外，浅水与湿岸之间出现了清晰水线。",
     shore_attachment: "水流只改变了抵达位置，生命依靠自身结构附着在湿岩上。",
+    niche_split: "同一支生命在浅水、湿岩和湿润岸缘留下了不同姿态。",
     shoreline_exchange: "岸边与浅水第一次互相带回材料，越过水线的生命没有离开原有循环。",
   };
   return map[nodeId] ?? "";

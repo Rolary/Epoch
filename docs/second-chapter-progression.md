@@ -79,8 +79,8 @@
 
 ## 7. 收口验收工具
 
-- 非生产环境的 `POST /debug/second-chapter-save` 支持 `light / roles / resonance / cycle / imbalance / personality / complete` 七个阶段。
-- `pnpm run smoke:chapter2` 默认逐阶段验证章节状态、角色见证、首次回响、循环、待处理失衡、性格沉淀和完成状态。
+- 非生产环境的 `POST /debug/second-chapter-save` 支持 `light / roles / resonance / cycle / imbalance / personality / complete` 七个阶段，并可用 `?persist=false` 完成不写入 PostgreSQL 的视觉或回归验收。
+- `pnpm run smoke:chapter2` 默认以非持久化方式逐阶段验证章节状态、角色见证、首次回响、循环、待处理失衡、性格沉淀和完成状态；只有显式设置 `CHAPTER2_PERSIST=true` 时才保留调试存档。
 - 第二章角色、事件和背景资产使用移动端交付尺寸；原图保留在 `apps/web/src/assets/original-ui`。
 
 ## 8. 后续系统候选：潮汐回响

@@ -7,7 +7,7 @@ import { uiAssets } from "../../assets/uiAssets.js";
 import { useGameStore } from "../../stores/gameStore.js";
 import { useUIStore } from "../../stores/uiStore.js";
 
-type ChapterId = "life_birth" | "ecology_burst";
+type ChapterId = "life_birth" | "ecology_burst" | "shoreline_differentiation";
 
 const CHAPTERS: Array<{
   id: ChapterId;
@@ -43,6 +43,17 @@ const CHAPTERS: Array<{
       "ecological_personality",
     ],
   },
+  {
+    id: "shoreline_differentiation",
+    title: "海陆分化篇",
+    objective: "目标：让生命越过水线并形成相连栖位",
+    nodeIds: [
+      "waterline_exposure",
+      "shore_attachment",
+      "niche_split",
+      "shoreline_exchange",
+    ],
+  },
 ];
 
 export function EvolutionPage() {
@@ -71,9 +82,15 @@ export function EvolutionPage() {
   }
 
   const currentSave = save;
-  const currentChapter: ChapterId = currentSave.chapterProgress?.chapter === "ecology_burst" ? "ecology_burst" : "life_birth";
+  const currentChapter: ChapterId = currentSave.chapterProgress?.chapter === "shoreline_differentiation"
+    ? "shoreline_differentiation"
+    : currentSave.chapterProgress?.chapter === "ecology_burst"
+      ? "ecology_burst"
+      : "life_birth";
   const visibleChapters = chapterBlocks.filter((chapter) =>
-    chapter.id === "life_birth" || currentSave.unlockedNodes.includes("photo_pigment") || currentChapter === "ecology_burst",
+    chapter.id === "life_birth"
+    || (chapter.id === "ecology_burst" && (currentSave.unlockedNodes.includes("photo_pigment") || currentChapter !== "life_birth"))
+    || (chapter.id === "shoreline_differentiation" && (currentSave.unlockedNodes.includes("ecological_personality") || currentChapter === "shoreline_differentiation")),
   );
 
   const handleUnlock = async (nodeId: string) => {
@@ -128,7 +145,9 @@ export function EvolutionPage() {
           const { total, unlocked } = countChapterProgress(chapter, currentSave.unlockedNodes);
           const completed = chapter.id === "life_birth"
             ? currentSave.unlockedNodes.includes("photo_pigment")
-            : currentSave.unlockedNodes.includes("ecological_personality") || currentSave.chapterProgress?.stage === "complete";
+            : chapter.id === "ecology_burst"
+              ? currentSave.unlockedNodes.includes("ecological_personality")
+              : currentSave.chapterProgress?.chapter === "shoreline_differentiation" && currentSave.chapterProgress.stage === "complete";
           const collapsed = collapsedChapters[chapter.id] ?? (completed && chapter.id !== currentChapter);
           const available = chapter.nodes.some((node) => canUnlockEvolutionNode(currentSave, node.id));
 
@@ -355,6 +374,10 @@ function actionFor(nodeId: string): string {
     tidal_filter_pores: "记录滤食孔隙",
     mutual_ecology_cycle: "形成小循环",
     ecological_personality: "确认生态倾向",
+    waterline_exposure: "让水线显现",
+    shore_attachment: "形成湿岸附着",
+    niche_split: "记录水分分栖",
+    shoreline_exchange: "接回浅水循环",
   };
   return map[nodeId] ?? "记录这个变化";
 }
@@ -375,6 +398,10 @@ function iconFor(nodeId: string): string {
     tidal_filter_pores: uiAssets.species.filterer,
     mutual_ecology_cycle: uiAssets.emblems.ecologyResonance,
     ecological_personality: uiAssets.emblems.system,
+    waterline_exposure: uiAssets.shoreline.wetRockOverlay,
+    shore_attachment: uiAssets.species.shorelineRolePosture,
+    niche_split: uiAssets.shoreline.moistureFilm,
+    shoreline_exchange: uiAssets.shoreline.tidalDispersal,
   };
   return map[nodeId] ?? uiAssets.emblems.discovery;
 }
@@ -449,6 +476,22 @@ function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: 
       title: "形成生态倾向",
       description: "反复出现的环境变化形成了稳定的生态偏向。",
     },
+    waterline_exposure: {
+      title: "让水线第一次显现",
+      description: "退潮露出仍然湿润的岩面，原有循环开始拥有边界。",
+    },
+    shore_attachment: {
+      title: "让原有生命附着湿岩",
+      description: "水流只负责把生命带到岸边，能否停留仍取决于它们自己的结构。",
+    },
+    niche_split: {
+      title: "让同一支生命分出岸缘姿态",
+      description: "浅水、湿岩和湿润岸缘开始留下不同的活动痕迹。",
+    },
+    shoreline_exchange: {
+      title: "让岸边重新接回浅水",
+      description: "回潮带回岸边碎屑，浅水中的材料也再次抵达湿岩。",
+    },
   };
   return map[nodeId] ?? { title: fallbackName, description: fallbackDescription };
 }
@@ -457,7 +500,10 @@ function lockReasonFor(save: NonNullable<ReturnType<typeof useGameStore.getState
   if (node.id === "ecological_personality" && !save.chapterWitness?.ecologyBurst.imbalanceWitnessed) {
     return "先等潮池处理一次过盛的水面";
   }
-  if (save.chapterProgress?.chapter === "ecology_burst" && save.chapterProgress.nextHintLabel) {
+  if (node.id === "niche_split" && !save.chapterWitness?.shorelineDifferentiation.shoreColonized) {
+    return "先把一缕水光引向湿岩，观察哪支生命能够停留";
+  }
+  if ((save.chapterProgress?.chapter === "ecology_burst" || save.chapterProgress?.chapter === "shoreline_differentiation") && save.chapterProgress.nextHintLabel) {
     return save.chapterProgress.nextHintLabel;
   }
   return "继续积累材料";

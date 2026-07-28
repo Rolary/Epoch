@@ -1,6 +1,7 @@
 const apiBase = process.env.API_BASE ?? "http://127.0.0.1:8787/api";
 const webBase = process.env.WEB_BASE ?? "http://127.0.0.1:5174";
 const requestedStage = process.env.CHAPTER2_STAGE;
+const persistDebugSave = process.env.CHAPTER2_PERSIST === "true";
 const stages = requestedStage
   ? [requestedStage]
   : ["light", "roles", "resonance", "cycle", "imbalance", "personality", "complete"];
@@ -35,7 +36,7 @@ for (const stage of stages) {
     "content-type": "application/json",
     "x-guest-key": guestKey,
   };
-  const { save } = await request("/debug/second-chapter-save", {
+  const { save } = await request(`/debug/second-chapter-save?persist=${persistDebugSave}`, {
     method: "POST",
     headers,
     body: JSON.stringify({ stage }),

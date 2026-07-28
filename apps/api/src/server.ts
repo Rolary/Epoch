@@ -76,8 +76,9 @@ server.post("/debug/second-chapter-save", async (request, reply) => {
   const guestKey = requireGuestKey(request.headers["x-guest-key"]);
   if (!guestKey) return reply.code(401).send({ message: "缺少游客身份" });
   const body = (request.body ?? {}) as { stage?: SecondChapterDebugStage };
+  const { persist } = (request.query ?? {}) as { persist?: string };
   const save = buildSecondChapterDebugSave(createSaveId(), body.stage ?? "cycle");
-  await putSave(guestKey, save);
+  if (persist !== "false") await putSave(guestKey, save);
   return { save: toPublicGameState(save) };
 });
 
