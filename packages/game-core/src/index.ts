@@ -171,14 +171,14 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "organic_richness",
     name: "有机富集",
     description: "潮池在蒸发与回潮之间保留更多复杂分子。",
-    cost: { organic: 30, energy: 10 },
+    cost: { organic: 20, energy: 8 },
     requires: []
   },
   {
     id: "replicating_chain",
     name: "自复制链",
     description: "少数链体已经能够复制自身结构。",
-    cost: { organic: 70, minerals: 25, stability: 12 },
+    cost: { organic: 45, minerals: 16, stability: 8 },
     requires: ["organic_richness"],
     unlocksEra: "self_replicators"
   },
@@ -186,7 +186,7 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "replication_fidelity",
     name: "高保真复制",
     description: "复制链更少出错，潮池更容易稳定延续，但突变机会减少。",
-    cost: { organic: 42, energy: 24, minerals: 16 },
+    cost: { organic: 24, energy: 14, minerals: 10 },
     requires: ["replicating_chain"],
     branchGroupId: "replication_strategy",
     branchHint: "三种复制方式只能选择一种。"
@@ -195,7 +195,7 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "error_retention",
     name: "错误保留",
     description: "一部分复制错误被保留下来，带来更多可能，也让潮池更不安定。",
-    cost: { organic: 42, energy: 24, minerals: 16 },
+    cost: { organic: 24, energy: 14, minerals: 10 },
     requires: ["replicating_chain"],
     branchGroupId: "replication_strategy",
     branchHint: "三种复制方式只能选择一种。"
@@ -204,14 +204,14 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "primitive_vesicle",
     name: "原始膜泡",
     description: "薄膜结构把反应环境与外界潮水短暂隔开。",
-    cost: { organic: 90, energy: 32, minerals: 30 },
+    cost: { organic: 55, energy: 20, minerals: 18 },
     requires: ["replicating_chain"]
   },
   {
     id: "fragment_budding",
     name: "断裂繁殖",
     description: "链体断裂后仍能延续，旁支谱系更容易出现。",
-    cost: { organic: 42, energy: 24, minerals: 16 },
+    cost: { organic: 24, energy: 14, minerals: 10 },
     requires: ["replicating_chain"],
     branchGroupId: "replication_strategy",
     branchHint: "三种复制方式只能选择一种。"
@@ -220,14 +220,14 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "metabolic_loop",
     name: "代谢回路",
     description: "简单循环让能量输入转化为更稳定的生命活动。",
-    cost: { energy: 150, stability: 44, mutation: 26 },
+    cost: { energy: 75, stability: 24, mutation: 14 },
     requires: ["primitive_vesicle"]
   },
   {
     id: "proto_cell",
     name: "原初细胞",
     description: "潮池中出现最早可称为生命单位的结构。",
-    cost: { organic: 190, biomass: 40, stability: 58 },
+    cost: { organic: 95, biomass: 18, stability: 28 },
     requires: ["metabolic_loop"],
     unlocksEra: "proto_cell"
   },
@@ -235,7 +235,7 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "photo_pigment",
     name: "感光色素",
     description: "部分谱系形成感光结构，能够利用浅水中的光照。",
-    cost: { energy: 300, mutation: 82, biomass: 95 },
+    cost: { energy: 150, mutation: 36, biomass: 45 },
     requires: ["proto_cell"],
     unlocksEra: "photosynthesis_eve"
   },
@@ -243,35 +243,35 @@ export const evolutionNodes: EvolutionNode[] = [
     id: "early_producer_film",
     name: "早期生产薄膜",
     description: "追逐光照的谱系在水面铺开，把光转成可被潮池继续使用的能量。",
-    cost: { energy: 250, biomass: 115, mutation: 48 },
+    cost: { energy: 200, biomass: 90, mutation: 36 },
     requires: ["photo_pigment"]
   },
   {
     id: "decomposition_layer",
     name: "沉积分解层",
     description: "旧薄膜和碎片沉入池底，分解谱系把它们拆回可用材料。",
-    cost: { organic: 270, minerals: 110, biomass: 125 },
+    cost: { organic: 220, minerals: 90, biomass: 100 },
     requires: ["early_producer_film"]
   },
   {
     id: "tidal_filter_pores",
     name: "潮筛滤孔",
     description: "微小孔隙反复筛取潮水中的颗粒，滤食角色稳定出现。",
-    cost: { organic: 245, biomass: 170, stability: 46 },
+    cost: { organic: 200, biomass: 130, stability: 38 },
     requires: ["decomposition_layer"]
   },
   {
     id: "mutual_ecology_cycle",
     name: "互养小循环",
     description: "生产薄膜、分解层和滤食孔隙交换材料，形成第一个小生态循环。",
-    cost: { organic: 360, energy: 280, stability: 64 },
+    cost: { organic: 280, energy: 220, stability: 40 },
     requires: ["tidal_filter_pores"]
   },
   {
     id: "ecological_personality",
     name: "潮池的样子",
     description: "反复出现的环境变化被记录下来，形成长期生态倾向。",
-    cost: { biomass: 340, stability: 36, mutation: 72 },
+    cost: { biomass: 260, stability: 24, mutation: 54 },
     requires: ["mutual_ecology_cycle"]
   },
   {
@@ -1082,7 +1082,7 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
   const speciesEnergy = sumSpeciesEffect(state, "energy");
   const mutationPressure = 0.045 * (state.resources.mutation / (state.resources.mutation + 600));
   const stabilityPressure = env.volatility * 0.012 + mutationPressure;
-  const stabilityRecovery = state.resources.stability < 35 ? 0.035 : 0.02;
+  const stabilityRecovery = state.resources.stability < 35 ? 0.035 : 0.03;
 
   // Trait: 生态共振 — each living/flourishing species gives +1.5% all resources (max 15%)
   const hasEcoResonance = (state.talents ?? []).some((t) => t.trait?.id === "eco_resonance");
@@ -1094,8 +1094,8 @@ export function calculateResourceDelta(state: GameState, elapsedSeconds: number)
     energy: elapsedSeconds * (0.14 * env.light + 0.05 * env.heat + speciesEnergy) * multiplier.energy * legacyMultiplierFor(state, "energy") * resonanceBonus,
     minerals: elapsedSeconds * (0.09 * env.mineralFlow + 0.02 * env.tide) * multiplier.minerals * legacyMultiplierFor(state, "minerals") * resonanceBonus,
     stability: elapsedSeconds * (stabilityRecovery + state.species.length * 0.004 - stabilityPressure) * legacyMultiplierFor(state, "stability"),
-    mutation: elapsedSeconds * (0.025 * env.volatility + 0.006 * env.light + state.species.length * 0.001) * multiplier.mutation * legacyMultiplierFor(state, "mutation") * resonanceBonus,
-    biomass: elapsedSeconds * (state.unlockedNodes.includes("proto_cell") ? 0.07 + state.species.length * 0.008 : 0.005) * multiplier.biomass * legacyMultiplierFor(state, "biomass") * resonanceBonus
+    mutation: elapsedSeconds * (0.04 * env.volatility + 0.01 * env.light + state.species.length * 0.0015) * multiplier.mutation * legacyMultiplierFor(state, "mutation") * resonanceBonus,
+    biomass: elapsedSeconds * (state.unlockedNodes.includes("proto_cell") ? 0.09 + state.species.length * 0.01 : 0.025) * multiplier.biomass * legacyMultiplierFor(state, "biomass") * resonanceBonus
   };
   return applyActivePoolEffect(
     applyEcologyComboEffects(applyHistoryTagEffects(applyTalentEffects(delta, state.talents ?? []), state), state),
@@ -1217,6 +1217,34 @@ export function applyEnvironmentAction(input: GameState, action: string): GameSt
     if (wasQuiet) {
       addLog(next, "event", "这些微小变化还称不上生命，却会成为后来一切的底色。");
     }
+  }
+
+  if (action === "absorb_crystal") {
+    next.resources.minerals = clamp(next.resources.minerals + 3.2, 0, RESOURCE_CAP);
+    next.resources.stability = clamp(next.resources.stability + 0.8, 0, 100);
+    next.resources.organic = clamp(next.resources.organic + 0.4, 0, RESOURCE_CAP);
+    addLog(next, "event", "矿物晶体沉入池底，留下新的附着面，水中的结构稍微稳定下来。");
+  }
+
+  if (action === "absorb_spark") {
+    next.resources.energy = clamp(next.resources.energy + 3, 0, RESOURCE_CAP);
+    next.resources.mutation = clamp(next.resources.mutation + 0.18, 0, RESOURCE_CAP);
+    next.resources.organic = clamp(next.resources.organic + 0.3, 0, RESOURCE_CAP);
+    addLog(next, "event", "能量闪光掠过水面，局部反应加快，少量变化被保留下来。");
+  }
+
+  if (action === "absorb_droplet") {
+    next.resources.organic = clamp(next.resources.organic + 3.4, 0, RESOURCE_CAP);
+    next.resources.energy = clamp(next.resources.energy + 0.4, 0, RESOURCE_CAP);
+    next.resources.biomass = clamp(next.resources.biomass + 0.12, 0, RESOURCE_CAP);
+    addLog(next, "event", "有机液滴散进浅水，复杂分子和早期生命材料开始富集。");
+  }
+
+  if (action === "absorb_pulse") {
+    next.resources.mutation = clamp(next.resources.mutation + 2.4, 0, RESOURCE_CAP);
+    next.resources.energy = clamp(next.resources.energy + 1.2, 0, RESOURCE_CAP);
+    next.resources.stability = clamp(next.resources.stability + 0.5, 0, 100);
+    addLog(next, "event", "异常脉冲穿过潮池，带来一阵罕见变化，也留下了可延续的能量。");
   }
 
   if (action === "light") {
@@ -1610,6 +1638,9 @@ export function buildThirdChapterDebugSave(id: string, stage: ThirdChapterDebugS
       ...normalizeGameState(save),
       resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
     };
+    if (nodeId === "tidal_filter_pores" && !save.chapterWitness?.ecologyBurst.firstResonanceWitnessed) {
+      save = applyEcologyResonance(save, "decomposer_feeds_producer").state;
+    }
     if (canUnlockEvolutionNode(save, nodeId)) save = unlockEvolutionNode(save, nodeId);
   }
 
@@ -1792,7 +1823,7 @@ function normalizeChapterWitness(state: GameState) {
       lightWitnessed: witness.lightWitnessed || state.unlockedNodes.includes("early_producer_film") || rolesFromSpecies.includes("producer"),
       rolesWitnessed,
       firstResonanceWitnessed: witness.firstResonanceWitnessed || (state.resonanceHistory?.length ?? 0) > 0,
-      cycleWitnessed: witness.cycleWitnessed || state.unlockedNodes.includes("mutual_ecology_cycle") || hasEcologyCycleRoles(state),
+      cycleWitnessed: witness.cycleWitnessed || state.unlockedNodes.includes("mutual_ecology_cycle"),
       imbalanceWitnessed: witness.imbalanceWitnessed || (state.eventHistory ?? []).includes("bloom_pressure") || (state.historyTags ?? []).includes("ecology_imbalance_faced"),
       personalityWitnessed: witness.personalityWitnessed || state.unlockedNodes.includes("ecological_personality") || (state.historyTags ?? []).includes("ecological_personality"),
     },
@@ -1831,6 +1862,9 @@ export function canUnlockEvolutionNode(state: GameState, nodeId: string): boolea
     return false;
   }
   if (!node.requires.every((required) => state.unlockedNodes.includes(required))) {
+    return false;
+  }
+  if (nodeId === "tidal_filter_pores" && !normalizeChapterWitness(state).ecologyBurst.firstResonanceWitnessed) {
     return false;
   }
   if (nodeId === "mutual_ecology_cycle" && !hasEcologyCycleRoles(state)) {
@@ -2082,6 +2116,12 @@ function ensureRoleSpecies(state: GameState, role: EcologicalRole, reason: strin
 
 function applyNodeHistoryEffects(state: GameState, nodeId: string) {
   const effects: Record<string, () => void> = {
+    proto_cell: () => {
+      if (state.species.length > 0) return;
+      const species = { ...generateSpeciesTemplate(state), era: "proto_cell" as const };
+      state.species.unshift(species);
+      state.logs.unshift(createLog("species", `第一种生命出现了：${species.name}。${species.shortDescription}`));
+    },
     early_producer_film: () => {
       state.historyTags = addUniqueTags(state.historyTags ?? [], ["light_chasing", "producer_seed"]);
       state.environment.light = clamp(state.environment.light + 0.08, 0.4, 3);
@@ -2342,7 +2382,7 @@ function addUniqueHabitats(existing: HabitatId[], incoming: HabitatId[]): Habita
 }
 
 function shouldCreateSpecies(state: GameState) {
-  if (state.species.length === 0 && state.unlockedNodes.includes("replicating_chain")) return true;
+  if (state.species.length === 0) return state.unlockedNodes.includes("proto_cell");
   if (state.species.length >= 12) return false;
   const pressure = state.resources.mutation + state.environment.volatility * 30 + state.unlockedNodes.length * 8;
   return pressure > 80 + state.species.length * 48 && Math.random() > 0.80;

@@ -1,5 +1,5 @@
 const apiBase = process.env.API_BASE ?? "http://127.0.0.1:8787/api";
-const webBase = process.env.WEB_BASE ?? "http://127.0.0.1:5174";
+const webBase = process.env.WEB_BASE ?? "http://127.0.0.1:5173";
 const requestedStage = process.env.CHAPTER2_STAGE;
 const persistDebugSave = process.env.CHAPTER2_PERSIST === "true";
 const stages = requestedStage
@@ -10,10 +10,10 @@ const expected = {
   light: { stage: "pursue_light", roles: 0, resonance: false, cycle: false, imbalance: false, personality: false },
   roles: { stage: "form_cycle", roles: 2, resonance: false, cycle: false, imbalance: false, personality: false },
   resonance: { stage: "form_cycle", roles: 2, resonance: true, cycle: false, imbalance: false, personality: false },
-  cycle: { stage: "face_imbalance", roles: 3, resonance: false, cycle: true, imbalance: false, personality: false },
-  imbalance: { stage: "face_imbalance", roles: 3, resonance: false, cycle: true, imbalance: false, personality: false },
-  personality: { stage: "ecological_personality", roles: 3, resonance: false, cycle: true, imbalance: true, personality: false },
-  complete: { stage: "complete", roles: 3, resonance: false, cycle: true, imbalance: true, personality: true },
+  cycle: { stage: "face_imbalance", roles: 3, resonance: true, cycle: true, imbalance: false, personality: false },
+  imbalance: { stage: "face_imbalance", roles: 3, resonance: true, cycle: true, imbalance: false, personality: false },
+  personality: { stage: "ecological_personality", roles: 3, resonance: true, cycle: true, imbalance: true, personality: false },
+  complete: { stage: "complete", roles: 3, resonance: true, cycle: true, imbalance: true, personality: true },
 };
 
 async function request(path, options = {}) {

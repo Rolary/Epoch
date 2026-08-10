@@ -13,28 +13,32 @@ const ACTIONS = [
     asset: uiAssets.resources.energy,
     name: "增强光照",
     gain: "提高能量产出和光反应概率",
-    cost: "长期增加挥发性和氧化压力",
+    cost: "消耗 8 能量，水体波动略微增加",
+    requires: { energy: 8 },
   },
   {
     id: "minerals",
     asset: uiAssets.resources.minerals,
     name: "矿物沉积",
-    gain: "增加矿物质和结构稳定",
-    cost: "可能压制薄膜结构发育",
+    gain: "提高矿物产出并恢复 2 稳定性",
+    cost: "消耗 10 有机质",
+    requires: { organic: 10 },
   },
   {
     id: "tide",
     asset: uiAssets.resources.organic,
     name: "潮汐扰动",
     gain: "提高有机质和突变倾向",
-    cost: "降低短期稳定性",
+    cost: "消耗 12 能量和 3 稳定性",
+    requires: { energy: 12, stability: 3 },
   },
   {
     id: "heat",
     asset: uiAssets.resources.mutation,
     name: "提高温度",
-    gain: "加快反应速度和突变",
-    cost: "增加失衡和灭绝风险",
+    gain: "加快反应速度并获得 2 突变点",
+    cost: "消耗 8 矿物质",
+    requires: { minerals: 8 },
   },
 ];
 
@@ -298,27 +302,33 @@ function ActionGrid({
   remaining: number;
   onAction: (actionId: string) => void;
 }) {
+  const save = useGameStore((s) => s.save);
   const disabled = onCooldown || Boolean(submittingId);
   return (
     <div className="strategy-grid">
-      {ACTIONS.map((a) => (
-        <button
-          key={a.id}
-          className={`strategy-card ${disabled ? "cooldown" : ""} ${submittingId === a.id ? "submitting" : ""}`}
-          disabled={disabled}
-          onClick={() => onAction(a.id)}
-        >
-          <span className="strategy-card-top">
-            <img className="strategy-icon" src={a.asset} alt="" aria-hidden="true" />
-            <span className="strategy-card-state">
-              {submittingId === a.id ? "提交中" : onCooldown ? `${remaining}s` : "可用"}
+      {ACTIONS.map((a) => {
+        const affordable = Boolean(save) && Object.entries(a.requires).every(
+          ([key, value]) => (save?.resources[key as keyof typeof save.resources] ?? 0) >= value,
+        );
+        return (
+          <button
+            key={a.id}
+            className={`strategy-card ${disabled ? "cooldown" : ""} ${!affordable ? "unavailable" : ""} ${submittingId === a.id ? "submitting" : ""}`}
+            disabled={disabled || !affordable}
+            onClick={() => onAction(a.id)}
+          >
+            <span className="strategy-card-top">
+              <img className="strategy-icon" src={a.asset} alt="" aria-hidden="true" />
+              <span className="strategy-card-state">
+                {submittingId === a.id ? "提交中" : onCooldown ? `${remaining}s` : affordable ? "可用" : "材料不足"}
+              </span>
             </span>
-          </span>
-          <span className="strategy-name">{a.name}</span>
-          <span className="strategy-gain">+ {a.gain}</span>
-          <span className="strategy-cost">- {a.cost}</span>
-        </button>
-      ))}
+            <span className="strategy-name">{a.name}</span>
+            <span className="strategy-gain">+ {a.gain}</span>
+            <span className="strategy-cost">- {a.cost}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -457,8 +467,8 @@ function resonanceDirectionCopy(resonanceId: string) {
 
 function resonanceTradeoffCopy(resonanceId: string) {
   const map: Record<string, string> = {
-    decomposer_feeds_producer: "池底的回流会变得更重要。",
-    filter_pores_clear_tide: "短时的繁盛会慢一点，水体会更稳。",
+    decomposer_feeds_producer: "",
+    filter_pores_clear_tide: "过滤会消耗少量有机质，短时繁盛会慢一点。",
     bloom_selection_pressure: "水面会更挤，稳定会先承压。",
   };
   return map[resonanceId] ?? "这次变化会进入生命史记录。";

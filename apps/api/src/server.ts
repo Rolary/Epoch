@@ -406,6 +406,9 @@ function buildSecondChapterDebugSave(id: string, stage: SecondChapterDebugStage)
       resources: { organic: 9999, energy: 9999, minerals: 9999, stability: 9999, mutation: 9999, biomass: 9999 },
       pendingEcologyEvent: null,
     };
+    if (nodeId === "tidal_filter_pores" && !save.chapterWitness?.ecologyBurst.firstResonanceWitnessed) {
+      save = applyEcologyResonance(save, "decomposer_feeds_producer").state;
+    }
     if (canUnlockEvolutionNode(save, nodeId)) save = unlockEvolutionNode(save, nodeId);
     if (nodeId !== "mutual_ecology_cycle") save.pendingEcologyEvent = null;
   }

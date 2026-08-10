@@ -27,8 +27,8 @@ export function SystemUnlock() {
     window.setTimeout(() => {
       if (narrativeId) completeNarrative(narrativeId);
       else hideModal();
-      if (targetPage) setPage(targetPage);
-      else if (hintId) setUnlockGuideTarget(hintId);
+      if (hintId) setUnlockGuideTarget(hintId);
+      else if (targetPage) setPage(targetPage);
     }, 180);
   };
 

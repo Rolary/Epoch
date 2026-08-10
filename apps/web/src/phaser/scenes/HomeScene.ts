@@ -47,7 +47,6 @@ export class HomeScene extends Phaser.Scene {
   private organisms: Phaser.GameObjects.Container[] = [];
   private lightBeams: { gfx: Phaser.GameObjects.Graphics; phase: number; speed: number }[] = [];
   private resourceOrbs: Phaser.GameObjects.Container[] = [];
-  private titleText!: Phaser.GameObjects.Text;
   private poolPulseTime = 0;
   private organismSpawnTimer = 0;
   private tapRipples: Phaser.GameObjects.Graphics[] = [];
@@ -135,7 +134,6 @@ export class HomeScene extends Phaser.Scene {
     this.createShorelineLayer(width, height);
     this.createFloatingParticles(width, height);
     this.createResourceOrbs(width, height);
-    this.createTitle(width, height);
     this.createPoolHint(width, height);
 
     this.particleEmitters.push(
@@ -267,7 +265,7 @@ export class HomeScene extends Phaser.Scene {
     this.elementSpawnTimer += delta;
     if (this.elementSpawnTimer > this.nextSpawnDelay && this.dragElements.length < HomeScene.MAX_ELEMENTS) {
       this.elementSpawnTimer = 0;
-      this.nextSpawnDelay = 12000 + Math.random() * 10000;
+      this.nextSpawnDelay = 6500 + Math.random() * 4500;
       this.spawnElement();
     }
   }
@@ -1596,14 +1594,6 @@ export class HomeScene extends Phaser.Scene {
       c.setData("phase", Math.random() * Math.PI * 2);
       this.resourceOrbs.push(c);
     }
-  }
-
-  private createTitle(w: number, _h: number): void {
-    this.titleText = this.add.text(w / 2, 84, "始源潮池", {
-      fontSize: "22px", fontFamily: "system-ui, sans-serif", color: "#4FC3F7", fontStyle: "bold",
-    });
-    this.titleText.setOrigin(0.5);
-    this.titleText.setAlpha(0.6);
   }
 
   private createPoolHint(w: number, h: number): void {

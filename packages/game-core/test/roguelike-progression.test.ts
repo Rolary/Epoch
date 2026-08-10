@@ -42,6 +42,107 @@ describe("roguelike life-history progression", () => {
     expect(canUnlockEvolutionNode(next, "fragment_budding")).toBe(false);
   });
 
+  it("paces an active first-two-chapter run without long single-resource stalls", () => {
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    const unlockOrder = [
+      "organic_richness",
+      "replicating_chain",
+      "replication_fidelity",
+      "primitive_vesicle",
+      "metabolic_loop",
+      "proto_cell",
+      "photo_pigment",
+      "early_producer_film",
+      "decomposition_layer",
+      "tidal_filter_pores",
+      "mutual_ecology_cycle",
+      "ecological_personality",
+    ];
+    const pickupActions = [
+      "absorb_droplet",
+      "absorb_spark",
+      "absorb_crystal",
+      "absorb_droplet",
+      "absorb_spark",
+      "absorb_crystal",
+      "absorb_pulse",
+    ];
+    let state = createInitialState("active-pace", "active-pace", "algae_film_prelude");
+    const startedAt = new Date(state.createdAt).getTime();
+    const unlockedAt: Record<string, number> = {};
+    let pickupIndex = 0;
+
+    for (let second = 1; second <= 1_500; second += 1) {
+      const now = new Date(startedAt + second * 1_000);
+      state = advanceState(state, now);
+      if (second === 1 || second % 9 === 0) {
+        state = applyEnvironmentAction(state, pickupActions[pickupIndex % pickupActions.length]);
+        pickupIndex += 1;
+      }
+      if (second % 45 === 0) state = applyEnvironmentAction(state, "harvest_tide");
+      if (state.pendingEcologyEvent) {
+        state = applyEcologyEventChoice(state, state.pendingEcologyEvent.id, state.pendingEcologyEvent.options[0].id);
+      }
+      if (state.unlockedNodes.includes("decomposition_layer") && !state.chapterWitness?.ecologyBurst.firstResonanceWitnessed) {
+        state = applyEcologyResonance(state, "decomposer_feeds_producer", now).state;
+      }
+
+      let unlockedOne = true;
+      while (unlockedOne) {
+        unlockedOne = false;
+        for (const nodeId of unlockOrder) {
+          if (state.unlockedNodes.includes(nodeId) || !canUnlockEvolutionNode(state, nodeId)) continue;
+          state = unlockEvolutionNode(state, nodeId);
+          unlockedAt[nodeId] = second;
+          unlockedOne = true;
+          break;
+        }
+      }
+      if (state.unlockedNodes.includes("ecological_personality")) break;
+    }
+
+    expect(unlockedAt.organic_richness).toBeLessThanOrEqual(90);
+    expect(unlockedAt.proto_cell).toBeLessThanOrEqual(600);
+    expect(unlockedAt.photo_pigment).toBeLessThanOrEqual(750);
+    expect(unlockedAt.ecological_personality).toBeLessThanOrEqual(1_500);
+    expect(state.chapterProgress?.stage).toBe("complete");
+    random.mockRestore();
+  });
+
+  it("requires the first visible material exchange before the filter role settles", () => {
+    const base = normalizeGameState({
+      ...createInitialState("filter-role-gate"),
+      resources: { organic: 999, energy: 999, minerals: 999, stability: 99, mutation: 999, biomass: 999 },
+      unlockedNodes: [
+        "organic_richness",
+        "replicating_chain",
+        "primitive_vesicle",
+        "metabolic_loop",
+        "proto_cell",
+        "photo_pigment",
+        "early_producer_film",
+        "decomposition_layer",
+      ],
+    });
+
+    expect(canUnlockEvolutionNode(base, "tidal_filter_pores")).toBe(false);
+    const resonated = applyEcologyResonance(base, "decomposer_feeds_producer").state;
+    expect(canUnlockEvolutionNode(resonated, "tidal_filter_pores")).toBe(true);
+  });
+
+  it("records the first species when the proto-cell node is confirmed", () => {
+    const ready = normalizeGameState({
+      ...createInitialState("proto-cell-species"),
+      resources: { organic: 999, energy: 999, minerals: 999, stability: 99, mutation: 999, biomass: 999 },
+      unlockedNodes: ["organic_richness", "replicating_chain", "primitive_vesicle", "metabolic_loop"],
+    });
+
+    const next = unlockEvolutionNode(ready, "proto_cell");
+
+    expect(next.species).toHaveLength(1);
+    expect(next.logs.some((log) => log.message.includes("第一种生命出现了"))).toBe(true);
+  });
+
   it("filters ecology events by current pool conditions", () => {
     const state = createInitialState("event-filter-test");
     const events = availableEcologyEvents({
@@ -436,7 +537,7 @@ describe("roguelike life-history progression", () => {
 
     expect(first.logs.filter((log) => log.message.includes("生态组合")).length).toBe(1);
     expect(second.logs.filter((log) => log.message.includes("生态组合")).length).toBe(1);
-    expect(first.chapterProgress?.ecologyCycleFormed).toBe(true);
+    expect(first.chapterProgress?.ecologyCycleFormed).toBe(false);
   });
 
   it("normalizes old saves with empty ecology resonance fields", () => {

@@ -45,7 +45,7 @@
 
 ## UI Visual Assets
 
-- When a feature needs new UI visuals, create fit-for-purpose image assets with `imagegen`/Imagen instead of forcing existing images into a mismatched role.Before using ImageGen, tell the user what will be generated and wait for the user's explicit approval.
+- When a feature needs new UI visuals, create fit-for-purpose image assets directly with `imagegen`/Imagen instead of forcing existing images into a mismatched role; no separate user confirmation is required before generation.
 - Reuse existing images only when they clearly match the new UI's meaning, style, framing, and interaction context.
 - Generated assets should serve the actual feature state or gameplay moment, not act as generic decoration.
 

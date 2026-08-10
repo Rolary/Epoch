@@ -497,6 +497,9 @@ function nodeCopyFor(nodeId: string, fallbackName: string, fallbackDescription: 
 }
 
 function lockReasonFor(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>, node: EvolutionNode) {
+  if (node.id === "tidal_filter_pores" && !save.chapterWitness?.ecologyBurst.firstResonanceWitnessed) {
+    return "先观察生产者与分解者的第一次材料交换";
+  }
   if (node.id === "ecological_personality" && !save.chapterWitness?.ecologyBurst.imbalanceWitnessed) {
     return "先等潮池处理一次过盛的水面";
   }

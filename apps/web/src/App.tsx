@@ -41,11 +41,13 @@ const DecisionConfirm = lazy(() => import("./components/modals/DecisionConfirm.j
 const StrategySheet = lazy(() => import("./components/sheets/StrategySheet.js").then((m) => ({ default: m.StrategySheet })));
 
 const ELEMENT_ACTION: Record<ElementType, string> = {
-  crystal: "catalyze",
-  spark: "catalyze",
-  droplet: "catalyze",
-  pulse: "catalyze",
+  crystal: "absorb_crystal",
+  spark: "absorb_spark",
+  droplet: "absorb_droplet",
+  pulse: "absorb_pulse",
 };
+
+const ACTIVE_HARVEST_SECONDS = 45;
 
 type InterventionCue = {
   id: number;
@@ -150,7 +152,7 @@ function resourceTotal(resources: Partial<Resources> | undefined) {
 }
 
 function minimumHarvestTotal(save: NonNullable<ReturnType<typeof useGameStore.getState>["save"]>) {
-  return Math.max(1, resourceTotal(calculateResourceDelta(save, 2 * 60)));
+  return Math.max(1, resourceTotal(calculateResourceDelta(save, ACTIVE_HARVEST_SECONDS)));
 }
 
 function estimatedHarvestWaitSeconds(
@@ -159,7 +161,7 @@ function estimatedHarvestWaitSeconds(
   minimumTotal: number,
 ) {
   const perSecond = resourceTotal(calculateResourceDelta(save, 1));
-  if (perSecond <= 0) return 2 * 60;
+  if (perSecond <= 0) return ACTIVE_HARVEST_SECONDS;
   return Math.max(1, Math.ceil((minimumTotal - currentTotal) / perSecond));
 }
 
@@ -295,7 +297,9 @@ export function App() {
   const enqueueNarrative = useUIStore((s) => s.enqueueNarrative);
   const activateNextNarrative = useUIStore((s) => s.activateNextNarrative);
   const activeNarrative = useUIStore((s) => s.activeNarrative);
+  const narrativeQueue = useUIStore((s) => s.narrativeQueue);
   const guide = useUIStore((s) => s.guide);
+  const setGuide = useUIStore((s) => s.setGuide);
   const unlockGuideTarget = useUIStore((s) => s.unlockGuideTarget);
   const hydrateScopedUIState = useUIStore((s) => s.hydrateScopedUIState);
   const snoozedEcologyEventId = useUIStore((s) => s.snoozedEcologyEventId);
@@ -453,6 +457,12 @@ export function App() {
     return () => clearInterval(interval);
   }, [save, page]);
 
+  useEffect(() => {
+    if (!save || !guide) return;
+    if (save.unlockedNodes.length === 0 && save.species.length === 0) return;
+    setGuide(false);
+  }, [save?.id, save?.unlockedNodes.length, save?.species.length, guide, setGuide]);
+
   // Periodic API sync
   useEffect(() => {
     if (!saveId || page !== "home" || isThirdChapterDebugPreview()) return;
@@ -593,7 +603,7 @@ export function App() {
   useEffect(() => {
     if (activeNarrative || unlockGuideTarget || modalType || sheetType || page === "create-ecology" || guide) return;
     activateNextNarrative();
-  }, [activeNarrative, unlockGuideTarget, modalType, sheetType, page, guide, activateNextNarrative]);
+  }, [activeNarrative, narrativeQueue.length, unlockGuideTarget, modalType, sheetType, page, guide, activateNextNarrative]);
 
   useEffect(() => {
     if (!activeNarrative || modalType || sheetType) return;

@@ -10,7 +10,6 @@ export declare class HomeScene extends Phaser.Scene {
     private organisms;
     private lightBeams;
     private resourceOrbs;
-    private titleText;
     private poolPulseTime;
     private organismSpawnTimer;
     private tapRipples;
@@ -96,7 +95,6 @@ export declare class HomeScene extends Phaser.Scene {
     private updateEcologyStageLayer;
     private createFloatingParticles;
     private createResourceOrbs;
-    private createTitle;
     private createPoolHint;
     private createProceduralTextures;
 }

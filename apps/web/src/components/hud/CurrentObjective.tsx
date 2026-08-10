@@ -459,10 +459,9 @@ function getEcologyObjective(save: NonNullable<ReturnType<typeof useGameStore.ge
 }
 
 function getCurrentStageIndex(unlocked: string[], speciesCount: number) {
-  if (speciesCount > 0) return 3;
-  if (unlocked.includes("replicating_chain")) return 3;
-  if (unlocked.includes("organic_richness")) return 2;
-  if (unlocked.length > 0) return 1;
+  if (speciesCount > 0 || unlocked.includes("proto_cell")) return 3;
+  if (unlocked.includes("replicating_chain")) return 2;
+  if (unlocked.includes("organic_richness")) return 1;
   return 0;
 }
 
